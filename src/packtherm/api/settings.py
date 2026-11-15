@@ -8,6 +8,8 @@ PACKTHERM_TRUST_PROXY         1: take the client address from X-Forwarded-For
 PACKTHERM_CORS_ORIGINS        comma-separated origins allowed to call the API
                               from a browser ("*" by default: it is public)
 PACKTHERM_WORKERS_PER_STUDY   processes each study uses (default 1)
+PACKTHERM_WEB_DIR             the built web app to serve at / (default: the
+                              copy inside the package)
 PACKTHERM_LIMIT_<NAME>        any field of Limits, e.g. PACKTHERM_LIMIT_MAX_RUNNING=4
 """
 
@@ -43,6 +45,7 @@ class Settings:
     trust_proxy: bool = False
     cors_origins: tuple[str, ...] = ("*",)
     workers_per_study: int = 1
+    web_dir: Path | None = None  # the built web app; None: the copy inside the package
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None) -> Settings:
@@ -62,4 +65,6 @@ class Settings:
         kw["cors_origins"] = tuple(origins)
         if env.get("PACKTHERM_WORKERS_PER_STUDY"):
             kw["workers_per_study"] = int(env["PACKTHERM_WORKERS_PER_STUDY"])
+        if env.get("PACKTHERM_WEB_DIR"):
+            kw["web_dir"] = Path(env["PACKTHERM_WEB_DIR"])
         return cls(**kw)

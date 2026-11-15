@@ -1,0 +1,40 @@
+[
+ {
+  "label": "LG MJ1 (NMC 18650)",
+  "file": "user_cell_mj1.yaml",
+  "cell": {
+   "name": "LG INR18650 MJ1 (from datasheet)",
+   "diameter_mm": 18.3,
+   "height_mm": 65.1,
+   "chemistry": "NMC",
+   "capacity_Ah": 3.5,
+   "V_nominal": 3.635,
+   "mass_g": 46.8,
+   "DCIR_mOhm": 60,
+   "max_discharge_A": 10,
+   "max_charge_A": 3.4,
+   "T_max_charge_C": 45,
+   "T_max_discharge_C": 60,
+   "source": "LG Chem INR18650 MJ1 product specification; batterydesign.net"
+  }
+ },
+ {
+  "label": "ANR26650M1-B (LFP 26650)",
+  "file": "user_cell_lfp_26650.yaml",
+  "cell": {
+   "name": "ANR26650M1-B (LFP, from datasheet)",
+   "diameter_mm": 25.96,
+   "height_mm": 65.15,
+   "chemistry": "LFP",
+   "capacity_Ah": 2.6,
+   "V_nominal": 3.3,
+   "mass_g": 76.0,
+   "DCIR_mOhm": 10,
+   "max_discharge_A": 52,
+   "max_charge_A": 10,
+   "T_max_charge_C": 60,
+   "T_max_discharge_C": 60,
+   "source": "Lithium Werks 26650 Power Cell datasheet (080322); DC resistance from the A123 ANR26650M1 datasheet"
+  }
+ }
+]

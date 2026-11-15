@@ -9,3 +9,5 @@ matlab
 tests
 validation
 thesis_results
+web/node_modules
+src/packtherm/web_static

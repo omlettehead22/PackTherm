@@ -4,3 +4,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 thesis_results/
+
+# web app
+web/node_modules/
+src/packtherm/web_static/

@@ -1,6 +1,6 @@
 # HTTP API
 
-The API runs PackTherm studies for other programs and for the web app. A study is the same document as a [study file](STUDY_FILES.md), sent as JSON. It is queued and run in its own process; you check on it, then fetch the results.
+The API runs PackTherm studies for other programs and for the web app, which the same server serves at `/`. A study is the same document as a [study file](STUDY_FILES.md), sent as JSON. It is queued and run in its own process; you check on it, then fetch the results.
 
 ```bash
 pip install "packtherm[api]"
@@ -51,6 +51,7 @@ print(results["summary"]["text"])
 
 | Request | Returns |
 |---|---|
+| `POST /studies/check` | Validates a study without queuing it: `designs` (how many it would run), `mode`, `within_limits` and `problems` (the limits it is over; none with an API key). 422 with `errors` for an invalid study. The web app calls this as you edit |
 | `POST /studies` | 202 with `id`, `designs`, `mode`, `status_url`, `results_url`. 422 with `errors` (each naming its field) for an invalid study or one over the limits; 400 for invalid JSON; 413 for a request over the size limit; 429 over the rate limit (with `Retry-After`); 503 when the queue is full |
 | `GET /studies/{id}` | `state`, `created` / `started` / `finished` (Unix time), `progress` (`stage`: `designs` then `re-check`, `done`, `total`), `eta_s` while running, `queue_position` while queued, `error` if failed, `files` when done |
 | `GET /studies/{id}/results` | The results JSON (409 until the study is done) |
@@ -93,9 +94,15 @@ For a public server, without an API key:
 | `PACKTHERM_TRUST_PROXY` | off | `1` behind a hosting platform's proxy: the visitor's address comes from `X-Forwarded-For` (otherwise every visitor would share one rate limit) |
 | `PACKTHERM_CORS_ORIGINS` | `*` | Origins allowed to call the API from a browser |
 | `PACKTHERM_WORKERS_PER_STUDY` | 1 | Processes each study uses (designs run in parallel) |
+| `PACKTHERM_WEB_DIR` | the copy in the package | The built web app to serve at `/`. Without one, `/` explains how to build it |
 | `PORT` | 8000 | Port for `packtherm serve` and the Docker image |
 
 ## Notes
 
 - A server restart fails studies that were queued or running (`"error": "the server restarted"`); finished results survive in the jobs folder.
 - Nothing in a request is run as code: studies are validated against the format before they are queued, and the server reads no files a request names.
+- Results made from 0.5.5 on carry a `labels` block (the chart's axis titles and the cooling-kind names), which the web app uses; it falls back to the module study's labels for older results files.
+
+## The web app
+
+The server serves the web app at `/` from the built files in the package (`src/packtherm/web_static/`), with its scripts and styles under `/assets/`. The app uses only the endpoints above, from the same address. Its pages are addresses after `#`: `/#/` sets up a study and `/#/studies/{id}` shows one, so a result link works for as long as the results are kept. Building and developing it are covered in [web/README.md](../web/README.md).
