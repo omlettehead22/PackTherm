@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.5
+
+The web app, the sixth v0.5 mini update: set up a study in the browser, watch it run, explore the results.
+
+- **New: a web app**, served by `packtherm serve` at `/` and included in the Docker image. Built with React and TypeScript (Vite), in `web/`; Node is needed only to build it.
+  - **Set up:** start from the README's example studies or a blank form. Choose a library cell or enter your own (NMC, NCA, LFP), with the server checking it as you type: what PackTherm derives from it, warnings, and errors by field. The duty's own fields follow its type, including an editor for custom segments. Limits, the designs to compare, and advanced options (collapsed) complete the form.
+  - **Fast mode by default**, with normal mode one click away. The app shows how many designs the study will run and stops a study over the public limits before it is sent, with the reason.
+  - **Running:** progress through the designs and the worst-case re-check, time remaining, queue position, and cancel. The page can be closed: the link keeps working.
+  - **Results:** a card for each pick (one card where a design is two picks), the interactive trade-off chart (hover or arrow keys for a design's numbers), a sortable table of every design with why each failed, the notes, and labels for fast mode and user-defined cells.
+  - **Downloads:** results JSON, designs CSV, the PNG chart, and the study as a YAML file to re-run with `packtherm run`. A link to the results works for 24 hours.
+  - Light and dark themes (following the system, with a switch), keyboard use, and phone widths.
+- **The form is built from the study format** (`packtherm.study.schema()`), so it cannot drift from what the API accepts. Tests fail if the shared files are out of date or a key has no label.
+- **New: `POST /studies/check`** validates a study without queuing it: how many designs it would run, and any limits it is over. `POST /studies` uses the same checks.
+- **Results files carry chart labels** (`labels`: axis titles and cooling-kind names), so the app's chart matches the PNG. The format version is unchanged; older files work without them.
+- **New setting `PACKTHERM_WEB_DIR`**, to serve a web app built elsewhere. Without a built app, `/` explains how to build it.
+- **CI** gains a web job (type-check, 26 tests, build), and the Docker job checks that the image serves the app.
+
 ## 0.5.4
 
 LFP cells, the fifth v0.5 mini update: user-defined cylindrical cells can now be LFP/graphite.

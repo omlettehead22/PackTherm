@@ -18,6 +18,24 @@ jobs:
       - run: ruff check src tests
       - run: pytest -q
 
+  web:
+    # The web app: type-check, test, and build.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
   docker:
     # Build the API image, start it, and run a small study through it.
     runs-on: ubuntu-latest
@@ -38,5 +56,10 @@ jobs:
             sleep 2
           done
           curl -sf localhost:8000/studies/$id/results | python3 -c "import sys, json; d = json.load(sys.stdin); print(d['summary']['text']); assert d['picks']"
+      - name: The web app is served
+        run: |
+          curl -sf localhost:8000/ | grep -q '<div id="root">'
+          asset=$(curl -sf localhost:8000/ | grep -o '/assets/index-[^"]*\.js' | head -1)
+          curl -sf "localhost:8000$asset" > /dev/null
       - if: failure()
         run: docker logs api

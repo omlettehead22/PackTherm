@@ -1,0 +1,643 @@
+{
+ "packtherm_study": 1,
+ "required": [
+  "packtherm_study",
+  "cell",
+  "duty.type"
+ ],
+ "top": {
+  "packtherm_study": {
+   "type": [
+    "integer"
+   ],
+   "default": null
+  },
+  "name": {
+   "type": [
+    "string"
+   ],
+   "default": null
+  },
+  "cell": {
+   "type": [
+    "string",
+    "object"
+   ],
+   "default": null
+  },
+  "mode": {
+   "type": [
+    "string"
+   ],
+   "default": "normal",
+   "choices": [
+    "normal",
+    "fast"
+   ]
+  },
+  "ambient_C": {
+   "type": [
+    "number"
+   ],
+   "default": 25.0
+  }
+ },
+ "duty": {
+  "keys": {
+   "type": {
+    "type": [
+     "string"
+    ],
+    "default": null,
+    "choices": [
+     "constant",
+     "wltc",
+     "roadtrip",
+     "segments"
+    ]
+   },
+   "c_rate": {
+    "type": [
+     "number"
+    ],
+    "default": 1.0,
+    "min": 0,
+    "exclusive": true
+   },
+   "direction": {
+    "type": [
+     "string"
+    ],
+    "default": "discharge",
+    "choices": [
+     "discharge",
+     "charge"
+    ]
+   },
+   "soc0": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "max": 1
+   },
+   "soc_min": {
+    "type": [
+     "number"
+    ],
+    "default": 0.0,
+    "min": 0,
+    "max": 1
+   },
+   "soc_max": {
+    "type": [
+     "number"
+    ],
+    "default": 1.0,
+    "min": 0,
+    "max": 1
+   },
+   "cycles": {
+    "type": [
+     "integer"
+    ],
+    "default": 3,
+    "min": 0,
+    "exclusive": true
+   },
+   "speed_kmh": {
+    "type": [
+     "number"
+    ],
+    "default": 130.0,
+    "min": 0,
+    "exclusive": true
+   },
+   "charge_c_rate": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "pack_kWh": {
+    "type": [
+     "number"
+    ],
+    "default": 60.0,
+    "min": 0,
+    "exclusive": true
+   },
+   "pack_V": {
+    "type": [
+     "number"
+    ],
+    "default": 350.0,
+    "min": 0,
+    "exclusive": true
+   },
+   "steps": {
+    "type": [
+     "list"
+    ],
+    "default": null
+   },
+   "name": {
+    "type": [
+     "string"
+    ],
+    "default": null
+   },
+   "rest_h": {
+    "type": [
+     "number"
+    ],
+    "default": 3.0,
+    "min": 0
+   }
+  },
+  "uses": {
+   "constant": [
+    "c_rate",
+    "direction",
+    "pack_kWh",
+    "rest_h",
+    "soc0",
+    "soc_max",
+    "soc_min"
+   ],
+   "wltc": [
+    "cycles",
+    "pack_V",
+    "pack_kWh",
+    "rest_h"
+   ],
+   "roadtrip": [
+    "charge_c_rate",
+    "pack_V",
+    "pack_kWh",
+    "rest_h",
+    "speed_kmh"
+   ],
+   "segments": [
+    "name",
+    "pack_kWh",
+    "rest_h",
+    "soc0",
+    "soc_max",
+    "soc_min",
+    "steps"
+   ]
+  }
+ },
+ "requirements": {
+  "T_max_C": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null
+  },
+  "dT_cell_max_C": {
+   "type": [
+    "number"
+   ],
+   "default": 5.0,
+   "min": 0,
+   "exclusive": true
+  },
+  "recovery_max_min": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null,
+   "min": 0
+  },
+  "cell_to_cell_max_K": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null,
+   "min": 0,
+   "exclusive": true
+  }
+ },
+ "design_space": {
+  "topologies": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    "none",
+    "air",
+    "bottom",
+    "ribbon"
+   ],
+   "items": {
+    "type": [
+     "string"
+    ],
+    "choices": [
+     "none",
+     "air",
+     "bottom",
+     "ribbon"
+    ]
+   }
+  },
+  "air_flows_g_s": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    0.15,
+    0.3,
+    0.6
+   ],
+   "items": {
+    "type": [
+     "number"
+    ],
+    "min": 0,
+    "exclusive": true
+   }
+  },
+  "coolant_flows_g_s": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    0.02,
+    0.05
+   ],
+   "items": {
+    "type": [
+     "number"
+    ],
+    "min": 0,
+    "exclusive": true
+   }
+  },
+  "chiller_C": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    15.0
+   ],
+   "items": {
+    "type": [
+     "number"
+    ]
+   }
+  },
+  "fillers": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    "none",
+    "RT31",
+    "RT42",
+    "RT31-EG"
+   ],
+   "items": {
+    "type": [
+     "string"
+    ],
+    "choices": [
+     "none",
+     "RT28HC",
+     "RT31",
+     "OM35",
+     "RT42",
+     "RT28HC-EG",
+     "RT31-EG",
+     "OM35-EG",
+     "RT42-EG"
+    ]
+   }
+  },
+  "gaps_mm": {
+   "type": [
+    "list"
+   ],
+   "default": [
+    2.0
+   ],
+   "items": {
+    "type": [
+     "number"
+    ],
+    "min": 0
+   }
+  },
+  "packing": {
+   "type": [
+    "string"
+   ],
+   "default": "hex",
+   "choices": [
+    "hex",
+    "square"
+   ]
+  }
+ },
+ "options": {
+  "edge_cells": {
+   "type": [
+    "boolean"
+   ],
+   "default": true
+  },
+  "wall_U": {
+   "type": [
+    "number"
+   ],
+   "default": 5.0,
+   "min": 0
+  },
+  "r_margin": {
+   "type": [
+    "number"
+   ],
+   "default": 0.2,
+   "min": 0
+  },
+  "chiller_cop": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null,
+   "min": 0,
+   "exclusive": true
+  },
+  "chiller_runs": {
+   "type": [
+    "string"
+   ],
+   "default": "event",
+   "choices": [
+    "event",
+    "always"
+   ]
+  },
+  "liquid_loop_kg": {
+   "type": [
+    "number"
+   ],
+   "default": 3.0,
+   "min": 0
+  },
+  "air_system_kg": {
+   "type": [
+    "number"
+   ],
+   "default": 4.0,
+   "min": 0
+  },
+  "chiller_kg": {
+   "type": [
+    "number"
+   ],
+   "default": 4.0,
+   "min": 0
+  }
+ },
+ "cell": {
+  "keys": {
+   "name": {
+    "type": [
+     "string"
+    ],
+    "default": null
+   },
+   "format": {
+    "type": [
+     "string",
+     "integer",
+     "null"
+    ],
+    "default": null,
+    "choices": [
+     "18650",
+     "21700",
+     "26650",
+     "4680"
+    ]
+   },
+   "diameter_mm": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "height_mm": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "chemistry": {
+    "type": [
+     "string"
+    ],
+    "default": "NMC",
+    "choices": [
+     "NMC",
+     "NCA",
+     "LFP"
+    ]
+   },
+   "capacity_Ah": {
+    "type": [
+     "number"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "V_nominal": {
+    "type": [
+     "number"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "mass_g": {
+    "type": [
+     "number"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "DCIR_mOhm": {
+    "type": [
+     "number"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "DCIR_max_mOhm": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "max_discharge_A": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "max_charge_A": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "T_max_charge_C": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null
+   },
+   "T_max_discharge_C": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null
+   },
+   "cp_J_kgK": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "k_radial_W_mK": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "k_axial_W_mK": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0,
+    "exclusive": true
+   },
+   "Ea_kJ_mol": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null,
+    "min": 0
+   },
+   "entropic": {
+    "type": [
+     "boolean"
+    ],
+    "default": true
+   },
+   "source": {
+    "type": [
+     "string",
+     "null"
+    ],
+    "default": null
+   }
+  },
+  "required": [
+   "name",
+   "capacity_Ah",
+   "V_nominal",
+   "mass_g",
+   "DCIR_mOhm"
+  ],
+  "formats_mm": {
+   "18650": {
+    "diameter": 18.4,
+    "height": 65.0
+   },
+   "21700": {
+    "diameter": 21.1,
+    "height": 70.1
+   },
+   "26650": {
+    "diameter": 26.2,
+    "height": 65.2
+   },
+   "4680": {
+    "diameter": 46.0,
+    "height": 80.0
+   }
+  }
+ },
+ "library": {
+  "cells": {
+   "M50": {
+    "name": "LG INR21700 M50",
+    "model": "circuit (derived)"
+   },
+   "M50-LUMPED": {
+    "name": "LG INR21700 M50 (lumped DCIR)",
+    "model": "lumped DCIR"
+   },
+   "MJ1": {
+    "name": "LG INR18650 MJ1",
+    "model": "lumped DCIR"
+   },
+   "PF": {
+    "name": "Panasonic NCR18650PF",
+    "model": "circuit (measured)"
+   }
+  },
+  "fillers": [
+   "RT28HC",
+   "RT31",
+   "OM35",
+   "RT42",
+   "RT28HC-EG",
+   "RT31-EG",
+   "OM35-EG",
+   "RT42-EG"
+  ]
+ }
+}

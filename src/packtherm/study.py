@@ -567,6 +567,12 @@ class StudyRun:
                 "T_limit_C": _num(t.T_limit_C.iloc[0]) if len(t) else None,
                 "text": res.summary(),
             },
+            "labels": {
+                "mass_axis": res.mass_axis_label,
+                "energy_axis": "Fan, pump and chiller energy, % of energy moved by the cell",
+                "filler": res.filler_axis_label,
+                "kinds": dict(res.kind_names),
+            },
             "picks": picks,
             "notes": list(res.warnings) + list(res.notes()) + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
             "assumptions": _assumptions(st),

@@ -12,14 +12,26 @@ import secrets
 import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from .. import __version__
 from .jobs import JobManager, QueueFull
 from .settings import Settings
+
+# The web app's built files (``npm run build`` in web/ writes them here).
+WEB_DIR = Path(__file__).resolve().parent.parent / "web_static"
+
+NO_WEB_APP = """<!doctype html><html lang="en"><meta charset="utf-8"><title>PackTherm API</title>
+<body style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; line-height: 1.5">
+<h1>PackTherm API</h1>
+<p>The web app is not built in this installation. Build it with <code>npm ci && npm run build</code>
+in the repository's <code>web/</code> folder, or use the API directly: see <a href="/docs">/docs</a>.</p>
+</body></html>"""
 
 
 def _error(status: int, message: str, errors: list[str] | None = None, **extra) -> JSONResponse:
@@ -161,31 +173,40 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         return {"cell": spec, "derived": cell_summary(spec), "warnings": warnings}
 
     # -- studies ----------------------------------------------------------------
-    @app.post("/studies", status_code=202)
-    async def submit(request: Request):
-        """Queue a study. Returns its id and where to check on it."""
+    def examine(doc, unlimited: bool):
+        """Validate a study and check it against the limits.
+
+        Returns (spec, study, designs, error response or None, over-limit problems).
+        """
         from ..study import StudyError, StudySpec, validate
 
-        try:
-            doc = await body_json(request)
-        except ValueError as e:
-            return _error(400, str(e))
         if (
             isinstance(doc, dict)
             and isinstance(doc.get("cell"), str)
             and doc["cell"].lower().endswith((".yaml", ".yml", ".json"))
         ):
-            return _error(422, "Invalid study", ["cell: a file name cannot be used here; give the definition inline"])
+            return (
+                None,
+                None,
+                0,
+                _error(422, "Invalid study", ["cell: a file name cannot be used here; give the definition inline"]),
+                [],
+            )
         try:
             spec = validate(doc)
         except StudyError as e:
-            return _error(422, "Invalid study", [x.strip() for x in str(e).splitlines()[1:]] or [str(e)])
-        unlimited = has_key(request)
+            return (
+                None,
+                None,
+                0,
+                _error(422, "Invalid study", [x.strip() for x in str(e).splitlines()[1:]] or [str(e)]),
+                [],
+            )
         study = StudySpec(spec).build()
         n = len(study.designs())
+        problems = []
         if not unlimited:
             cap = lim.max_designs_fast if study.mode == "fast" else lim.max_designs_normal
-            problems = []
             if n > cap:
                 problems.append(f"design_space: {n} designs, more than the {cap} allowed in {study.mode} mode")
             hours = (study.duty.event_duration() + study.duty.rest_after_s) / 3600
@@ -194,8 +215,34 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
             steps = spec["duty"].get("steps") or []
             if len(steps) > lim.max_steps:
                 problems.append(f"duty.steps: {len(steps)} segments, more than {lim.max_steps}")
-            if problems:
-                return _error(422, "Study over the limits (GET /limits)", problems)
+        return spec, study, n, None, problems
+
+    @app.post("/studies/check")
+    async def check_study(request: Request):
+        """Validate a study without running it: the number of designs, and any limits it is over."""
+        try:
+            doc = await body_json(request)
+        except ValueError as e:
+            return _error(400, str(e))
+        _spec, study, n, err, problems = examine(doc, has_key(request))
+        if err:
+            return err
+        return {"designs": n, "mode": study.mode, "within_limits": not problems, "problems": problems}
+
+    @app.post("/studies", status_code=202)
+    async def submit(request: Request):
+        """Queue a study. Returns its id and where to check on it."""
+        try:
+            doc = await body_json(request)
+        except ValueError as e:
+            return _error(400, str(e))
+        unlimited = has_key(request)
+        spec, study, n, err, problems = examine(doc, unlimited)
+        if err:
+            return err
+        if problems:
+            return _error(422, "Study over the limits (GET /limits)", problems)
+        if not unlimited:
             client = client_id(request)
             wait = limiter.retry_after(client)
             if wait is not None:
@@ -262,5 +309,23 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         if err:
             return err
         return {"id": jid, "result": manager.cancel_or_delete(jid)}
+
+    # -- the web app --------------------------------------------------------------
+    web_dir = settings.web_dir if settings.web_dir is not None else WEB_DIR
+    index = web_dir / "index.html"
+    if (web_dir / "assets").is_dir():
+        # Hashed file names, so they can be cached for good.
+        app.mount("/assets", StaticFiles(directory=web_dir / "assets"), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    def web_app():
+        if index.is_file():
+            return FileResponse(index, media_type="text/html", headers={"Cache-Control": "no-cache"})
+        return HTMLResponse(NO_WEB_APP)
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def favicon():
+        icon = web_dir / "favicon.svg"
+        return FileResponse(icon, media_type="image/svg+xml") if icon.is_file() else _error(404, "no icon")
 
     return app

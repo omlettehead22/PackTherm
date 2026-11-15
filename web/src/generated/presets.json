@@ -1,0 +1,44 @@
+[
+ {
+  "label": "Hot motorway road trip",
+  "file": "m50_roadtrip_35c.yaml",
+  "study": {
+   "packtherm_study": 1,
+   "name": "M50 road trip, 35 degC",
+   "cell": "M50",
+   "ambient_C": 35,
+   "duty": {
+    "type": "roadtrip",
+    "speed_kmh": 130
+   }
+  }
+ },
+ {
+  "label": "1.5C discharge",
+  "file": "m50_discharge_1.5c_25c.yaml",
+  "study": {
+   "packtherm_study": 1,
+   "name": "M50 1.5C discharge, 25 degC",
+   "cell": "M50",
+   "ambient_C": 25,
+   "duty": {
+    "type": "constant",
+    "c_rate": 1.5
+   }
+  }
+ },
+ {
+  "label": "WLTC city driving",
+  "file": "m50_wltc3_35c.yaml",
+  "study": {
+   "packtherm_study": 1,
+   "name": "M50 3 x WLTC, 35 degC",
+   "cell": "M50",
+   "ambient_C": 35,
+   "duty": {
+    "type": "wltc",
+    "cycles": 3
+   }
+  }
+ }
+]
