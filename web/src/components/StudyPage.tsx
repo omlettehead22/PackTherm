@@ -52,10 +52,8 @@ export function StudyPage({ id, limits, onEdit, onNew }: Props) {
 
   if (results) return (
       <Results
-        id={id}
+        source={{ kind: "server", id, finished: status?.finished ?? null, keepH: limits.keep_h }}
         results={results}
-        limits={limits}
-        finished={status?.finished ?? null}
         onEdit={onEdit}
         onNew={onNew}
       />

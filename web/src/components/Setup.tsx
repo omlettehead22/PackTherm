@@ -1,31 +1,37 @@
 // Screen 1: set up a study.
 import { useId, useState } from "react";
-import { api, ApiError } from "../api";
+import { ApiError } from "../api";
+import type { Checks } from "../engine";
 import presets from "../generated/presets.json";
 import { useServerCheck } from "../hooks";
 import { CHOICE_LABELS } from "../labels";
 import { formFromStudy, studyFromForm, toYaml, fileStem, type FormState, type Values } from "../study";
-import type { Json, LibraryCell, Limits, Schema, Study } from "../types";
+import type { Json, LibraryCell, Limits, Schema, Study, StudyCheck } from "../types";
 import { CellPicker } from "./CellPicker";
 import { download } from "./download";
 import { Field } from "./Fields";
 
 interface Props {
   schema: Schema;
-  limits: Limits;
+  /** The public server's limits; null when studies run in the browser (no limits). */
+  limits: Limits | null;
+  checks: Checks;
   cells: Record<string, LibraryCell>;
   form: FormState;
   setForm: (f: FormState) => void;
-  onSubmitted: (id: string) => void;
+  /** Start the study: submit it to the server, or run it here. */
+  onRun: (study: Study) => Promise<void>;
+  /** Open a downloaded results file (browser engine only). */
+  onOpenResults?: (file: File) => void;
 }
 
-export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Props) {
+export function Setup({ schema, limits, checks, cells, form, setForm, onRun, onOpenResults }: Props) {
   const id = useId();
   const update = (part: Partial<FormState>) => setForm({ ...form, ...part });
   const setIn = (section: "duty" | "requirements" | "design_space" | "options", k: string, v: Json) =>
     update({ [section]: { ...form[section], [k]: v } } as Partial<FormState>);
   const study = studyFromForm(form, schema);
-  const check = useServerCheck<Study, Awaited<ReturnType<typeof api.checkStudy>>>(study, api.checkStudy);
+  const check = useServerCheck<Study, StudyCheck>(study, checks.checkStudy);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<ApiError | null>(null);
 
@@ -51,8 +57,7 @@ export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Pro
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const r = await api.submit(study);
-      onSubmitted(r.id);
+      await onRun(study);
     } catch (e) {
       setSubmitError(e instanceof ApiError ? e : new ApiError(String(e), 0));
     } finally {
@@ -70,7 +75,10 @@ export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Pro
     >
       <section className="card" aria-labelledby={`${id}-presets`}>
         <h2 id={`${id}-presets`}>Start from an example</h2>
-        <p className="muted">The studies in the README, with the LG M50 cell. Each fills in the form below.</p>
+        <p className="muted">
+          The studies in the README, with the LG M50 cell. Each fills in the form below.
+          {onOpenResults && " Or open results you downloaded earlier."}
+        </p>
         <div className="presets">
           {presets.map((p) => (
             <button
@@ -82,6 +90,20 @@ export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Pro
               {p.label}
             </button>
           ))}
+          {onOpenResults && (
+            <label className="button button--quiet file-button">
+              Open a results file
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onOpenResults(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
         </div>
       </section>
 
@@ -123,7 +145,7 @@ export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Pro
         </fieldset>
       </section>
 
-      <CellPicker schema={schema} cells={cells} form={form} update={update} />
+      <CellPicker schema={schema} cells={cells} form={form} update={update} checkCell={checks.checkCell} />
 
       <section className="card" aria-labelledby={`${id}-duty`}>
         <h2 id={`${id}-duty`}>Duty</h2>
@@ -213,7 +235,7 @@ export function Setup({ schema, limits, cells, form, setForm, onSubmitted }: Pro
       </details>
 
       <div className="runbar" aria-live="polite">
-        <StudyCheckView check={check} limits={limits} mode={form.mode} />
+        <StudyCheckView check={check} limits={limits} mode={form.mode} browser={checks.kind === "browser"} />
         {submitError && (
           <div className="notice notice--critical" role="alert">
             <p>
@@ -253,13 +275,16 @@ function StudyCheckView({
   check,
   limits,
   mode,
+  browser,
 }: {
-  check: ReturnType<typeof useServerCheck<Study, Awaited<ReturnType<typeof api.checkStudy>>>>;
-  limits: Limits;
+  check: ReturnType<typeof useServerCheck<Study, StudyCheck>>;
+  limits: Limits | null;
+  browser: boolean;
   mode: string;
 }) {
-  const cap = mode === "fast" ? limits.max_designs_fast : limits.max_designs_normal;
-  if (check.state === "idle" || check.state === "checking") return <p className="status">Checking the study…</p>;
+  const cap = limits ? (mode === "fast" ? limits.max_designs_fast : limits.max_designs_normal) : null;
+  if (check.state === "idle" || check.state === "checking")
+    return <p className="status">{browser ? "Checking the study (the engine loads on a first visit)…" : "Checking the study…"}</p>;
   if (check.state === "error")
     return (
       <div className="notice notice--critical">
@@ -298,7 +323,8 @@ function StudyCheckView({
   return (
     <p className="status status--good">
       <span aria-hidden="true">✓ </span>
-      {c.designs} design{c.designs === 1 ? "" : "s"} in {c.mode} mode (up to {cap} allowed).
+      {c.designs} design{c.designs === 1 ? "" : "s"} in {c.mode} mode
+      {cap !== null ? ` (up to ${cap} allowed).` : ", run in your browser."}
     </p>
   );
 }

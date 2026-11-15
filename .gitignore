@@ -8,3 +8,4 @@ thesis_results/
 # web app
 web/node_modules/
 src/packtherm/web_static/
+web/dist-pages/

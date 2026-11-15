@@ -3,15 +3,20 @@ import { useId, useMemo, useState } from "react";
 import { api } from "../api";
 import { failWords, PICK_LABEL, pickNumbers, TradeoffChart } from "../chart/TradeoffChart";
 import { fileStem, toYaml } from "../study";
-import type { Design, Limits, Pick, Results as ResultsDoc } from "../types";
-import { download } from "./download";
+import { studyLink } from "../share";
+import type { Design, Pick, Results as ResultsDoc } from "../types";
+import { designsCsv, download } from "./download";
+
+/** Where the results came from, which decides how they are downloaded and shared. */
+export type ResultsSource =
+  /** A study run by the PackTherm server: its files are on the server for keepH hours after it finished. */
+  | { kind: "server"; id: string; finished: number | null; keepH: number }
+  /** A study run in this browser, or a results file opened here. */
+  | { kind: "browser" | "file" };
 
 interface Props {
-  id: string;
+  source: ResultsSource;
   results: ResultsDoc;
-  limits: Limits;
-  /** When the study finished (seconds since the epoch, from its status). */
-  finished: number | null;
   onEdit: (study: ResultsDoc["study"]) => void;
   onNew: () => void;
 }
@@ -24,12 +29,10 @@ const FALLBACK_LABELS = {
   kinds: { natural: "no cooling", air: "forced air", liquid: "liquid" } as Record<string, string>,
 };
 
-export function Results({ id, results, limits, finished, onEdit, onNew }: Props) {
+export function Results({ source, results, onEdit, onNew }: Props) {
   const [active, setActive] = useState<number | null>(null);
   const labels = results.labels ?? FALLBACK_LABELS;
   const s = results.summary;
-  const link = `${window.location.origin}${window.location.pathname}#/studies/${id}`;
-  const expires = new Date(((finished ?? Date.now() / 1000) + limits.keep_h * 3600) * 1000);
   const fast = s.mode === "fast";
   const userCell = (s.cell_model ?? "").startsWith("user-defined");
 
@@ -101,15 +104,38 @@ export function Results({ id, results, limits, finished, onEdit, onNew }: Props)
       <section className="card">
         <h2>Download and share</h2>
         <div className="downloads">
-          <a className="button button--secondary" href={api.resultsUrl(id)} download>
-            Results (JSON)
-          </a>
-          <a className="button button--secondary" href={api.csvUrl(id)} download>
-            Every design (CSV)
-          </a>
-          <a className="button button--secondary" href={api.chartUrl(id)} download>
-            Chart (PNG)
-          </a>
+          {source.kind === "server" ? (
+            <>
+              <a className="button button--secondary" href={api.resultsUrl(source.id)} download>
+                Results (JSON)
+              </a>
+              <a className="button button--secondary" href={api.csvUrl(source.id)} download>
+                Every design (CSV)
+              </a>
+              <a className="button button--secondary" href={api.chartUrl(source.id)} download>
+                Chart (PNG)
+              </a>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() =>
+                  download(`${fileStem(results.study)}_results.json`, JSON.stringify(results, null, 1), "application/json")
+                }
+              >
+                Results (JSON)
+              </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => download(`${fileStem(results.study)}_designs.csv`, designsCsv(results.designs), "text/csv")}
+              >
+                Every design (CSV)
+              </button>
+            </>
+          )}
           <button
             type="button"
             className="button button--secondary"
@@ -124,7 +150,17 @@ export function Results({ id, results, limits, finished, onEdit, onNew }: Props)
             Study file (YAML)
           </button>
         </div>
-        <ShareLink link={link} expires={expires} />
+        {source.kind === "server" ? (
+          <ShareLink
+            link={`${window.location.origin}${window.location.pathname}#/studies/${source.id}`}
+            help={`Works until ${new Date(((source.finished ?? Date.now() / 1000) + source.keepH * 3600) * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}, then the results are deleted. Download them to keep them.`}
+          />
+        ) : (
+          <ShareLink
+            link={studyLink(results.study)}
+            help="Opens this study, set up and ready to run in the browser of whoever opens it. To share these exact numbers, send the results file: the app opens it."
+          />
+        )}
         <div className="runbar__actions">
           <button type="button" className="button button--quiet" onClick={onNew}>
             New study
@@ -138,12 +174,12 @@ export function Results({ id, results, limits, finished, onEdit, onNew }: Props)
   );
 }
 
-function ShareLink({ link, expires }: { link: string; expires: Date }) {
+function ShareLink({ link, help }: { link: string; help: string }) {
   const id = useId();
   const [copied, setCopied] = useState(false);
   return (
     <div className="field share">
-      <label htmlFor={id}>Link to these results</label>
+      <label htmlFor={id}>Link to share</label>
       <div className="share__row">
         <input id={id} type="text" readOnly value={link} onFocus={(e) => e.target.select()} />
         <button
@@ -162,10 +198,7 @@ function ShareLink({ link, expires }: { link: string; expires: Date }) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <p className="field__help">
-        Works until {expires.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}, then the results
-        are deleted. Download them to keep them.
-      </p>
+      <p className="field__help">{help}</p>
     </div>
   );
 }

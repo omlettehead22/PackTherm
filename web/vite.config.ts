@@ -9,6 +9,8 @@ const API = ["/health", "/limits", "/schema", "/template", "/cells", "/studies",
 
 export default defineConfig({
   plugins: [react()],
+  // The in-browser engine's workers are ES modules (they import Pyodide).
+  worker: { format: "es" },
   build: {
     outDir: "../src/packtherm/web_static",
     emptyOutDir: true,

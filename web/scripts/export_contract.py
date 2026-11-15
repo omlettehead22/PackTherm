@@ -7,6 +7,8 @@ src/generated/schema.json   the study format (packtherm.study.schema()), which
 src/generated/presets.json  the example studies in docs/examples, offered as presets
 src/generated/cells.json    the example cell files in docs/examples, offered as
                             starting points for your own cell
+src/generated/library.json  the cell library (GET /cells), so the public site's
+                            form shows before the in-browser engine has loaded
 
 tests/test_web.py fails if these are out of date, so the app cannot drift from
 the study format.
@@ -35,6 +37,7 @@ def contract() -> dict[str, str]:
     """File name -> its text."""
     import yaml
 
+    from packtherm.cells import library_summary
     from packtherm.study import schema
 
     presets = []
@@ -45,8 +48,13 @@ def contract() -> dict[str, str]:
     for name, label in CELLS:
         doc = yaml.safe_load((ROOT / "docs" / "examples" / name).read_text(encoding="utf-8"))
         cells.append({"label": label, "file": name, "cell": doc})
-    dump = lambda d: json.dumps(d, indent=1, ensure_ascii=False) + "\n"  # noqa: E731
-    return {"schema.json": dump(schema()), "presets.json": dump(presets), "cells.json": dump(cells)}
+    dump = lambda d: json.dumps(d, indent=1, ensure_ascii=False) + "\n"
+    return {
+        "schema.json": dump(schema()),
+        "presets.json": dump(presets),
+        "cells.json": dump(cells),
+        "library.json": dump(library_summary()),
+    }
 
 
 def main() -> int:

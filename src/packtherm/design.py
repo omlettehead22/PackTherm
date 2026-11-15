@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import math
 import os
-from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field, replace
 from typing import ClassVar
 
@@ -383,6 +382,8 @@ def _map(fn, jobs: list, workers: int | None, progress=None):
             if progress:
                 progress(len(out), len(jobs))
         return out
+    from concurrent.futures import ProcessPoolExecutor  # here, not at import: Pyodide has no processes
+
     chunk = 1 if progress else max(1, len(jobs) // (4 * workers))
     with ProcessPoolExecutor(max_workers=workers) as ex:
         for r in ex.map(fn, jobs, chunksize=chunk):

@@ -21,7 +21,6 @@ from __future__ import annotations
 import gzip
 import json
 import os
-from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -163,6 +162,8 @@ def validate(
     jobs = [(t, cell, h, m, dt) for m in modes for t in tests]
     workers = workers if workers is not None else min(len(jobs), os.cpu_count() or 1)
     if workers > 1:
+        from concurrent.futures import ProcessPoolExecutor
+
         with ProcessPoolExecutor(workers) as ex:
             results = list(ex.map(_run, jobs))
     else:

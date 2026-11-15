@@ -1,0 +1,43 @@
+# On a version tag (v0.5.6, ...): build the wheel with the web app inside and
+# attach it to a GitHub Release, so `pip install <wheel URL>` needs no Node.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build the web app into the package
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Build the wheel and check it carries the app and matches the tag
+        run: |
+          pip wheel . --no-deps -w dist
+          python - <<'PY'
+          import glob, os, zipfile
+          (whl,) = glob.glob("dist/packtherm-*.whl")
+          names = zipfile.ZipFile(whl).namelist()
+          assert "packtherm/web_static/index.html" in names, "the web app is missing from the wheel"
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          assert f"packtherm-{tag}-" in whl, f"{whl} does not match tag {tag}"
+          print(whl, len(names), "files")
+          PY
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/packtherm-*.whl \
+            --title "PackTherm $GITHUB_REF_NAME" \
+            --notes "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md). Install with: pip install \"packtherm[api] @ https://github.com/${{ github.repository }}/releases/download/$GITHUB_REF_NAME/$(basename dist/packtherm-*.whl)\""

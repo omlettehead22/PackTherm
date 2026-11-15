@@ -425,15 +425,29 @@ def run_module_study(
     def report(stage):
         return (lambda done, total: progress(stage, done, total)) if progress else None
 
-    table = pd.DataFrame(_map(_eval_args, [(study, d) for d in designs], workers, report("designs")))
-    R_worst = study.R0_worst
+    rows = _map(_eval_args, [(study, d) for d in designs], workers, report("designs"))
 
     def recheck(idx):
-        # The inlet cell only matters for the spread limit.
-        need_inlet = study.cell_to_cell_max_K is not None
-        return _map(_eval_args, [(study, designs[i], R_worst, need_inlet) for i in idx], workers, report("re-check"))
+        return _map(_eval_args, [recheck_args(study, designs[i]) for i in idx], workers, report("re-check"))
 
-    picks = select_front(table, recheck, robustness and R_worst > study.cell.R0_25C)
+    return module_study_result(study, rows, recheck, robustness)
+
+
+def recheck_args(study: ModuleStudy, d: ModuleDesign) -> tuple:
+    """The arguments for re-checking a design at worst-case resistance (for _eval_args)."""
+    # The inlet cell only matters for the spread limit.
+    return (study, d, study.R0_worst, study.cell_to_cell_max_K is not None)
+
+
+def module_study_result(study: ModuleStudy, rows: list[dict], recheck, robustness: bool = True) -> ModuleStudyResult:
+    """The study's result from its evaluated designs (in study.designs() order).
+
+    recheck(indices) evaluates designs at worst-case resistance. Shared by
+    run_module_study and the in-browser engine (packtherm.browser), which runs
+    the designs elsewhere and passes their rows in.
+    """
+    table = pd.DataFrame(rows)
+    picks = select_front(table, recheck, robustness and study.R0_worst > study.cell.R0_25C)
     return ModuleStudyResult(study, table, picks)
 
 
@@ -445,5 +459,7 @@ __all__ = [
     "ModuleStudyResult",
     "Resolution",
     "evaluate_module_design",
+    "module_study_result",
+    "recheck_args",
     "run_module_study",
 ]

@@ -792,3 +792,60 @@ input[type="radio"] {
     flex: 1 1 auto;
   }
 }
+
+/* -- in-browser engine */
+.header__end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.engine {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.engine--ready span {
+  color: var(--good);
+}
+.engine--failed {
+  color: var(--critical);
+}
+.notice--info {
+  background: var(--surface-1);
+  border-color: var(--accent);
+}
+.file-button {
+  position: relative;
+}
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.file-button:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.progress__bar--busy {
+  background: linear-gradient(90deg, var(--grid) 0%, var(--accent) 50%, var(--grid) 100%);
+  background-size: 200% 100%;
+  animation: busy 1.4s linear infinite;
+}
+@keyframes busy {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress__bar--busy {
+    animation: none;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+}

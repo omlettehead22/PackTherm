@@ -1,0 +1,937 @@
+"""Module-level thermal model: one cell inside a packed array.
+
+Unit cell
+---------
+In a large square or hexagonal array of identical cells, symmetry means no
+heat crosses the boundary between one cell's share of the module and its
+neighbour's. Each cell is therefore modelled with the area it owns, turned
+into an equivalent annulus (same area, outer radius r_u) with an **adiabatic**
+outer edge:
+
+    square packing:   pi r_u^2 = p^2
+    hexagonal:        pi r_u^2 = (sqrt(3)/2) p^2,    p = 2 r_cell + gap
+
+The gap between cells holds the *filler*: air (nothing conducts; any heat
+leaves through forced air on the can or through a cold plate), plain PCM, or
+expanded-graphite composite PCM.
+
+Heat leaves through one cooling topology:
+
+* ``AirFlow``: forced air through the gaps, h on the can surface (air filler
+  only). Flow and gap set h (cross-flow over the cans, h ~ (flow/gap)^0.6),
+  the air's temperature rise and fan power.
+* ``BottomPlate``: cells stand on a cold plate. Solved on a radius x height
+  grid (``model2d.simulate_2d``): heat runs down the winding (``Cell.k_axial``),
+  across the roll-to-can end resistance, the thermal interface and the coolant
+  film; the top of the cell runs hottest. ``nz=0`` falls back to the radial
+  model with a distributed sink and a quasi-steady axial estimate.
+* ``SideRibbon``: a cooling tube bonded to a strip of each can (a share of the
+  circumference over 75 % of the height). Solved on a radius x angle grid
+  (``model2d.simulate_rtheta``), so the far side of the can runs warmer.
+  ``n_theta=0`` falls back to the radial model with the contact spread evenly.
+* No cooling: an interior cell of a packed, uncooled module is adiabatic.
+  Free-air natural convection does not exist inside a pack.
+
+Coolant (plate or ribbon) warms as it passes cells and holds heat itself: the
+coolant in each cell's share of the channel (``coolant_holdup_kg``) is a lump
+with heat capacity, solved implicitly each step together with the heat the
+cell rejects. ``position`` picks the cell: "outlet" (hottest coolant, the
+default), "inlet" (coldest) or "mean". Flow sets h (the channels are laminar,
+so only weakly; see ``Coolant``) and pump power over the whole loop,
+(flow/rho) (dp_module + dp_loop) / eta, with dp_module ~ flow (laminar) and
+dp_loop ~ flow^2. A chiller (``Coolant.inlet_C`` below ambient) can hand back to the
+radiator after ``chiller_until_s``; ``Chiller`` prices its electricity.
+
+``edge=True`` puts the cell on the module wall (``Wall``): a share of its
+boundary exchanges heat with ambient instead of with a neighbour.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass, field
+from typing import ClassVar
+
+import numpy as np
+
+from .cells import Cell, params_for_cell
+from .electrothermal import CurrentProfile, ElectroThermalLoad
+from .materials import get_pcm
+from .model import CELL, PCM_REGION, SimulationResult, Sink, simulate
+from .params import KELVIN, Params
+
+# ---------------------------------------------------------------------------
+# Geometry
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Layout:
+    packing: str = "hex"  # "hex" | "square"
+    gap_mm: float = 2.0  # surface-to-surface gap between neighbouring cans
+
+    def __post_init__(self) -> None:
+        if self.packing not in ("hex", "square"):
+            raise ValueError("packing must be 'hex' or 'square'")
+        if self.gap_mm < 0:
+            raise ValueError("gap_mm must be >= 0")
+
+    def pitch(self, cell: Cell) -> float:
+        return cell.diameter + self.gap_mm * 1e-3
+
+    def area_per_cell(self, cell: Cell) -> float:
+        p = self.pitch(cell)
+        return p * p if self.packing == "square" else math.sqrt(3) / 2 * p * p
+
+    def unit_radius(self, cell: Cell) -> float:
+        return math.sqrt(self.area_per_cell(cell) / math.pi)
+
+    def cells_per_m2(self, cell: Cell) -> float:
+        return 1.0 / self.area_per_cell(cell)
+
+
+# ---------------------------------------------------------------------------
+# Coolant and cooling topologies
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Coolant:
+    """Liquid coolant (50/50 water-glycol) shared along a channel.
+
+    ASSUMPTIONS (all overridable): reference flow 0.05 g/s per cell (about
+    9.5 L/min for a 3,360-cell 96s35p pack), h_ref at that flow, 20 kPa across
+    the module channels at that flow.
+
+    Flow laws (v0.4.13). The module's channels are laminar: Reynolds numbers of
+    about 3-550 for any plausible number of cells per channel (ribbon ports
+    under 2 mm, plate channels 4 mm high). So:
+    * h grows weakly with flow. In a ribbon port the flow is fully developed
+      within a few cells (Nusselt number fixed, h independent of flow); in a
+      plate channel it is still developing over much of the length (Leveque:
+      h ~ flow^(1/3)). ``h_flow_exponent`` defaults to 0 for a ``SideRibbon``
+      and 1/3 for a ``BottomPlate``. (Up to v0.4.12: flow^0.8, Dittus-Boelter,
+      a turbulent law.)
+    * The pressure drop across the module channels is proportional to flow
+      (Hagen-Poiseuille); the rest of the loop (hoses at Re ~ 4,000) goes as
+      flow^2.
+
+    Pump power covers the whole loop: the module channels plus the rest of the
+    loop (hoses, manifolds, chiller and radiator), 30 kPa at the reference
+    flow, so the total of 50 kPa matches the 0.5-0.6 bar that small electric
+    coolant pumps are rated for around 20-25 L/min (Pierburg CWA50, Rheinmetall
+    CWA 50). The same datasheets give a pump efficiency of about 0.3 (hydraulic
+    power over electrical input). The radiator fan is charged at 3 % of the
+    heat the radiator rejects (ASSUMPTION: e.g. a 300 W fan rejecting 10 kW).
+    """
+
+    flow_g_s_per_cell: float = 0.05
+    inlet_C: float | None = None  # None = ambient (radiator); below ambient needs a chiller
+    # The chiller holds inlet_C until this time [s], then the loop returns to
+    # the radiator (inlet at ambient). None = chiller on throughout.
+    chiller_until_s: float | None = None
+    cp: float = 3500.0  # J/(kg K), 50/50 water-glycol
+    rho: float = 1060.0  # kg/m^3
+    h_ref: float = 1500.0  # W/(m^2 K) at flow_ref, per cooled area
+    flow_ref_g_s: float = 0.05
+    dp_ref_Pa: float = 20e3  # module channels
+    dp_loop_ref_Pa: float = 30e3  # rest of the loop
+    pump_efficiency: float = 0.3
+    radiator_fan_W_per_W: float = 0.03
+    # None = set by the cooling topology (SideRibbon 0, BottomPlate 1/3); 1/3 if used alone.
+    h_flow_exponent: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.flow_g_s_per_cell <= 0:
+            raise ValueError("Coolant flow must be positive.")
+
+    @property
+    def mdot(self) -> float:
+        return self.flow_g_s_per_cell * 1e-3
+
+    @property
+    def h(self) -> float:
+        """Convective coefficient at this flow (laminar: weak flow dependence)."""
+        n = 1.0 / 3.0 if self.h_flow_exponent is None else self.h_flow_exponent
+        return self.h_ref * (self.flow_g_s_per_cell / self.flow_ref_g_s) ** n
+
+    @property
+    def pump_power_W_per_cell(self) -> float:
+        """Electrical pump power per cell for the whole loop."""
+        f = self.flow_g_s_per_cell / self.flow_ref_g_s
+        dp = self.dp_ref_Pa * f + self.dp_loop_ref_Pa * f * f  # laminar channels, turbulent loop
+        return self.mdot / self.rho * dp / self.pump_efficiency
+
+    def rise_K(self, Q_W_per_cell: float) -> float:
+        """Inlet-to-outlet coolant temperature rise along the channel."""
+        return Q_W_per_cell / (self.mdot * self.cp)
+
+    def inlet_K(self, t: float, T_amb: float) -> float:
+        """Inlet temperature at time t: the chiller set-point while it runs, else ambient."""
+        if self.inlet_C is None or (self.chiller_until_s is not None and t >= self.chiller_until_s):
+            return T_amb
+        return self.inlet_C + KELVIN
+
+    def chiller_on(self, t, T_amb: float):
+        """Mask of times when the chiller holds the coolant below ambient."""
+        t = np.asarray(t, dtype=float)
+        if self.inlet_C is None or self.inlet_C + KELVIN >= T_amb:
+            return np.zeros(t.shape, dtype=bool)
+        if self.chiller_until_s is None:
+            return np.ones(t.shape, dtype=bool)
+        return t < self.chiller_until_s
+
+
+@dataclass(frozen=True)
+class Chiller:
+    """Refrigerant chiller holding the coolant below ambient.
+
+    COP: a fixed value, or (default) a share of the Carnot COP between an
+    evaporator ``evap_approach_K`` below the coolant set-point and a condenser
+    ``cond_approach_K`` above ambient, so it falls as the day gets hotter.
+    ASSUMPTIONS: Carnot share 0.42, chosen so COP = 3.0 with a 15 degC set-point
+    at 35 degC ambient (the value used up to v0.4.3); 5 K and 15 K approaches.
+    Measured automotive air conditioning loses about 5 % of COP between 32.5 and
+    37.5 degC outdoor air (R134a/R1234yf study, Entropy 2020); this model gives
+    about 12 %, so it is on the cautious side.
+
+    Heat leak: a chilled pack also gains heat from the hot day through its
+    enclosure, and the chiller must remove that too. It is charged per cell as
+    (cell heat capacity / tau) x (ambient - set-point), with tau the pack's
+    thermal time constant to ambient. ASSUMPTION: tau = 9 h, an owner's
+    measurement on a parked Nissan Leaf pack.
+    """
+
+    cop: float | None = None
+    carnot_fraction: float = 0.42
+    evap_approach_K: float = 5.0
+    cond_approach_K: float = 15.0
+    pack_time_constant_h: float = 9.0
+
+    def cop_at(self, T_set: float, T_amb: float) -> float:
+        """COP for coolant set-point and ambient [K]."""
+        if self.cop is not None:
+            return self.cop
+        T_e = T_set - self.evap_approach_K
+        T_c = T_amb + self.cond_approach_K
+        return self.carnot_fraction * T_e / (T_c - T_e)
+
+    def leak_W_per_cell(self, cell: Cell, T_set: float, T_amb: float) -> float:
+        UA = cell.mass * cell.cp / (self.pack_time_constant_h * 3600.0)
+        return UA * max(T_amb - T_set, 0.0)
+
+
+@dataclass(frozen=True)
+class Interface:
+    """Thermal interface material: R = bond-line thickness / k.
+
+    ASSUMPTION: 0.5 mm of 2 W/mK gap filler (EV gap fillers reach ~3.5 W/mK).
+    Density 2.0 g/cm^3: low-density 2 W/mK EV gap fillers are 1.95-2.0
+    (Dow TC-5515 LT; a 1K EV gap filler), the wider range 1.8-2.2 (Bostik).
+    """
+
+    bond_line_mm: float = 0.5
+    k: float = 2.0
+    rho: float = 2000.0  # kg/m^3
+
+    @property
+    def R(self) -> float:  # m^2 K / W
+        return self.bond_line_mm * 1e-3 / self.k
+
+
+@dataclass(frozen=True)
+class AirFlow:
+    """Forced air through the gaps between cans.
+
+    Flow is the design variable: it sets h on the can, the air temperature
+    rise along the flow, and fan power ((flow/rho) dp / eta). ASSUMPTIONS:
+    h = 30 W/m^2K at 0.3 g/s of air per cell (about 1.8 m/s through a 2 mm x
+    70 mm gap per cell), 200 Pa pack pressure drop at that flow, fan
+    efficiency 0.3. ``track_rise=False`` ignores the air temperature rise
+    (every cell sees ambient air).
+
+    The air crosses the array of cans, so it is cross-flow over a bank of
+    cylinders: Re about 1,200-5,000 on the can diameter over the flows and gaps
+    swept. In that range h ~ v^0.6 (Zukauskas, staggered tube banks) and the
+    pressure drop ~ v^1.8 (friction factor ~ Re^-0.2), with v the air speed in
+    the gap between cans, v ~ flow / gap. The gap scaling is taken from
+    ``gap_ref_mm``; a ``Module`` sets ``gap_mm`` from its layout. Note the
+    cans are closer than the correlation's usual range (pitch / diameter
+    about 1.1 against 1.25 and up), so treat h_ref as the calibration.
+    (v0.4.12 used h ~ flow^0.8 / gap and dp ~ flow^2 / gap^3; up to v0.4.11
+    the gap had no effect.)
+    """
+
+    flow_g_s_per_cell: float = 0.3
+    h_ref: float = 30.0  # W/(m^2 K) at flow_ref_g_s
+    flow_ref_g_s: float = 0.3
+    cp: float = 1005.0  # J/(kg K)
+    rho: float = 1.18  # kg/m^3
+    dp_ref_Pa: float = 200.0
+    fan_efficiency: float = 0.3
+    track_rise: bool = True
+    gap_ref_mm: float = 2.0  # gap at which h_ref and dp_ref apply
+    gap_mm: float | None = None  # the gap the air flows through; None = gap_ref_mm
+    name: str = "air"
+
+    def __post_init__(self) -> None:
+        if self.flow_g_s_per_cell <= 0:
+            raise ValueError("Air flow must be positive.")
+        if self.gap_mm is not None and self.gap_mm <= 0:
+            raise ValueError("Air gap must be positive.")
+
+    @property
+    def _gap_ratio(self) -> float:
+        return self.gap_ref_mm / (self.gap_mm if self.gap_mm is not None else self.gap_ref_mm)
+
+    H_EXP: ClassVar[float] = 0.6  # Zukauskas, Re_D 1e3-2e5
+    DP_EXP: ClassVar[float] = 1.8
+
+    @property
+    def _speed_ratio(self) -> float:
+        """Air speed between the cans relative to the reference (flow / gap)."""
+        return self.flow_g_s_per_cell / self.flow_ref_g_s * self._gap_ratio
+
+    @property
+    def h(self) -> float:
+        return self.h_ref * self._speed_ratio**self.H_EXP
+
+    @property
+    def mdot(self) -> float:
+        return self.flow_g_s_per_cell * 1e-3
+
+    @property
+    def pump_power_W_per_cell(self) -> float:
+        dp = self.dp_ref_Pa * self._speed_ratio**self.DP_EXP
+        return self.mdot / self.rho * dp / self.fan_efficiency
+
+    def rise_K(self, Q_W_per_cell: float) -> float:
+        return Q_W_per_cell / (self.mdot * self.cp) if self.track_rise else 0.0
+
+    @classmethod
+    def with_h(cls, h: float, **kw) -> AirFlow:
+        """The air flow that gives convective coefficient ``h``."""
+        ref = cls(**kw)
+        return cls(flow_g_s_per_cell=ref.flow_ref_g_s * (h / ref.h_ref) ** (1.0 / cls.H_EXP) / ref._gap_ratio, **kw)
+
+
+@dataclass(frozen=True)
+class PlateGeometry:
+    """Brazed aluminium cold plate under the cells.
+
+    Sources: brazed battery plates are a flat base sheet of 1.5-2.0 mm and a
+    formed channel sheet of 0.8-1.2 mm (AMAG); channel heights of 4-8 mm are
+    typical (Boyd). ASSUMPTIONS: channels cover half the footprint; forming
+    adds 10 % to the channel-sheet area.
+    """
+
+    base_mm: float = 1.5
+    channel_sheet_mm: float = 1.0
+    channel_height_mm: float = 4.0
+    channel_coverage: float = 0.5
+    forming_factor: float = 1.1
+
+
+@dataclass(frozen=True)
+class RibbonGeometry:
+    """Extruded multi-port aluminium tube bonded along the cans.
+
+    Sources: ribbons for 18650 cells are 2.2-3.2 mm thick and 48-50 mm tall
+    (about 75 % of the 65 mm can) with 0.25-0.8 mm walls and 0.28-0.43 mm
+    internal ribs (XD Thermal); micro-port walls are typically 0.3-0.6 mm.
+    ASSUMPTIONS: one ribbon serves two rows of cells; weaving between the cans
+    makes it 10 % longer than the row; one internal rib per 2.5 mm of height.
+    """
+
+    thickness_mm: float = 2.5
+    wall_mm: float = 0.4
+    rib_mm: float = 0.35
+    rib_pitch_mm: float = 2.5
+    height_fraction: float = 0.75  # share of the can height the ribbon covers
+    rows_per_ribbon: int = 2
+    weave_factor: float = 1.1
+
+    def __post_init__(self) -> None:
+        if not 0 < self.height_fraction <= 1:
+            raise ValueError("height_fraction must be in (0, 1].")
+        if self.thickness_mm <= 2 * self.wall_mm:
+            raise ValueError("Ribbon thickness must exceed two walls.")
+
+
+def _set_h_exponent(cooling, n: float) -> None:
+    if cooling.coolant.h_flow_exponent is None:
+        from dataclasses import replace as _replace
+
+        object.__setattr__(cooling, "coolant", _replace(cooling.coolant, h_flow_exponent=n))
+
+
+@dataclass(frozen=True)
+class BottomPlate:
+    coolant: Coolant = field(default_factory=Coolant)
+    tim: Interface = field(default_factory=Interface)
+    # ASSUMPTION: roll-to-can-bottom resistance (insulating end disc, single
+    # tab): ~0.1 mm of polymer. The largest uncertainty in bottom cooling.
+    R_end: float = 5e-4  # m^2 K / W
+    plate: PlateGeometry = field(default_factory=PlateGeometry)
+    name: str = "bottom plate"
+
+    def __post_init__(self) -> None:
+        _set_h_exponent(self, 1.0 / 3.0)  # developing laminar flow in a 4 mm channel
+
+
+@dataclass(frozen=True)
+class SideRibbon:
+    coolant: Coolant = field(default_factory=Coolant)
+    tim: Interface = field(default_factory=Interface)
+    # ASSUMPTION: share of the can circumference bonded to the ribbon.
+    contact_fraction: float = 0.25
+    tube: RibbonGeometry = field(default_factory=RibbonGeometry)
+    name: str = "side ribbon"
+
+    def __post_init__(self) -> None:
+        _set_h_exponent(self, 0.0)  # fully developed laminar flow in sub-2 mm ports
+
+    @property
+    def min_gap_mm(self) -> float:
+        """The tube plus a bond line on each side must fit between the cans."""
+        return self.tube.thickness_mm + 2.0 * self.tim.bond_line_mm
+
+
+Cooling = AirFlow | BottomPlate | SideRibbon | None
+
+
+@dataclass(frozen=True)
+class Wall:
+    """The module wall seen by a cell on the edge of the array.
+
+    An edge cell in a hex array has 4 neighbours instead of 6, so a third of
+    its share faces the wall; through it, the cell exchanges heat with the
+    outside air. ASSUMPTION: U = 5 W/m^2K from the unit-cell boundary to
+    ambient (module wall, air gap, pack housing and natural convection).
+    Corner cells (half their boundary) can use fraction=0.5.
+    """
+
+    U: float = 5.0  # W/(m^2 K)
+    fraction: float = 1.0 / 3.0
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.fraction <= 1 or self.U < 0:
+            raise ValueError("Wall fraction must be in [0, 1] and U >= 0.")
+
+
+@dataclass(frozen=True)
+class Module:
+    layout: Layout = field(default_factory=Layout)
+    filler: str | None = None  # PCM grade from packtherm.materials, or None for air
+    cooling: Cooling = field(default_factory=BottomPlate)
+    wall: Wall = field(default_factory=Wall)  # used for edge cells only
+
+    def __post_init__(self) -> None:
+        if isinstance(self.cooling, AirFlow) and self.cooling.gap_mm != self.layout.gap_mm:
+            from dataclasses import replace as _replace
+
+            object.__setattr__(self, "cooling", _replace(self.cooling, gap_mm=self.layout.gap_mm))
+        if isinstance(self.cooling, AirFlow) and self.filler is not None:
+            raise ValueError("Forced air needs open gaps between the cans: use no filler (filler=None).")
+        if isinstance(self.cooling, SideRibbon) and self.layout.gap_mm < self.cooling.min_gap_mm:
+            raise ValueError(
+                f"A side ribbon needs at least {self.cooling.min_gap_mm:g} mm between cans "
+                f"(layout has {self.layout.gap_mm:g} mm)."
+            )
+
+    def describe(self) -> str:
+        cool = "uncooled" if self.cooling is None else self.cooling.name
+        if isinstance(self.cooling, AirFlow):
+            cool += f" {self.cooling.flow_g_s_per_cell:g} g/s/cell (h={self.cooling.h:.0f})"
+        elif self.cooling is not None:
+            c = self.cooling.coolant
+            cool += f" {c.flow_g_s_per_cell:g} g/s/cell"
+            if c.inlet_C is not None:
+                cool += f" @{c.inlet_C:g}°C"
+        fill = self.filler or "air gaps"
+        return f"{self.layout.packing} {self.layout.gap_mm:g} mm gap, {fill}, {cool}"
+
+
+# ---------------------------------------------------------------------------
+# Simulation
+# ---------------------------------------------------------------------------
+
+
+def module_params(
+    cell: Cell, module: Module, base: Params | None = None, dr_mm: float = 0.1, exact_volumes: bool = False
+) -> Params:
+    """Model parameters for one cell's share of the module (radial spacing ``dr_mm``)."""
+    base = base or Params()
+    dr = dr_mm * 1e-3
+    if module.filler is None:
+        P = params_for_cell(
+            cell, pcm_thickness=0.0, case_thickness=0.0, base=base, dr_target=dr, exact_volumes=exact_volumes
+        )
+    else:
+        r_u = module.layout.unit_radius(cell)
+        P = params_for_cell(
+            cell,
+            pcm_thickness=r_u - cell.radius,
+            case_thickness=0.0,
+            base=base.with_(pcm=get_pcm(module.filler)),
+            dr_target=dr,
+            exact_volumes=exact_volumes,
+        )
+    return P
+
+
+@dataclass
+class ModuleResult:
+    cell: Cell
+    module: Module
+    position: str
+    res: SimulationResult
+    load: ElectroThermalLoad
+    T_ambient: float  # K
+    T_coolant: np.ndarray | None  # K, coolant at this cell, every step
+    Q_coolant: np.ndarray | None  # W per cell into the coolant
+    T_top: np.ndarray  # K, estimated hottest point (top of cell for bottom cooling)
+    dT_axial: np.ndarray  # K, estimated top-to-bottom difference inside the roll
+    edge: bool = False  # cell on the module wall
+
+    @property
+    def T_peak_C(self) -> float:
+        return float(self.T_top.max() - KELVIN)
+
+    @property
+    def dT_cell_max(self) -> float:
+        """Largest in-cell spread: radial (model) plus axial (estimate)."""
+        return float(np.max(self.res.dT_cell + self.dT_axial))
+
+    def chiller_energy_Wh(self, chiller: Chiller | float = 3.0, until_s: float | None = None) -> float:
+        """Chiller electricity per cell while it runs: (heat taken from the cell
+        + heat leaking in from ambient) / COP. A number is a fixed COP."""
+        if not isinstance(chiller, Chiller):
+            chiller = Chiller(cop=float(chiller))
+        c = self.module.cooling
+        if not isinstance(c, (BottomPlate, SideRibbon)) or self.Q_coolant is None:
+            return 0.0
+        t = self.res.t
+        n = t.size if until_s is None else int(np.searchsorted(t, until_s, side="right"))
+        on = c.coolant.chiller_on(t[:n], self.T_ambient)
+        if not on.any():
+            return 0.0
+        dt = np.diff(t[:n], prepend=0.0)
+        T_set = c.coolant.inlet_C + KELVIN
+        heat_J = float(np.sum(np.clip(self.Q_coolant[:n], 0.0, None) * dt * on))
+        heat_J += chiller.leak_W_per_cell(self.cell, T_set, self.T_ambient) * float(np.sum(dt * on))
+        return heat_J / chiller.cop_at(T_set, self.T_ambient) / 3600.0
+
+    def radiator_fan_energy_Wh(self, until_s: float | None = None) -> float:
+        """Radiator fan electricity per cell: a share of the heat the coolant
+        carries to the radiator (whenever the chiller is not running)."""
+        c = self.module.cooling
+        if not isinstance(c, (BottomPlate, SideRibbon)) or self.Q_coolant is None:
+            return 0.0
+        t = self.res.t
+        n = t.size if until_s is None else int(np.searchsorted(t, until_s, side="right"))
+        radiator = ~c.coolant.chiller_on(t[:n], self.T_ambient)
+        dt = np.diff(t[:n], prepend=0.0)
+        heat_J = float(np.sum(np.clip(self.Q_coolant[:n], 0.0, None) * dt * radiator))
+        return c.coolant.radiator_fan_W_per_W * heat_J / 3600.0
+
+    @property
+    def pump_W_per_cell(self) -> float:
+        c = self.module.cooling
+        if isinstance(c, (BottomPlate, SideRibbon)):
+            return c.coolant.pump_power_W_per_cell
+        if isinstance(c, AirFlow):
+            return c.pump_power_W_per_cell
+        return 0.0
+
+
+def coolant_holdup_kg(cell: Cell, module: Module) -> float:
+    """Coolant held in one cell's share of the channel [kg] (zero for air)."""
+    c = module.cooling
+    if isinstance(c, BottomPlate):
+        g = c.plate
+        v = module.layout.area_per_cell(cell) * g.channel_coverage * g.channel_height_mm * 1e-3
+    elif isinstance(c, SideRibbon):
+        g = c.tube
+        h = g.height_fraction * cell.height
+        t, w = g.thickness_mm * 1e-3, g.wall_mm * 1e-3
+        n_ribs = max(0, math.floor(h / (g.rib_pitch_mm * 1e-3)) - 1)
+        a_al = 2.0 * (h + t) * w + n_ribs * (t - 2.0 * w) * g.rib_mm * 1e-3
+        length = module.layout.pitch(cell) * g.weave_factor / g.rows_per_ribbon
+        v = (h * t - a_al) * length
+    else:
+        return 0.0
+    return c.coolant.rho * v
+
+
+def _coolant_temperature(T_in, coolant, position: str, holdup_kg: float = 0.0):
+    """Coolant temperature at this cell, in balance with the heat it absorbs.
+
+    Energy balance on the coolant in this cell's share of the channel:
+        M cp dTc/dt = (m cp / frac) (T_in - Tc) + sum G (T - Tc)
+    with frac the share of the channel upstream of the cell (outlet 1, inlet
+    0), M the coolant held per cell and m the flow per cell. Solved implicitly
+    each step (stable for any ratio of contact conductance to flow):
+        Tc = (b Tc_old + (m cp/frac) T_in + sum(G T)) / (b + m cp/frac + sum G),
+    b = M cp / dt. With M = 0 this is the steady balance used up to v0.4.6.
+    The outlet temperature then lags heat input by about M / m (the time the
+    coolant takes to pass one cell's share of the channel per unit flow).
+    """
+    frac = {"outlet": 1.0, "inlet": 0.0, "mean": 0.5}[position]
+    state = {"t": None, "Tc": None}
+
+    def T(t: float, T_nodes: np.ndarray, G: np.ndarray) -> float:
+        T0 = T_in(t) if callable(T_in) else T_in
+        if frac == 0.0:
+            Tc = float(T0)
+        else:
+            flow = coolant.mdot * coolant.cp / frac  # W/K
+            gs, gt = float(G.sum()), float(np.dot(G, T_nodes))
+            b = 0.0
+            if holdup_kg > 0 and state["t"] is not None and t > state["t"]:
+                b = holdup_kg * coolant.cp / (t - state["t"])
+            Tc_old = state["Tc"] if state["Tc"] is not None else 0.0
+            Tc = (b * Tc_old + flow * T0 + gt) / (b + flow + gs)
+        state["t"], state["Tc"] = t, Tc
+        return Tc
+
+    return T
+
+
+def simulate_module(
+    cell: Cell,
+    module: Module,
+    profile: CurrentProfile,
+    duration: float,
+    T_ambient_C: float = 25.0,
+    *,
+    position: str = "outlet",
+    soc0: float = 1.0,
+    soc_limits: tuple[float, float] = (0.0, 1.0),
+    base: Params | None = None,
+    entropic: bool = True,
+    edge: bool = False,
+    coolant_mass: bool = True,
+    nz: int = 16,
+    n_theta: int = 12,
+    dr_mm: float = 0.1,
+    electrical_dt: float | None = None,
+    exact_volumes: bool = True,
+) -> ModuleResult:
+    """Simulate one cell of the module (the coolant-outlet cell by default).
+
+    ``edge=True`` puts the cell on the module wall: a share of its boundary
+    exchanges heat with ambient through ``module.wall``. ``coolant_mass``
+    gives the liquid coolant its heat capacity (the coolant held in the cell's
+    share of the channel); False reproduces the steady balance of v0.4.6.
+    Bottom plates are solved on a radius x height grid with ``nz`` layers
+    (``nz=0``: the v0.4.7 radial model with a quasi-steady axial estimate).
+    Side ribbons are solved on a radius x angle grid with ``n_theta`` slices
+    over half the circumference (``n_theta=0``: the radial model with the
+    contact spread evenly round the can). ``dr_mm`` is the radial spacing;
+    ``electrical_dt`` caps the cell model's step inside a longer thermal step;
+    ``exact_volumes`` gives each region its exact volume on a coarse mesh.
+    """
+    T_amb = T_ambient_C + KELVIN
+    base = (base or Params()).with_(T_initial=T_amb)
+    P = module_params(cell, module, base, dr_mm=dr_mm, exact_volumes=exact_volumes)
+    L = cell.height
+    cooling = module.cooling
+    sinks: list[Sink] = []
+    h_outer = 0.0
+    if isinstance(cooling, AirFlow):
+        if cooling.track_rise:
+            area = 2.0 * math.pi * cell.radius * L
+
+            def G_air(grid, params, h=cooling.h, area=area):
+                G = np.zeros(grid.r.size)
+                # Half-cell conduction to the can surface in series with convection,
+                # as for the outer boundary of the bare-cell model.
+                k_out = cell.k_radial
+                G[-1] = area / (grid.dr / (2.0 * k_out) + 1.0 / h)
+                return G
+
+            sinks.append(Sink(G_air, _coolant_temperature(T_amb, cooling, position), "coolant"))
+        else:
+            h_outer = cooling.h
+    elif isinstance(cooling, (BottomPlate, SideRibbon)):
+        c = cooling.coolant
+        holdup = coolant_holdup_kg(cell, module) if coolant_mass else 0.0
+        T_sink = _coolant_temperature(lambda t, c=c: c.inlet_K(t, T_amb), c, position, holdup)
+        R_path = cooling.tim.R + 1.0 / c.h
+        if isinstance(cooling, BottomPlate):
+            k_fill = P.pcm.k
+
+            def G_bottom(grid, params, R_end=cooling.R_end, R_path=R_path):
+                k_ax = np.where(grid.region == CELL, cell.k_axial, k_fill)
+                R_e = np.where(grid.region == CELL, R_end, 0.0)
+                g = 1.0 / (L * L / (3.0 * k_ax) + L * (R_e + R_path))
+                return grid.volume * g
+
+            sinks.append(Sink(G_bottom, T_sink, "coolant"))
+        else:
+
+            def G_ribbon(grid, params, f=cooling.contact_fraction, hf=cooling.tube.height_fraction, R_path=R_path):
+                G = np.zeros(grid.r.size)
+                i = int(np.flatnonzero(grid.region == CELL)[-1])
+                # Bonded area: a share of the circumference over the ribbon's height.
+                G[i] = f * 2.0 * math.pi * cell.radius * hf * L / R_path
+                return G
+
+            sinks.append(Sink(G_ribbon, T_sink, "coolant"))
+    if edge and module.wall.fraction > 0 and module.wall.U > 0:
+        k_out = P.pcm.k if module.filler is not None else cell.k_radial
+        r_u = module.layout.unit_radius(cell)
+        area = module.wall.fraction * 2.0 * math.pi * r_u * L
+
+        def G_wall(grid, params, area=area, U=module.wall.U, k_out=k_out):
+            G = np.zeros(grid.r.size)
+            G[-1] = area / (grid.dr / (2.0 * k_out) + 1.0 / U)
+            return G
+
+        sinks.append(Sink(G_wall, T_amb, "wall"))
+    load = ElectroThermalLoad(
+        cell, profile, soc0=soc0, soc_limits=soc_limits, entropic=entropic, max_substep=electrical_dt
+    )
+    if isinstance(cooling, BottomPlate) and nz > 0:
+        # Full radius x height field (v0.4.8): replaces the quasi-steady axial estimate.
+        from .model2d import Axial, simulate_2d
+
+        R_film = cooling.tim.R + 1.0 / cooling.coolant.h
+        axial = Axial(nz, cell.k_axial, cooling.R_end + R_film, R_film)
+        wall = None
+        if edge:
+            wall = (module.wall.fraction * 2.0 * math.pi * module.layout.unit_radius(cell), module.wall.U)
+        res, T_top = simulate_2d(P, axial, duration, load, T_sink, T_amb, wall)
+        T_coolant = res.T_sinks["coolant"].copy()
+        T_coolant[0] = T_coolant[1] if T_coolant.size > 1 else T_coolant[0]
+        dT_axial = np.zeros_like(res.t)  # dT_cell already spans radius and height
+        return ModuleResult(
+            cell,
+            module,
+            position,
+            res,
+            load,
+            T_amb,
+            T_coolant,
+            res.Q_sinks["coolant"],
+            res.T_max.copy(),
+            dT_axial,
+            edge,
+        )
+    if isinstance(cooling, SideRibbon) and n_theta > 0:
+        # Radius x angle field (v0.4.9): the ribbon cools a strip of the can.
+        from .model2d import Strip, simulate_rtheta
+
+        strip = Strip(n_theta=n_theta, k_inplane_cell=cell.k_axial)
+        R_film = cooling.tim.R + 1.0 / cooling.coolant.h
+        wall = None
+        if edge:
+            wall = (module.wall.fraction * 2.0 * math.pi * module.layout.unit_radius(cell), module.wall.U)
+        res, _ = simulate_rtheta(
+            P,
+            strip,
+            cooling.contact_fraction,
+            1.0 / R_film,
+            cooling.tube.height_fraction * L,
+            duration,
+            load,
+            T_sink,
+            T_amb,
+            wall,
+        )
+        T_coolant = res.T_sinks["coolant"].copy()
+        T_coolant[0] = T_coolant[1] if T_coolant.size > 1 else T_coolant[0]
+        return ModuleResult(
+            cell,
+            module,
+            position,
+            res,
+            load,
+            T_amb,
+            T_coolant,
+            res.Q_sinks["coolant"],
+            res.T_max.copy(),
+            np.zeros_like(res.t),
+            edge,
+        )
+    res = simulate(P, duration=duration, h=h_outer, T_env=T_amb, load=load, sinks=sinks)
+
+    T_coolant = res.T_sinks.get("coolant") if sinks else None
+    Q_coolant = res.Q_sinks.get("coolant") if sinks else None
+    if T_coolant is not None:
+        T_coolant = T_coolant.copy()
+        T_coolant[0] = T_coolant[1] if T_coolant.size > 1 else T_coolant[0]
+    if isinstance(cooling, BottomPlate):
+        # Quasi-steady axial profile for uniform generation q with a cooled base:
+        # top - mean = q L^2/(6k), top - bottom = q L^2/(2k). The heat that
+        # must run down the roll is at most what the cell generates and at
+        # most what reaches the coolant (the rest is stored in the cell and
+        # PCM), so q uses the smaller of the two. Still an upper bound: part
+        # of the coolant heat comes through the filler, not the roll.
+        V_cell = math.pi * cell.radius**2 * L
+        Q_down = np.minimum(np.maximum(res.heat_W, 0.0), np.maximum(Q_coolant, 0.0))
+        q = Q_down / V_cell
+        dT_axial = q * L * L / (2.0 * cell.k_axial)
+        T_top = res.T_max + q * L * L / (6.0 * cell.k_axial)
+    else:
+        dT_axial = np.zeros_like(res.t)
+        T_top = res.T_max.copy()
+    return ModuleResult(cell, module, position, res, load, T_amb, T_coolant, Q_coolant, T_top, dT_axial, edge)
+
+
+def module_mass_per_cell_kg(cell: Cell, module: Module) -> float:
+    """Filler mass per cell (gap volume x density); cooling hardware excluded.
+
+    A side ribbon and its bonds sit in the gap, so their volume holds no filler.
+    """
+    if module.filler is None:
+        return 0.0
+    vol = (module.layout.area_per_cell(cell) - math.pi * cell.radius**2) * cell.height
+    c = module.cooling
+    if isinstance(c, SideRibbon):
+        g = c.tube
+        length = module.layout.pitch(cell) * g.weave_factor / g.rows_per_ribbon
+        vol -= g.thickness_mm * 1e-3 * g.height_fraction * cell.height * length
+        vol -= (
+            c.contact_fraction
+            * 2.0
+            * math.pi
+            * cell.radius
+            * g.height_fraction
+            * cell.height
+            * c.tim.bond_line_mm
+            * 1e-3
+        )
+    return get_pcm(module.filler).rho * max(vol, 0.0)
+
+
+def pcm_volume_fraction(cell: Cell, module: Module) -> float:
+    return 1.0 - math.pi * cell.radius**2 / module.layout.area_per_cell(cell)
+
+
+__all__ = [
+    "PCM_REGION",
+    "RESOLUTIONS",
+    "AirFlow",
+    "BottomPlate",
+    "Chiller",
+    "Coolant",
+    "Interface",
+    "Layout",
+    "Module",
+    "ModuleResult",
+    "PlateGeometry",
+    "Resolution",
+    "RibbonGeometry",
+    "SideRibbon",
+    "Wall",
+    "compare_modules",
+    "coolant_holdup_kg",
+    "module_mass_per_cell_kg",
+    "module_params",
+    "pcm_volume_fraction",
+    "simulate_module",
+]
+
+
+@dataclass(frozen=True)
+class Resolution:
+    """Numerical resolution of a module study.
+
+    dt            thermal time step [s]
+    electrical_dt longest step of the cell's electrical model inside a thermal
+                  step [s] (None: the thermal step)
+    dr_mm         radial spacing; nz plate layers; n_theta ribbon slices
+    exact_volumes scale each region to its exact volume (needed on a coarse mesh)
+    """
+
+    name: str
+    dt: float
+    electrical_dt: float | None
+    dr_mm: float
+    nz: int
+    n_theta: int
+    exact_volumes: bool = False
+
+
+# "normal" is the resolution every result up to v0.4.13 used. "fast" is about
+# ten times quicker for a small accuracy cost (see docs/FAST_MODE.md).
+RESOLUTIONS = {
+    "normal": Resolution("normal", dt=2.0, electrical_dt=None, dr_mm=0.1, nz=16, n_theta=12, exact_volumes=True),
+    "fast": Resolution("fast", dt=5.0, electrical_dt=2.0, dr_mm=0.3, nz=12, n_theta=8, exact_volumes=True),
+}
+
+
+def compare_modules(
+    cell: Cell,
+    modules: list[Module],
+    duty,
+    T_ambient_C: float = 25.0,
+    dt: float | None = None,
+    edge: bool = False,
+    mode: str = "normal",
+) -> list[dict]:
+    """Inlet and outlet cell of each module design for one duty cycle (a design.DutyCycle).
+
+    ``edge=True`` runs the cells on the module wall instead of interior cells.
+    ``mode`` picks the numerical resolution (RESOLUTIONS); ``dt`` overrides its step.
+    """
+    from dataclasses import replace as _replace
+
+    if mode not in RESOLUTIONS:
+        raise ValueError(f"Unknown mode {mode!r}; choose from {', '.join(RESOLUTIONS)}")
+    res_ = RESOLUTIONS[mode]
+    dt = res_.dt if dt is None else dt
+    base = Params()
+    base = base.with_(solver=_replace(base.solver, dt=dt, store_every=max(1, int(60 / dt))))
+    duration = duty.event_duration()
+    rows = []
+    for m in modules:
+        out = {
+            "module": m.describe(),
+            "cooling": m.cooling.name if m.cooling else "none",
+            "filler": m.filler or "air",
+            "gap_mm": m.layout.gap_mm,
+        }
+        for pos in ("inlet", "outlet"):
+            r = simulate_module(
+                cell,
+                m,
+                duty.profile(cell),
+                duration,
+                T_ambient_C,
+                position=pos,
+                soc0=duty.soc0,
+                soc_limits=duty.soc_limits,
+                base=base,
+                edge=edge,
+                dr_mm=res_.dr_mm,
+                nz=res_.nz,
+                n_theta=res_.n_theta,
+                electrical_dt=res_.electrical_dt,
+                exact_volumes=res_.exact_volumes,
+            )
+            out[f"T_peak_{pos}_C"] = r.T_peak_C
+            out[f"dT_cell_{pos}_K"] = r.dT_cell_max
+            if pos == "outlet":
+                out["coolant_rise_max_K"] = _coolant_rise_max(r)
+                out["pump_mW_per_cell"] = 1e3 * r.pump_W_per_cell
+                out["filler_g_per_cell"] = 1e3 * module_mass_per_cell_kg(cell, m)
+                out["filler_mass_pct"] = 100 * module_mass_per_cell_kg(cell, m) / cell.mass
+        out["cell_to_cell_K"] = out["T_peak_outlet_C"] - out["T_peak_inlet_C"]
+        rows.append(out)
+    return rows
+
+
+def _coolant_rise_max(r: ModuleResult) -> float:
+    """Largest coolant temperature above its inlet at this cell [K]."""
+    c = r.module.cooling
+    if r.T_coolant is None:
+        return 0.0
+    t = r.res.t
+    if isinstance(c, (BottomPlate, SideRibbon)):
+        T_in = np.array([c.coolant.inlet_K(x, r.T_ambient) for x in t])
+    else:
+        T_in = np.full(t.size, r.T_ambient)
+    return float(np.max(r.T_coolant - T_in))

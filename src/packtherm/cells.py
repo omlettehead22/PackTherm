@@ -466,3 +466,19 @@ PANASONIC_NCR18650PF = Cell(
 )
 
 CELLS["PF"] = PANASONIC_NCR18650PF
+
+
+def library_summary() -> dict[str, dict]:
+    """The cell library in brief, as the API's GET /cells and the web app show it."""
+    return {
+        k: {
+            "name": c.name,
+            "model": c.model_label,
+            "format": c.form_factor,
+            "capacity_Ah": c.capacity_Ah,
+            "V_nominal": c.V_nominal,
+            "DCIR_25C_mOhm": c.R0_25C * 1e3,
+            "mass_g": c.mass * 1e3,
+        }
+        for k, c in CELLS.items()
+    }

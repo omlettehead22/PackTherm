@@ -199,6 +199,9 @@ def _check_section(doc: dict, keys: dict, where: str, errors: list[str]) -> dict
             out[k] = default
             continue
         v = doc[k]
+        if v is None and default is None:  # null for a key whose default is null: not set
+            out[k] = None
+            continue
         if not _type_ok(v, types):
             errors.append(f"{where}{k}: must be {_type_name(types)}, got {v!r}")
             continue
@@ -273,7 +276,11 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
         if "type" not in raw_duty:
             errors.append("duty.type: required (constant, wltc, roadtrip or segments)")
         elif duty.get("type") in DUTY_USES:
-            unused = set(raw_duty) - DUTY_USES[duty["type"]] - {"type", "rest_h"}
+            # A key left at its default (null included) sets nothing, so it is not flagged: results
+            # files list every duty key, and must read back as the same study.
+            unused = {
+                k for k, v in raw_duty.items() if not (k in DUTY_KEYS and v == DUTY_KEYS[k][1])
+            } - DUTY_USES[duty["type"]] - {"type", "rest_h"}
             for k in sorted(unused & set(DUTY_KEYS)):
                 errors.append(f"duty.{k}: not used by a {duty['type']} duty")
             if duty["type"] == "segments":
