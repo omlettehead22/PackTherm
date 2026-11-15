@@ -34,10 +34,16 @@ jobs:
           assert f"packtherm-{tag}-" in whl, f"{whl} does not match tag {tag}"
           print(whl, len(names), "files")
           PY
-      - name: Create the release
+      - name: Create the release, or add the wheel to it
+        # A release made in GitHub's web page creates the tag too, and so starts this
+        # workflow with the release already there: then the wheel is attached to it.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/packtherm-*.whl \
-            --title "PackTherm $GITHUB_REF_NAME" \
-            --notes "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md). Install with: pip install \"packtherm[api] @ https://github.com/${{ github.repository }}/releases/download/$GITHUB_REF_NAME/$(basename dist/packtherm-*.whl)\""
+          whl=$(ls dist/packtherm-*.whl)
+          notes="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md). Install with: pip install \"packtherm[api] @ https://github.com/${{ github.repository }}/releases/download/$GITHUB_REF_NAME/$(basename "$whl")\""
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$whl" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$whl" --title "PackTherm $GITHUB_REF_NAME" --notes "$notes"
+          fi
