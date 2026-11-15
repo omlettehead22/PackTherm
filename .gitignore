@@ -9,3 +9,5 @@ thesis_results/
 web/node_modules/
 src/packtherm/web_static/
 web/dist-pages/
+build/
+*.egg-info/

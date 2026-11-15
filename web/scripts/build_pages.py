@@ -40,6 +40,7 @@ def main() -> int:
             [sys.executable, "-m", "pip", "wheel", str(ROOT), "--no-deps", "--no-build-isolation", "-q", "-w", tmp],
             check=True,
         )
+        shutil.rmtree(ROOT / "build", ignore_errors=True)  # setuptools' scratch folder from the wheel build
         (wheel,) = Path(tmp).glob("packtherm-*.whl")
         (out / "py").mkdir(exist_ok=True)
         shutil.copy(wheel, out / "py" / wheel.name)
