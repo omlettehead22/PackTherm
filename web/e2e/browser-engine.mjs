@@ -67,7 +67,9 @@ try {
   const secs = (Date.now() - t) / 1000;
   const workers = await page.evaluate(() => Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)));
   say(`Hot road trip (39 designs, fast, ${workers} workers on ${await page.evaluate(() => navigator.hardwareConcurrency)} cores): ${secs.toFixed(0)} s`);
-  say(`Downloaded in all: ${(bytes / 1e6).toFixed(1)} MB (first load ${(firstLoad / 1e6).toFixed(1)} MB; extra workers load from the browser's cache)`);
+  // Counted per request, so a file every worker loads counts once per worker, whether or not
+  // the browser served it from its cache.
+  say(`Requested in all: ${(bytes / 1e6).toFixed(1)} MB over every worker (first load ${(firstLoad / 1e6).toFixed(1)} MB)`);
   await page.screenshot({ path: join(outDir, "results.png"), fullPage: true });
   if (errors.length) throw new Error(`errors in the page:\n${errors.join("\n")}`);
 } finally {
