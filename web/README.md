@@ -22,7 +22,7 @@ The public site:
 
 ```bash
 python web/scripts/build_pages.py --out web/dist-pages   # the app with VITE_ENGINE=browser, plus py/<PackTherm wheel>
-python -m http.server -d <a folder holding dist-pages as "packtherm"> 8123   # then open http://127.0.0.1:8123/packtherm/
+python -m http.server -d web/dist-pages 8123   # then open http://127.0.0.1:8123/ (the site uses relative paths)
 ```
 
 ## The in-browser engine

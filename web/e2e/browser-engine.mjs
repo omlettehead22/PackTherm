@@ -15,10 +15,10 @@ const [site, outDir] = process.argv.slice(2).map((p) => resolve(p));
 mkdirSync(outDir, { recursive: true });
 const root = join(tmpdir(), "packtherm-site");
 rmSync(root, { recursive: true, force: true });
-cpSync(site, join(root, "packtherm"), { recursive: true });
+cpSync(site, join(root, "PackTherm"), { recursive: true }); // as GitHub serves it
 const server = spawn("python3", ["-m", "http.server", "8123", "--bind", "127.0.0.1", "--directory", root], { stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 1500));
-const URL0 = "http://127.0.0.1:8123/packtherm/";
+const URL0 = "http://127.0.0.1:8123/PackTherm/";
 
 // The small study of tests/test_browser.py: three designs, with a worst-case re-check.
 const STUDY = {

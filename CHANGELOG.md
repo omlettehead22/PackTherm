@@ -4,7 +4,7 @@
 
 The public site, the seventh v0.5 mini update: PackTherm runs in the visitor's browser, published free on GitHub Pages.
 
-- **New: an in-browser engine.** The public site ([omlettehead22.github.io/packtherm](https://omlettehead22.github.io/packtherm/)) runs PackTherm itself in the page, with Pyodide (Python compiled to WebAssembly). It needs no server, so it costs nothing to host, has no queue or design limits, and nothing a visitor enters leaves their computer.
+- **New: an in-browser engine.** The public site ([omlettehead22.github.io/PackTherm](https://omlettehead22.github.io/PackTherm/)) runs PackTherm itself in the page, with Pyodide (Python compiled to WebAssembly). It needs no server, so it costs nothing to host, has no queue or design limits, and nothing a visitor enters leaves their computer.
   - Designs run in parallel Web Workers: one per core, leaving one for the page, at most four.
   - Measured in CI (headless Chromium, 4 cores): the engine is ready about 6 s into a first visit, after a 28 MB download; the hot road-trip example (39 designs, fast mode) took 41–54 s on 3 workers across runs.
   - **Same results as `packtherm run`**: CI runs a study in the browser and compares the results file with a native run. All text and verdicts match; numbers agree to 1e-11 (the browser's NumPy is a different build).
