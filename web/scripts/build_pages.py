@@ -25,7 +25,9 @@ WEB = ROOT / "web"
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--base", default="/packtherm/", help="the path the site is served under (default /packtherm/)")
+    # Relative paths, so the site works wherever it is served (GitHub serves it under the
+    # repository's name, /PackTherm/, with its capital letters).
+    ap.add_argument("--base", default="./", help="the path the site is served under (default ./: any)")
     ap.add_argument("--out", type=Path, default=WEB / "dist-pages")
     args = ap.parse_args()
     out = args.out.resolve()
