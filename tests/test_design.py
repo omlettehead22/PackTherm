@@ -224,3 +224,12 @@ def test_cli_rejects_bad_input_cleanly(argv, capsys):
         main(argv)
     assert e.value.code == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_cli_version(capsys):
+    from packtherm import __version__
+    from packtherm.cli import main
+
+    with pytest.raises(SystemExit) as e:
+        main(["--version"])
+    assert e.value.code == 0 and capsys.readouterr().out.strip() == f"packtherm {__version__}"

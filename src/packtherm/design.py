@@ -33,7 +33,15 @@ import numpy as np
 import pandas as pd
 
 from .cells import Cell, with_R0
-from .electrothermal import CurrentProfile, check_limits, segments, simulate_cell
+from .electrothermal import (
+    MIN_DELIVERED,
+    CurrentProfile,
+    check_limits,
+    delivered_share,
+    segments,
+    shortfall_warning,
+    simulate_cell,
+)
 from .materials import PCM_LIBRARY, melt_midpoint_C
 from .params import DEFAULT_AUX_POWER, DEFAULT_H, KELVIN, Params
 
@@ -326,6 +334,10 @@ def evaluate_design(
     else:
         rec_ok = recovered and recovery_min <= req.recovery_max_min
     rating = [w for w in check_limits(cell, load, res) if "rating" in w]
+    short = delivered_share(load, event) < MIN_DELIVERED
+    if short:
+        rating.insert(0, shortfall_warning(delivered_share(load, event)))
+    fails = (("hot", T_peak > T_limit), ("uneven", dT > req.dT_cell_max_C), ("slow", not rec_ok), ("short", short))
     return {
         "design": f"{cooling.name}, {pcm_label(grade, pcm_mm)}",
         "cooling": cooling.name,
@@ -355,12 +367,11 @@ def evaluate_design(
         "recovery_min": recovery_min,
         "T_limit_C": T_limit,
         "T_margin_C": T_limit - T_peak,
-        "feasible": bool(T_peak <= T_limit and dT <= req.dT_cell_max_C and rec_ok),
+        "feasible": not any(bad for _, bad in fails),
         # hot = peak above limit, uneven = in-cell spread above limit,
-        # slow = not ready for the next event in time
-        "fail_reason": " · ".join(
-            r for r, bad in (("hot", T_peak > T_limit), ("uneven", dT > req.dT_cell_max_C), ("slow", not rec_ok)) if bad
-        ),
+        # slow = not ready for the next event in time, short = the cell could
+        # not deliver the duty's current (voltage cut-off)
+        "fail_reason": " · ".join(r for r, bad in fails if bad),
         "rating_warning": "; ".join(rating),
     }
 
@@ -419,8 +430,8 @@ class StudyResult:
 
     @property
     def warnings(self) -> list[str]:
-        w = self.table.rating_warning
-        return sorted({x for x in w[w != ""]})
+        # One entry per warning: a design with two has them joined by "; ".
+        return sorted({x for w in self.table.rating_warning if w for x in w.split("; ")})
 
     def _recovery_text(self) -> str:
         r, d = self.study.requirements.recovery_max_min, self.study.duty

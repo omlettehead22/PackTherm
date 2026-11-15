@@ -1,8 +1,8 @@
 {
  "packtherm_results": 1,
- "packtherm_version": "0.5.1",
- "created": "2026-11-13T19:47:07+00:00",
- "elapsed_s": 173.19,
+ "packtherm_version": "0.5.7",
+ "created": "2026-11-15T22:57:45+00:00",
+ "elapsed_s": 152.99,
  "study": {
   "packtherm_study": 1,
   "name": "M50 3 x WLTC, 35 degC",
@@ -74,6 +74,7 @@
  },
  "summary": {
   "cell": "LG INR21700 M50",
+  "cell_model": "circuit (derived)",
   "duty": "3x WLTC 3b (C-segment EV, 96s35p)",
   "mode": "normal",
   "designs": 39,
@@ -81,6 +82,16 @@
   "on_front": 4,
   "T_limit_C": 45.0,
   "text": "LG INR21700 M50, 3x WLTC 3b (C-segment EV, 96s35p), ambient 35 degC\nLimits: T_peak <= 45 degC, in-cell dT <= 5 degC, ready again within 180 min\n39 designs, 24 feasible, 4 on the trade-off front\nNOTE: bottom plates are solved in 2D (radius x height). A chiller pulling a hot-soaked pack down through its base opens large top-to-bottom gradients while it does so.\nNOTE: liquid pump power covers the whole loop (7.9 mW/cell at most) and the radiator fan is charged at 3 % of the heat it rejects; chiller idle losses are not included.\nLightest       air 0.15 g/s, no filler: T_peak 35.3 degC, +1.8% mass, aux 0.82% of energy, recovery 0 min\nLowest energy  bottom 0.02 g/s, RT42: T_peak 35.4 degC, +18.2% mass, aux 0.03% of energy, recovery 0 min\nBalanced       ribbon 0.02 g/s, 3.5 mm gap, no filler: T_peak 35.3 degC, +7.2% mass, aux 0.04% of energy, recovery 0 min\nNot picked     sealed (no cooling), RT42: +10.0% mass, aux 0.00%, but fails (slow) at worst-case R0 = 43 mOhm (peak 36.5 degC)"
+ },
+ "labels": {
+  "mass_axis": "Mass added per cell (filler + cooling hardware), % of cell mass",
+  "energy_axis": "Fan, pump and chiller energy, % of energy moved by the cell",
+  "filler": "Filler between the cans",
+  "kinds": {
+   "natural": "no cooling",
+   "air": "forced air",
+   "liquid": "liquid"
+  }
  },
  "picks": [
   {

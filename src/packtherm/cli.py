@@ -447,7 +447,10 @@ def _module(args) -> None:
 
 def parser() -> argparse.ArgumentParser:
     """The packtherm command-line parser."""
+    from . import __version__
+
     ap = argparse.ArgumentParser(prog="packtherm", description="Battery thermal management design toolkit.")
+    ap.add_argument("--version", action="version", version=f"packtherm {__version__}")
     sub = ap.add_subparsers(dest="cmd")
 
     t = sub.add_parser("thesis", help="Run the four MSc thesis scenarios.")
@@ -608,6 +611,13 @@ def main(argv: list[str] | None = None) -> None:
         args = ap.parse_args(["thesis", *(argv or [])])
     try:
         args.func(args)
+    except BrokenPipeError:
+        # Output piped into something that stopped reading (| head): not an error.
+        import os
+        import sys
+
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)
     except (KeyError, ValueError, OSError) as e:  # unknown name, invalid combination or study, missing file
         if isinstance(e, FileNotFoundError) and e.filename:
             msg = f"file not found: {e.filename}"

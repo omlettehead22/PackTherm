@@ -99,7 +99,9 @@ class ElectroThermalLoad:
             raise ValueError("Require 0 <= soc_min < soc_max <= 1 and soc0 inside the window.")
         self.soc = self.soc0
         self.ecm_state = ECMState() if self.cell.ecm is not None else None
-        self.log = {k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A")}
+        self.log = {
+            k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A", "I_req_A")
+        }
 
     def power(self, t: float, dt: float, T_cell: float) -> float:
         h = self.max_substep
@@ -132,6 +134,7 @@ class ElectroThermalLoad:
             "V": mean(sub["V"]),
             # Drive and regen within one step cancel in the mean current, not here.
             "I_abs_A": sum(sub["I_abs_A"]) / n,
+            "I_req_A": sum(sub["I_req_A"]) / n,  # what the duty asked for
         }
         for k in self.log:
             self.log[k].append(merged[k])
@@ -139,6 +142,7 @@ class ElectroThermalLoad:
 
     def _power_one(self, t: float, dt: float, T_cell: float) -> float:
         current = float(self.profile(t))
+        self._requested = current
         if self.ecm_state is not None:
             return self._power_ecm(t, dt, T_cell, current)
         lo, hi = self.soc_limits
@@ -154,7 +158,7 @@ class ElectroThermalLoad:
         q_irr = current**2 * R
         q_rev = -current * T_cell * self.cell.dUdT(soc_mid) if self.entropic else 0.0
         self.soc = min(max(self.soc - current * dt / (3600.0 * self.cell.capacity_Ah), lo), hi)
-        for k, v in zip(self.log, (t, current, self.soc, R, q_irr, q_rev, np.nan, abs(current))):
+        for k, v in zip(self.log, (t, current, self.soc, R, q_irr, q_rev, np.nan, abs(current), self._requested)):
             self.log[k].append(v)
         return q_irr + q_rev
 
@@ -178,7 +182,7 @@ class ElectroThermalLoad:
         if hi < 1.0:
             self.soc = min(self.soc, hi)
         R_app = (ecm.ocv(soc_mid) - V) / current if current else np.nan
-        for k, v in zip(self.log, (t, current, self.soc, R_app, q_irr, q_rev, V, abs(current))):
+        for k, v in zip(self.log, (t, current, self.soc, R_app, q_irr, q_rev, V, abs(current), self._requested)):
             self.log[k].append(v)
         return q_irr + q_rev
 
@@ -251,6 +255,37 @@ def simulate_cell(
     load = ElectroThermalLoad(cell, profile, soc0=soc0, soc_limits=soc_limits, entropic=entropic)
     res = simulate(P, duration=duration, h=h, T_env=T_env, load=load)
     return res, load
+
+
+# Below this share of the requested discharge, the cell cannot carry out the duty:
+# normal runs deliver 87-100 % (tapering near empty at the voltage cut-off).
+MIN_DELIVERED = 0.8
+
+
+def delivered_share(load: ElectroThermalLoad, until_s: float) -> float:
+    """The share of the requested discharge charge the cell delivered before ``until_s``.
+
+    1.0 when nothing was asked (or all of it was delivered). An equivalent-circuit
+    cell stops at its voltage cut-off, so a current it cannot sustain is cut
+    short, sometimes to nothing: its run then shows little heat, which must not
+    pass as a well-cooled design.
+    """
+    a = load.arrays()
+    t = a["t"]
+    if t.size == 0:
+        return 1.0
+    step = np.diff(t, append=t[-1] + (float(np.median(np.diff(t))) if t.size > 1 else 1.0))
+    during = t < until_s - 1e-9
+    asked = float(np.clip(a["I_req_A"][during], 0.0, None) @ step[during])
+    got = float(np.clip(a["current_A"][during], 0.0, None) @ step[during])
+    return got / asked if asked > 0 else 1.0
+
+
+def shortfall_warning(share: float) -> str:
+    return (
+        f"The cell reached its voltage cut-off and delivered only {100 * share:.0f}% of the discharge the duty asks for, "
+        "so this result understates the heat: the cell cannot carry out this duty."
+    )
 
 
 def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30.0) -> list[str]:

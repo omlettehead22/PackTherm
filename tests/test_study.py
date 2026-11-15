@@ -155,3 +155,28 @@ def test_a_validated_study_validates_to_itself():
         spec = validate(doc, base_dir=EXAMPLES)
         assert validate(spec) == spec, f
         assert validate(json.loads(json.dumps(spec))) == spec, f
+
+
+def test_a_duty_the_cell_cannot_deliver_fails_rather_than_looking_cool():
+    """At 30C the M50 hits its voltage cut-off at once: almost no current, so almost no heat.
+
+    That must fail ("short") with a warning, not pass as a cool design (it did before 0.5.7).
+    """
+    from packtherm.study import StudySpec, validate
+
+    def run(c):
+        doc = {
+            "packtherm_study": 1,
+            "cell": "M50",
+            "mode": "fast",
+            "duty": {"type": "constant", "c_rate": c},
+            "design_space": {"topologies": ["ribbon"], "fillers": ["none"], "coolant_flows_g_s": [0.05], "chiller_C": []},
+        }
+        return StudySpec(validate(doc)).run(workers=1).to_json()
+
+    bad = run(30)["designs"][0]
+    assert not bad["feasible"] and bad["fail_reason"] == "short"
+    assert "voltage cut-off" in bad["rating_warning"]
+    ok = run(1.5)
+    assert ok["designs"][0]["feasible"] and "short" not in ok["designs"][0]["fail_reason"]
+    assert all(not n.startswith("The cell") for n in ok["notes"])  # warnings carry their WARNING: prefix

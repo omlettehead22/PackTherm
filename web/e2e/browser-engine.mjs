@@ -70,6 +70,10 @@ try {
   // Counted per request, so a file every worker loads counts once per worker, whether or not
   // the browser served it from its cache.
   say(`Requested in all: ${(bytes / 1e6).toFixed(1)} MB over every worker (first load ${(firstLoad / 1e6).toFixed(1)} MB)`);
+  const stats = await page.evaluate(() => window.__packtherm.downloadStats());
+  stats.forEach((s, i) =>
+    say(`Worker ${i + 1}: ${s.files} files; ${(s.network_bytes / 1e6).toFixed(1)} MB over the network, ${(s.cached_bytes / 1e6).toFixed(1)} MB from the browser's cache${s.unknown_files ? `, ${s.unknown_files} without timing details` : ""}`),
+  );
   await page.screenshot({ path: join(outDir, "results.png"), fullPage: true });
   if (errors.length) throw new Error(`errors in the page:\n${errors.join("\n")}`);
 } finally {

@@ -176,7 +176,8 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.5.3** | HTTP API (queue, progress, results, limits, API keys), Docker image; example studies re-run in CI |
 | **v0.5.4** | LFP user-defined cells: measured thermal properties and graphite-dominated entropic heat; chemistry-specific checks |
 | **v0.5.5** | Web app (React + TypeScript): study set-up form built from the study format, live checks, progress, interactive trade-off chart and design table, downloads and shareable result links |
-| **v0.5.6** (current) | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
+| **v0.5.6** | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
+| **v0.5.7** (current) | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
 

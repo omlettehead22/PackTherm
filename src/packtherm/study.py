@@ -581,7 +581,9 @@ class StudyRun:
                 "kinds": dict(res.kind_names),
             },
             "picks": picks,
-            "notes": list(res.warnings) + list(res.notes()) + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
+            "notes": [f"WARNING: {w}" for w in res.warnings]
+            + list(res.notes())
+            + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
             "assumptions": _assumptions(st),
             "designs": [_row(r) for _, r in t.iterrows()],
         }

@@ -54,7 +54,7 @@ from .design import (
     _map,
     select_front,
 )
-from .electrothermal import check_limits
+from .electrothermal import MIN_DELIVERED, check_limits, delivered_share, shortfall_warning
 from .hardware import PackHardware, hardware_mass_per_cell
 from .materials import get_pcm, melt_midpoint_C
 from .module import (
@@ -279,13 +279,17 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         rec_ok = recovered
     else:
         rec_ok = recovered and recovery_min <= req.recovery_max_min
+    share = delivered_share(r.load, event)
     fails = (
         ("hot", T_peak > T_limit),
         ("uneven", dT > req.dT_cell_max_C),
         ("slow", not rec_ok),
         ("spread", not c2c_ok),
+        ("short", share < MIN_DELIVERED),
     )
     rating = [w for w in check_limits(cell, r.load, res) if "rating" in w]
+    if share < MIN_DELIVERED:
+        rating.insert(0, shortfall_warning(share))
     show_gap = len(study.gaps_mm) > 1 or d.gap_mm not in study.gaps_mm
     cooling = d.cooling_label(show_gap)
     filler = d.filler_label()
@@ -339,7 +343,8 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         "T_margin_C": T_limit - T_peak,
         "feasible": not any(bad for _, bad in fails),
         # hot = peak over limit, uneven = in-cell spread over limit,
-        # slow = not ready in time, spread = inlet-to-outlet over limit
+        # slow = not ready in time, spread = inlet-to-outlet over limit,
+        # short = the cell could not deliver the duty's current (voltage cut-off)
         "fail_reason": " · ".join(r_ for r_, bad in fails if bad),
         "rating_warning": "; ".join(rating),
     }

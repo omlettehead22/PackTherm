@@ -4,6 +4,7 @@
 // staircase for the trade-off front, numbered rings for the picks.
 import { useId, useMemo, useState } from "react";
 import type { Design, Pick } from "../types";
+import type { LegendItem } from "./export";
 import { linear, needsLog, staircase, symlog } from "./scale";
 
 export const KINDS = ["natural", "air", "liquid"] as const;
@@ -90,8 +91,6 @@ export function TradeoffChart({ designs, picks, kindNames, xLabel, yLabel, activ
   const byX = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
   const front = staircase(points.filter((p) => p.d.pareto && p.d.feasible).map((p) => [p.x, p.y]));
   const numbered = pickNumbers(designs, picks);
-  const present = KINDS.filter((k) => designs.some((d) => d.cooling_kind === k));
-  const anyChilled = designs.some((d) => d.chilled);
   const activePt = points.find((p) => p.i === active) ?? null;
 
   const move = (step: number) => {
@@ -113,40 +112,12 @@ export function TradeoffChart({ designs, picks, kindNames, xLabel, yLabel, activ
         Trade-off: lower left is better
       </figcaption>
       <ul className="legend" aria-label="Legend">
-        {present.map((k) => (
-          <li key={k}>
-            <svg width="12" height="12" aria-hidden="true">
-              <circle cx="6" cy="6" r="5" fill={KIND_VAR[k]} />
-            </svg>
-            {kindNames[k] ?? k}
+        {chartLegend(designs, kindNames).map((item) => (
+          <li key={item.label}>
+            <LegendMark item={item} />
+            {item.label}
           </li>
         ))}
-        {anyChilled && (
-          <li>
-            <svg width="12" height="12" aria-hidden="true">
-              <rect x="1" y="1" width="10" height="10" rx="1" fill={KIND_VAR.liquid} />
-            </svg>
-            liquid + chiller
-          </li>
-        )}
-        <li>
-          <svg width="12" height="12" aria-hidden="true">
-            <circle cx="6" cy="6" r="5" fill="var(--text-secondary)" />
-          </svg>
-          meets the limits
-        </li>
-        <li>
-          <svg width="12" height="12" aria-hidden="true">
-            <circle cx="6" cy="6" r="4.3" fill="var(--surface-1)" stroke="var(--text-secondary)" strokeWidth="1.4" />
-          </svg>
-          fails the limits
-        </li>
-        <li>
-          <svg width="18" height="12" aria-hidden="true">
-            <path d="M1 9 H9 V3 H17" fill="none" stroke="var(--text-secondary)" strokeWidth="2" />
-          </svg>
-          trade-off front
-        </li>
       </ul>
       <p className="chart__ylabel">↑ {yLabel}</p>
       <div className="chart__scroll">
@@ -248,6 +219,42 @@ export function TradeoffChart({ designs, picks, kindNames, xLabel, yLabel, activ
   );
 }
 
+/** The legend: the cooling kinds present, then how marks read. Shared by the page and the chart file. */
+export function chartLegend(designs: Design[], kindNames: Record<string, string>): LegendItem[] {
+  const items: LegendItem[] = KINDS.filter((k) => designs.some((d) => d.cooling_kind === k)).map((k) => ({
+    label: kindNames[k] ?? k,
+    shape: "circle",
+    color: KIND_VAR[k],
+  }));
+  if (designs.some((d) => d.chilled)) items.push({ label: "liquid + chiller", shape: "square", color: KIND_VAR.liquid });
+  items.push(
+    { label: "meets the limits", shape: "circle", color: "var(--text-secondary)" },
+    { label: "fails the limits", shape: "hollow", color: "var(--text-secondary)" },
+    { label: "trade-off front", shape: "line", color: "var(--text-secondary)" },
+  );
+  return items;
+}
+
+function LegendMark({ item }: { item: LegendItem }) {
+  if (item.shape === "line")
+    return (
+      <svg width="18" height="12" aria-hidden="true">
+        <path d="M1 9 H9 V3 H17" fill="none" stroke={item.color} strokeWidth="2" />
+      </svg>
+    );
+  return (
+    <svg width="12" height="12" aria-hidden="true">
+      {item.shape === "square" ? (
+        <rect x="1" y="1" width="10" height="10" rx="1" fill={item.color} />
+      ) : item.shape === "hollow" ? (
+        <circle cx="6" cy="6" r="4.3" fill="var(--surface-1)" stroke={item.color} strokeWidth="1.4" />
+      ) : (
+        <circle cx="6" cy="6" r="5" fill={item.color} />
+      )}
+    </svg>
+  );
+}
+
 function Mark({ p }: { p: Point }) {
   const color = KIND_VAR[p.d.cooling_kind] ?? "var(--text-secondary)";
   const ok = p.d.feasible;
@@ -300,6 +307,7 @@ const FAIL_WORDS: Record<string, string> = {
   uneven: "in-cell spread",
   slow: "slow to recover",
   spread: "cell-to-cell spread",
+  short: "cell can't deliver the current",
 };
 
 export const failWords = (reason: string) =>
