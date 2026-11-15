@@ -37,7 +37,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run(
-            [sys.executable, "-m", "pip", "wheel", str(ROOT), "--no-deps", "--no-build-isolation", "-q", "-w", tmp],
+            [sys.executable, "-m", "pip", "wheel", str(ROOT), "--no-deps", "-q", "-w", tmp],
             check=True,
         )
         shutil.rmtree(ROOT / "build", ignore_errors=True)  # setuptools' scratch folder from the wheel build
