@@ -1,14 +1,46 @@
 /// <reference lib="webworker" />
 // A Web Worker running PackTherm under Pyodide (Python compiled to WebAssembly).
 // It answers {id, fn, args} messages by calling packtherm.browser.<fn>(...args).
-import { PYODIDE_URL } from "./config";
+import { PYODIDE_URL, PYODIDE_VERSION } from "./config";
 
 type Msg = { id: number; fn: string; args: unknown[] };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let mod: any = null;
 
+// The engine's files (Python, NumPy, SciPy, pandas: about 28 MB) are kept in the
+// page's Cache Storage, which every worker and later visit share. The browser's
+// own HTTP cache may not keep a file as large as SciPy's 14 MB package, and then
+// each worker would download it again.
+const CACHE = `packtherm-pyodide-${PYODIDE_VERSION}`;
+const KEEP = /\.(whl|zip|wasm|tar|json)$/;
+
+function cacheEngineFiles() {
+  if (typeof caches === "undefined") return; // not a secure context: plain downloads
+  const plainFetch = self.fetch.bind(self);
+  self.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (!url.startsWith(PYODIDE_URL) || !KEEP.test(new URL(url).pathname)) return plainFetch(input, init);
+    try {
+      const cache = await caches.open(CACHE);
+      const hit = await cache.match(url);
+      if (hit) return hit;
+      const res = await plainFetch(input, init);
+      if (res.ok) await cache.put(url, res.clone());
+      return res;
+    } catch {
+      return plainFetch(input, init); // storage full or refused: download as usual
+    }
+  };
+  // Files from older Pyodide versions are no longer needed.
+  void caches
+    .keys()
+    .then((names) => Promise.all(names.filter((n) => n.startsWith("packtherm-pyodide-") && n !== CACHE).map((n) => caches.delete(n))))
+    .catch(() => {});
+}
+
 async function init(wheelUrl: string): Promise<string> {
+  cacheEngineFiles();
   const { loadPyodide } = await import(/* @vite-ignore */ `${PYODIDE_URL}pyodide.mjs`);
   const py = await loadPyodide({ indexURL: PYODIDE_URL });
   await py.loadPackage(["numpy", "scipy", "pandas", "pyyaml"]);
