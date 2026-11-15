@@ -91,12 +91,26 @@ export class BrowserEngine {
         if (!r.ok) throw new Error(`no engine package here (${r.status})`);
         return r.json() as Promise<{ wheel: string }>;
       })
-      .then((m) => new URL(m.wheel, new URL(WHEEL_MANIFEST, window.location.href)).href);
+      .then((m) => new URL(m.wheel, new URL(WHEEL_MANIFEST, window.location.href)).href)
+      .catch((e: unknown) => {
+        this.wheel = null; // try again next time
+        throw e;
+      });
     return this.wheel;
   }
 
   /** Start the first worker (downloads Python and PackTherm on a first visit). */
   async start(): Promise<PyWorker> {
+    try {
+      return await this.startWorker();
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") throw e;
+      // What a visitor can act on; the cause stays in the header's details.
+      throw new ApiError(LOAD_FAILED, 0);
+    }
+  }
+
+  private async startWorker(): Promise<PyWorker> {
     if (!this.main) {
       this.set({ phase: "loading" });
       const url = await this.wheelUrl().catch((e: Error) => {
@@ -205,5 +219,8 @@ export class BrowserEngine {
     this.set({ phase: "idle" });
   }
 }
+
+export const LOAD_FAILED =
+  "The simulation engine could not load. Check your internet connection, then reload the page. (It needs a recent Chrome, Edge, Firefox or Safari.)";
 
 export const browserEngine = new BrowserEngine();

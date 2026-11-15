@@ -199,10 +199,10 @@ function EngineBadge() {
     s.phase === "ready"
       ? `Engine ready: PackTherm ${s.version} in your browser`
       : s.phase === "failed"
-        ? `Engine failed to load: ${s.message}`
+        ? "The engine could not load: reload the page to try again"
         : "Loading the engine…";
   return (
-    <p className={"engine engine--" + s.phase} role="status">
+    <p className={"engine engine--" + s.phase} role="status" title={s.phase === "failed" ? s.message : undefined}>
       <span aria-hidden="true">{s.phase === "ready" ? "● " : s.phase === "failed" ? "✕ " : "○ "}</span>
       {text}
     </p>

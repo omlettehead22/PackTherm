@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.6
+
+The public site, the seventh v0.5 mini update: PackTherm runs in the visitor's browser, published free on GitHub Pages.
+
+- **New: an in-browser engine.** The public site ([omlettehead22.github.io/packtherm](https://omlettehead22.github.io/packtherm/)) runs PackTherm itself in the page, with Pyodide (Python compiled to WebAssembly). It needs no server, so it costs nothing to host, has no queue or design limits, and nothing a visitor enters leaves their computer.
+  - Designs run in parallel Web Workers: one per core, leaving one for the page, at most four.
+  - Measured in CI (headless Chromium, 4 cores): the engine is ready 6 s into a first visit, after a 28 MB download; the hot road-trip example (39 designs, fast mode) takes 54 s on 3 workers.
+  - **Same results as `packtherm run`**: CI runs a study in the browser and compares the results file with a native run. All text and verdicts match; numbers agree to 1e-11 (the browser's NumPy is a different build).
+- **New: `packtherm.browser`**, the Python side of the engine: a study in steps (check, evaluate each design, assemble the results with any worst-case re-checks), with values crossing between workers as exact JSON text. A test drives it as the workers do and gets `packtherm run`'s results exactly. `run_module_study` and the engine share the final step (`module_study_result`).
+- **Sharing without a server:** a link carries the study and fills in the form for whoever opens it; a downloaded results file opens in the app. Results JSON and the designs CSV download from the page.
+- **Release wheels:** a version tag builds the wheel with the web app inside and attaches it to a GitHub release, so `pip install` of its URL gives `packtherm serve` with the app and needs no Node.
+- **Fixed: a results file's `study` block is a valid study again.** It lists every duty key, with null or the default for those the duty doesn't use, and validation rejected them, so the results screen's "Study file (YAML)" (new in 0.5.5) gave a file `packtherm run` refused. Keys left at their defaults are now accepted; a test checks every example study validates to itself.
+- PackTherm no longer imports process pools until it uses them (Pyodide has no processes).
+- CI gains a `browser-engine` job; a Pages workflow publishes the site from `main` after CI passes.
+
 ## 0.5.5
 
 The web app, the sixth v0.5 mini update: set up a study in the browser, watch it run, explore the results.
