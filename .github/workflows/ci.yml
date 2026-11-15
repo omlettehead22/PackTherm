@@ -36,6 +36,42 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  browser-engine:
+    # The public site: PackTherm under Pyodide in headless Chromium must give packtherm run's results.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - name: Build the public site
+        run: python web/scripts/build_pages.py --out web/dist-pages
+      - name: Run studies in the browser
+        run: node web/e2e/browser-engine.mjs web/dist-pages e2e-out
+        working-directory: .
+        env:
+          NODE_PATH: web/node_modules
+      - name: Same results as packtherm run
+        run: python web/e2e/compare.py e2e-out/browser_results.json
+      - name: Timings
+        if: always()
+        run: cat e2e-out/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-engine
+          path: e2e-out
+
   docker:
     # Build the API image, start it, and run a small study through it.
     runs-on: ubuntu-latest

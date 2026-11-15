@@ -30,7 +30,14 @@ describe("results files", () => {
 
 describe("the results screen", () => {
   const show = (r: ResultsDoc) =>
-    render(<Results id="abc" results={r} limits={limits} finished={1.7e9} onEdit={() => {}} onNew={() => {}} />);
+    render(
+      <Results
+        source={{ kind: "server", id: "abc", finished: 1.7e9, keepH: limits.keep_h }}
+        results={r}
+        onEdit={() => {}}
+        onNew={() => {}}
+      />,
+    );
 
   it("shows the summary, one card per picked design, and every design", () => {
     const r = examples[0];

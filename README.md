@@ -4,6 +4,8 @@ PackTherm designs the cooling for a pack of cylindrical cells. Give it a cell, a
 
 It answers questions like *"for this cell and this duty, should I use air, a cold plate or a side ribbon, at what flow, and is PCM worth its weight?"* The cell model is validated against 48 blind tests on a commercial cell from 25 °C down to −20 °C. PackTherm started as an MSc thesis model in MATLAB; how it got here is in [docs/HISTORY.md](docs/HISTORY.md).
 
+**Try it in your browser: [omlettehead22.github.io/packtherm](https://omlettehead22.github.io/packtherm/).** Nothing to install: PackTherm runs on your own computer, inside the page, so nothing you enter is sent anywhere.
+
 ![How the model works](docs/figures/model_overview.svg)
 
 ## Design result: LG M50 pack on a hot road trip
@@ -119,7 +121,10 @@ packtherm design my_cell.yaml --duty roadtrip --t-env 35 --fast
 
 User-defined cells use the lumped resistance model (no voltage model, so no cut-off or constant-voltage charge taper), and their results say so. [`docs/examples/user_cell_mj1.yaml`](docs/examples/user_cell_mj1.yaml) is the LG MJ1 written this way; it gives exactly the library MJ1's results. [`docs/examples/user_cell_lfp_26650.yaml`](docs/examples/user_cell_lfp_26650.yaml) is an LFP power cell. Give the DC resistance: many datasheets list only the 1 kHz AC impedance, which is lower and under-predicts heat.
 
-**Web app.** `packtherm serve` also serves a web app at its address (`http://127.0.0.1:8000`): set up a study from a form, starting from the example studies or your own cell (checked as you type), watch it run, then explore the results in an interactive trade-off chart and a sortable table of every design, and download them or the study file. It opens in fast mode, with normal mode one click away. The Docker image includes it. When installing from source, build it first: `cd web && npm ci && npm run build` (Node 20 or later); [web/README.md](web/README.md) covers development.
+**Web app.** Set up a study from a form, starting from the example studies or your own cell (checked as you type), watch it run, then explore the results in an interactive trade-off chart and a sortable table of every design, and download them or the study file. It opens in fast mode, with normal mode one click away. It comes in two forms:
+
+- **The public site** ([omlettehead22.github.io/packtherm](https://omlettehead22.github.io/packtherm/)) runs PackTherm in your browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), on several cores at once. The first visit downloads Python and its scientific packages; later visits load them from the browser's cache. A shared link carries the study, so whoever opens it can run it; to share exact numbers, send the results file, which the site opens. CI checks that the browser gives the same results as `packtherm run`.
+- **`packtherm serve`** serves the same app at its address (`http://127.0.0.1:8000`), running studies on that machine through the HTTP API below. The Docker image includes it, and so does the wheel attached to each [GitHub release](https://github.com/omlettehead22/packtherm/releases) (`pip install` the wheel's URL; no Node needed). When installing from source, build the app first: `cd web && npm ci && npm run build` (Node 20 or later). [web/README.md](web/README.md) covers development.
 
 **HTTP API.** `pip install "packtherm[api]"`, then `packtherm serve` (or `docker build -t packtherm .`) runs studies over HTTP: submit a study as JSON, check its progress, fetch the results. Interactive docs are at `/docs`; examples, limits and API keys are in [docs/API.md](docs/API.md).
 
@@ -170,8 +175,8 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.5.2** | User-defined cylindrical NMC/NCA cells from datasheet values, with unit-slip checks |
 | **v0.5.3** | HTTP API (queue, progress, results, limits, API keys), Docker image; example studies re-run in CI |
 | **v0.5.4** | LFP user-defined cells: measured thermal properties and graphite-dominated entropic heat; chemistry-specific checks |
-| **v0.5.5** (current) | Web app (React + TypeScript): study set-up form built from the study format, live checks, progress, interactive trade-off chart and design table, downloads and shareable result links |
-| v0.5.6 (next) | Public deployment |
+| **v0.5.5** | Web app (React + TypeScript): study set-up form built from the study format, live checks, progress, interactive trade-off chart and design table, downloads and shareable result links |
+| **v0.5.6** (current) | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -181,7 +186,9 @@ Results from earlier versions, as they stood at the time, are in [docs/HISTORY.m
 src/packtherm/        the package: cells, user_cells, ecm, electrothermal, model (1D), model2d, module, hardware,
                       module_design, study (study files), design, ev, materials, report, validation, cli
 src/packtherm/api/    the HTTP API (FastAPI): settings and limits, jobs, endpoints; serves the web app
-web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/)
+src/packtherm/browser.py  the in-browser engine's side in Python (the study in steps, for Web Workers)
+web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/, or
+                      as the public site with the in-browser engine: web/scripts/build_pages.py)
 src/packtherm/data/   WLTC Class 3b trace (UN GTR 15), NCR18650PF and LG M50 OCV tables
 validation/           dataset preparation, identification, M50 derivation and checks, processed test data
 docs/examples/        example study files, their results (JSON, CSV, charts) and module comparisons

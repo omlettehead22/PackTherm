@@ -1,0 +1,38 @@
+{
+ "M50": {
+  "name": "LG INR21700 M50",
+  "model": "circuit (derived)",
+  "format": "21700",
+  "capacity_Ah": 5.0,
+  "V_nominal": 3.63,
+  "DCIR_25C_mOhm": 30.0,
+  "mass_g": 68.0
+ },
+ "M50-LUMPED": {
+  "name": "LG INR21700 M50 (lumped DCIR)",
+  "model": "lumped DCIR",
+  "format": "21700",
+  "capacity_Ah": 5.0,
+  "V_nominal": 3.63,
+  "DCIR_25C_mOhm": 30.0,
+  "mass_g": 68.0
+ },
+ "MJ1": {
+  "name": "LG INR18650 MJ1",
+  "model": "lumped DCIR",
+  "format": "18650",
+  "capacity_Ah": 3.5,
+  "V_nominal": 3.635,
+  "DCIR_25C_mOhm": 60.0,
+  "mass_g": 46.800000000000004
+ },
+ "PF": {
+  "name": "Panasonic NCR18650PF",
+  "model": "circuit (measured)",
+  "format": "18650",
+  "capacity_Ah": 2.99491,
+  "V_nominal": 3.6,
+  "DCIR_25C_mOhm": 46.0,
+  "mass_g": 47.0
+ }
+}

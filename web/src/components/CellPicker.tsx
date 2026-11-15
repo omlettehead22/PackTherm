@@ -1,6 +1,5 @@
 // Choosing the cell: one from the library, or the user's own, checked by the server as it is typed.
 import { useId } from "react";
-import { api } from "../api";
 import exampleCells from "../generated/cells.json";
 import { useServerCheck } from "../hooks";
 import { ownCellDoc, type FormState, type Values } from "../study";
@@ -24,13 +23,14 @@ interface Props {
   cells: Record<string, LibraryCell>;
   form: FormState;
   update: (f: Partial<FormState>) => void;
+  checkCell: (cell: Values) => Promise<CellCheck>;
 }
 
-export function CellPicker({ schema, cells, form, update }: Props) {
+export function CellPicker({ schema, cells, form, update, checkCell }: Props) {
   const id = useId();
   const own = form.cellSource === "own";
   const doc = own ? ownCellDoc(form.ownCell, schema) : null;
-  const check = useServerCheck(doc, api.checkCell);
+  const check = useServerCheck(doc, checkCell);
   const setOwn = (k: string, v: Values[string]) => update({ ownCell: { ...form.ownCell, [k]: v } });
   const optional = Object.keys(schema.cell.keys).filter((k) => !REQUIRED_ORDER.includes(k));
   const lib = cells[form.libraryCell];

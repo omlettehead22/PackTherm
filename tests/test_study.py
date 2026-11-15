@@ -138,3 +138,20 @@ def test_every_key_is_documented():
             assert f"## `{name}`" in doc, name
         for k in keys:
             assert f"`{k}`" in doc, f"{name}.{k}" if name else k
+
+
+def test_a_validated_study_validates_to_itself():
+    """The study block in a results file is itself a study file: packtherm run (and the web app) can re-run it."""
+    import glob
+
+    import yaml
+
+    from packtherm.study import validate
+
+    for f in sorted(glob.glob(str(EXAMPLES / "*.yaml"))):
+        doc = yaml.safe_load(Path(f).read_text(encoding="utf-8"))
+        if "packtherm_study" not in doc:
+            continue  # a cell file
+        spec = validate(doc, base_dir=EXAMPLES)
+        assert validate(spec) == spec, f
+        assert validate(json.loads(json.dumps(spec))) == spec, f

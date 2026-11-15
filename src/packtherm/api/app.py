@@ -143,20 +143,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
 
     @app.get("/cells")
     def cells():
-        from ..cells import CELLS
+        from ..cells import library_summary
 
-        return {
-            k: {
-                "name": c.name,
-                "model": c.model_label,
-                "format": c.form_factor,
-                "capacity_Ah": c.capacity_Ah,
-                "V_nominal": c.V_nominal,
-                "DCIR_25C_mOhm": c.R0_25C * 1e3,
-                "mass_g": c.mass * 1e3,
-            }
-            for k, c in CELLS.items()
-        }
+        return library_summary()
 
     @app.post("/cells/check")
     async def check_cell(request: Request):
