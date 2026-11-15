@@ -28,12 +28,22 @@ function downloadStats(): string {
   let network = 0;
   let cached = 0;
   let unknown = 0;
+  const fetched: [string, number][] = [];
   for (const e of entries) {
+    if (e.transferSize > 0) fetched.push([e.name.split("/").pop() ?? e.name, e.transferSize]);
     if (e.transferSize > 0) network += e.transferSize;
     else if (e.encodedBodySize > 0) cached += e.encodedBodySize;
     else unknown += 1; // a cross-origin file without timing details
   }
-  return JSON.stringify({ files: entries.length, network_bytes: network, cached_bytes: cached, unknown_files: unknown });
+  const largest = fetched.sort((x, y) => y[1] - x[1]).slice(0, 8);
+  return JSON.stringify({
+    files: entries.length,
+    network_bytes: network,
+    cached_bytes: cached,
+    unknown_files: unknown,
+    largest_downloads: largest.map(([n, b]) => `${n} ${(b / 1e6).toFixed(1)} MB`),
+    initiators: [...new Set(entries.filter((e) => e.transferSize > 0).map((e) => e.initiatorType))],
+  });
 }
 
 self.onmessage = async (e: MessageEvent<Msg>) => {
