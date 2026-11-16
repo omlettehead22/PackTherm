@@ -43,8 +43,9 @@ from .module import (
 from .module_design import ModuleDesign, ModuleStudy, run_module_study
 from .params import KELVIN, PCM, Geometry, Material, Params, SolverSettings, default_params
 from .scenarios import Scenario, run_scenario, thesis_scenarios
+from .testdata import TestRecord, load_test_data
 
-__version__ = "0.5.7"
+__version__ = "0.6.0"
 
 from .user_cells import from_datasheet, load_cell
 
@@ -83,6 +84,7 @@ __all__ = [
     "SimulationResult",
     "Sink",
     "SolverSettings",
+    "TestRecord",
     "Wall",
     "check_limits",
     "compare_modules",
@@ -94,6 +96,7 @@ __all__ = [
     "get_pcm",
     "hardware_mass_per_cell",
     "load_cell",
+    "load_test_data",
     "params_for_cell",
     "run_module_study",
     "run_scenario",

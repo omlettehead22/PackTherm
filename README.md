@@ -123,7 +123,7 @@ User-defined cells use the lumped resistance model (no voltage model, so no cut-
 
 **Web app.** Set up a study from a form, starting from the example studies or your own cell (checked as you type), watch it run, then explore the results in an interactive trade-off chart and a sortable table of every design, and download them or the study file. It opens in fast mode, with normal mode one click away. It comes in two forms:
 
-- **The public site** ([omlettehead22.github.io/PackTherm](https://omlettehead22.github.io/PackTherm/)) runs PackTherm in your browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), on several cores at once. The first visit downloads Python and its scientific packages; later visits load them from the browser's cache. A shared link carries the study, so whoever opens it can run it; to share exact numbers, send the results file, which the site opens. CI checks that the browser gives the same results as `packtherm run`.
+- **The public site** ([omlettehead22.github.io/PackTherm](https://omlettehead22.github.io/PackTherm/)) runs PackTherm in your browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), on several cores at once. The first visit downloads Python and its scientific packages (28 MB); the page keeps them, so later visits load them from the browser. A shared link carries the study, so whoever opens it can run it; to share exact numbers, send the results file, which the site opens. CI checks that the browser gives the same results as `packtherm run`.
 - **`packtherm serve`** serves the same app at its address (`http://127.0.0.1:8000`), running studies on that machine through the HTTP API below. The Docker image includes it, and so does the wheel attached to each [GitHub release](https://github.com/omlettehead22/packtherm/releases) (`pip install` the wheel's URL; no Node needed). When installing from source, build the app first: `cd web && npm ci && npm run build` (Node 20 or later). [web/README.md](web/README.md) covers development.
 
 **HTTP API.** `pip install "packtherm[api]"`, then `packtherm serve` (or `docker build -t packtherm .`) runs studies over HTTP: submit a study as JSON, check its progress, fetch the results. Interactive docs are at `/docs`; examples, limits and API keys are in [docs/API.md](docs/API.md).
@@ -142,6 +142,8 @@ from packtherm.study import load_study
 run = load_study("docs/examples/m50_roadtrip_35c.yaml").run()
 print(run.result.summary())  # run.to_json() is the results document
 ```
+
+**Cell test data.** `packtherm data <file>` reads a cell test (CSV, or MATLAB `.mat` as the Kollmeyer datasets ship) and converts it to seconds, amps with + = discharge, volts and °C. It finds the columns of the common tester exports, checks the units, works out the current's sign from the voltage, and flags gaps, repeats and missing rows. It then labels the parts of the test: rests, pulses, constant-current steps, CC-CV charges and drive cycles. This is the first step towards fitting a cell model to your own data (v0.6); see [docs/TEST_DATA.md](docs/TEST_DATA.md).
 
 **Study files.** A study (cell, duty, ambient, limits, design space, options, normal or fast) can be written as one YAML or JSON file; `packtherm design` flags build the same document. Every key is described in [docs/STUDY_FILES.md](docs/STUDY_FILES.md). Each example study in [`docs/examples/`](docs/examples/) has its file and its results JSON, and every number this README quotes from them is checked in CI (`tests/test_docs.py`). CI also re-runs the examples in fast mode and checks they still match their committed results (`tests/test_examples_rerun.py`).
 
@@ -177,7 +179,10 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.5.4** | LFP user-defined cells: measured thermal properties and graphite-dominated entropic heat; chemistry-specific checks |
 | **v0.5.5** | Web app (React + TypeScript): study set-up form built from the study format, live checks, progress, interactive trade-off chart and design table, downloads and shareable result links |
 | **v0.5.6** | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
-| **v0.5.7** (current) | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
+| **v0.5.7** | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
+| **v0.6.0** (current) | Cell test data: CSV and `.mat` reading, column, unit and sign detection, checks, and the test's parts labelled (`packtherm data`) |
+| v0.6.1–v0.6.3 (next) | Fitting PackTherm's circuit model to test data: at one temperature, then across temperatures with a fit report, then predicting drive cycles the fit never saw (Panasonic NCR18650PF, then Samsung 30T) |
+| Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -185,7 +190,7 @@ Results from earlier versions, as they stood at the time, are in [docs/HISTORY.m
 
 ```
 src/packtherm/        the package: cells, user_cells, ecm, electrothermal, model (1D), model2d, module, hardware,
-                      module_design, study (study files), design, ev, materials, report, validation, cli
+                      module_design, study (study files), design, ev, materials, report, validation, testdata, cli
 src/packtherm/api/    the HTTP API (FastAPI): settings and limits, jobs, endpoints; serves the web app
 src/packtherm/browser.py  the in-browser engine's side in Python (the study in steps, for Web Workers)
 web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/, or
@@ -199,6 +204,7 @@ docs/VALIDATION.md    validation method and results
 docs/BACKLOG.md       known issues and improvement plan
 docs/FAST_MODE.md     fast and normal modes: settings, speed and accuracy
 docs/STUDY_FILES.md   study, cell and results file formats
+docs/TEST_DATA.md     reading cell test data: formats, columns, units, sign, checks, parts
 docs/API.md           the HTTP API: endpoints, limits, keys, settings
 docs/HISTORY.md       earlier versions, thesis results and figures (docs/history/)
 tests/                parity, physics, module, design and validation tests

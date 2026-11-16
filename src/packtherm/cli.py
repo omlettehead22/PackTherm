@@ -139,6 +139,47 @@ def _serve(args) -> None:
     uvicorn.run(create_app(), host=args.host, port=port, workers=1)
 
 
+def _data(args) -> None:
+    import json
+
+    from .testdata import TestDataError, load_test_data
+
+    columns = {r: getattr(args, r) for r in ("time", "current", "voltage", "temperature", "ambient") if getattr(args, r)}
+    try:
+        rec = load_test_data(args.file, columns=columns or None, capacity_Ah=args.capacity)
+    except TestDataError as e:
+        raise ValueError(str(e)) from None
+    if args.flip:
+        rec.current_A = -rec.current_A
+        rec.conversions.append("current sign flipped (--flip)")
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "source": rec.source,
+                    "samples": len(rec),
+                    "duration_s": rec.duration_s,
+                    "columns": rec.columns,
+                    "converted": rec.conversions,
+                    "warnings": rec.warnings,
+                    "segments": rec.segment_table(),
+                },
+                indent=1,
+            )
+        )
+        return
+    print(rec.summary())
+    if args.segments:
+        rows = rec.segment_table()
+        print()
+        keys = list(rows[0]) if rows else []
+        print("  ".join(f"{k:>11}" for k in keys))
+        for r in rows:
+            print("  ".join(f"{r[k]!s:>11}" for k in keys))
+    if args.plot:
+        print(f"Wrote {rec.plot(args.plot)}")
+
+
 def _cells(args) -> None:
     if args.file:
         _cell_file(args.file)
@@ -465,6 +506,25 @@ def parser() -> argparse.ArgumentParser:
     c = sub.add_parser("cells", help="List the cell library, or show a user-defined cell file.")
     c.add_argument("file", nargs="?", help="a cell file (.yaml or .json) to check and show")
     c.set_defaults(func=_cells)
+
+    t = sub.add_parser(
+        "data",
+        help="Read cell test data (CSV or .mat), check it and list its parts.",
+        description=(
+            "Read a cell test (CSV/TSV or MATLAB .mat), convert it to seconds, amps (+ = discharge), volts and degC, "
+            "check it, and label its parts: rests, pulses, constant-current steps, CC-CV charges and drive cycles. "
+            "Columns are found by name; name them if they are not. See docs/TEST_DATA.md."
+        ),
+    )
+    t.add_argument("file", help="the test file (.csv, .tsv, .txt or .mat)")
+    for role in ("time", "current", "voltage", "temperature", "ambient"):
+        t.add_argument(f"--{role}", metavar="COLUMN", help=f"the {role} column, if not found by name")
+    t.add_argument("--capacity", type=POS, metavar="AH", help="the cell's capacity: C-rates, and a charge check")
+    t.add_argument("--flip", action="store_true", help="flip the current's sign after reading (if the check got it wrong)")
+    t.add_argument("--segments", action="store_true", help="list every part of the test")
+    t.add_argument("--plot", metavar="PNG", help="plot current, voltage and temperature to this file")
+    t.add_argument("--json", action="store_true", help="print the summary and parts as JSON")
+    t.set_defaults(func=_data)
 
     e = sub.add_parser("cell", help="Electro-thermal run of one cell at constant C-rate.")
     e.add_argument("cell", help=f"Cell key ({', '.join(CELLS)}) or a cell file (.yaml or .json)")

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0
+
+Cell test data, the first v0.6 mini update. v0.6 fits a cell model to measured test data; this step reads and checks the data.
+
+- **New: `packtherm.testdata` and `packtherm data <file>`.** It reads a cell test from CSV/TSV, or from MATLAB `.mat` files (top-level vectors or a structure, including the Kollmeyer datasets' `meas`), and converts it to seconds, amps with + = discharge, volts and °C.
+  - **Columns** are found by name for the common tester exports (Arbin, Neware, Biologic, Digatron, Maccor), or named with `--time`, `--current`, `--voltage`, `--temperature` and `--ambient`.
+  - **Units** are read from the column names (`mA`, `mV`, `ms`, `min`, `h`, `K`) and checked against the values. Time may be numbers, `h:mm:ss` durations, or dates and times.
+  - **The current's sign** is worked out from the voltage. In a finely logged record, from the instant response to every jump in current; otherwise from how the voltage behaves when current starts and stops, and during long steady currents. It is flipped if needed, and the evidence is shown (`--flip` overrides it).
+  - **Checks:** missing rows, repeated times, time running backwards, gaps (the cell is taken as resting across them, with no charge counted), a coarse time step, a voltage that isn't a single cell's, implausible temperatures, and, with `--capacity`, more charge moved than the cell holds.
+  - **The parts of a test** are labelled: rests, pulses (60 s or less), constant-current steps, CC-CV charges and dynamic stretches such as drive cycles. `--segments` lists them, `--plot` draws the test with the parts shaded, and `--json` prints the lot.
+- **Checked on the Panasonic NCR18650PF dataset** (Kollmeyer, CC BY 4.0): of its 198 files, 191 hold data and 7 a single sample. The sign is found from the voltage in 189, and all 131 whose names say what they are come out the right way round. The other two are flagged as unclear. The raw dataset is not stored here; the tests use synthetic records with known answers, plus the real files when present.
+- **Docs:** [docs/TEST_DATA.md](docs/TEST_DATA.md). The roadmap lists v0.6.1–v0.6.3 (fitting), then a generic circuit model, fitting in the web app, and a 3D view.
+
 ## 0.5.7
 
 Fixes from a full audit (every test, the command line, the API's edge cases, the docs' links and the web app's files), the eighth v0.5 mini update.
