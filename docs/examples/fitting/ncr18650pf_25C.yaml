@@ -1,0 +1,448 @@
+# A PackTherm fitted cell (packtherm fit). Fitted at one temperature: studies refuse it until
+# PackTherm v0.6.2, which fits the temperature behaviour. See the report beside it.
+packtherm_fitted_cell: 1
+name: Panasonic NCR18650PF (fitted, 25 degC)
+status: single-temperature
+usable_in_studies: false
+why_not_usable: 'fitted at one temperature: its temperature behaviour is the library NCR18650PF''s, not this cell''s.
+  PackTherm v0.6.2 fits that from tests at several temperatures.'
+model:
+  form: packtherm-circuit-1
+  description: 'open-circuit voltage, instant resistance R0, a charge-transfer branch (I0, gamma, tau_ct), a slow
+    branch (Rd, tau_d) and a rise near empty (soc_a, soc_b): packtherm.ecm.ECM'
+values:
+  R0_25C:
+    value: 0.026284
+    unit: Ohm
+    source: fitted
+    what: instant (ohmic) resistance
+    range_95:
+    - 0.02428
+    - 0.02846
+  I0_25C:
+    value: 1.8452
+    unit: A
+    source: fitted
+    what: exchange current of the charge-transfer branch
+    range_95:
+    - 0.9053
+    - 3.761
+  gamma:
+    value: 0.94575
+    unit: '-'
+    source: fitted
+    what: shape of the charge-transfer branch (multiplies 2RT/F)
+    range_95:
+    - 0.5457
+    - 1.639
+  tau_ct:
+    value: 1.8277
+    unit: s
+    source: fitted
+    what: time constant of the charge-transfer branch
+    range_95:
+    - 1.184
+    - 2.822
+  soc_a:
+    value: 9.1638
+    unit: '-'
+    source: fitted
+    what: size of the rise near empty
+    range_95:
+    - 5.36
+    - 12.97
+  soc_b:
+    value: 0.058869
+    unit: '-'
+    source: fitted
+    what: how far up from empty the rise reaches (SOC)
+    range_95:
+    - 0.05055
+    - 0.06856
+  Rd_25C:
+    value: 0.021682
+    unit: Ohm
+    source: fitted
+    what: resistance of the slow (diffusion) branch
+    range_95:
+    - 0.01844
+    - 0.02549
+  tau_d:
+    value: 41.984
+    unit: s
+    source: fitted
+    what: time constant of the slow branch
+    range_95:
+    - 33.94
+    - 51.93
+  capacity_Ah:
+    value: 2.995
+    unit: Ah
+    source: data
+    what: 'capacity: the slow discharge''s charge'
+  V_min:
+    value: 2.4995
+    unit: V
+    source: data
+    what: 'discharge cut-off: where the slow discharge stopped'
+  V_max:
+    value: 4.2
+    unit: V
+    source: data
+    what: 'charge limit: the highest voltage in the tests'
+  Ea_R0:
+    value: 0.0
+    unit: J/mol
+    source: default
+    what: 'temperature behaviour (Ea_R0): the library NCR18650PF''s, not fitted'
+    note: fitted from tests at several temperatures in v0.6.2
+  Ea_I0:
+    value: 45200.0
+    unit: J/mol
+    source: default
+    what: 'temperature behaviour (Ea_I0): the library NCR18650PF''s, not fitted'
+    note: fitted from tests at several temperatures in v0.6.2
+  Ea_Rd:
+    value: 26800.0
+    unit: J/mol
+    source: default
+    what: 'temperature behaviour (Ea_Rd): the library NCR18650PF''s, not fitted'
+    note: fitted from tests at several temperatures in v0.6.2
+  Ea_soc:
+    value: 20700.0
+    unit: J/mol
+    source: default
+    what: 'temperature behaviour (Ea_soc): the library NCR18650PF''s, not fitted'
+    note: fitted from tests at several temperatures in v0.6.2
+capacity:
+  measured_Ah: 2.995
+  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (10.0 mV: 0.145 A x 69.0 mOhm, the fitted model''s
+    steady resistance, rising near empty as the model''s does)'
+  rated_Ah: 2.9
+  measured_vs_rated: +3.3%
+open_circuit_voltage:
+  soc:
+  - 0.0
+  - 0.01
+  - 0.02
+  - 0.03
+  - 0.04
+  - 0.05
+  - 0.06
+  - 0.07
+  - 0.08
+  - 0.09
+  - 0.1
+  - 0.11
+  - 0.12
+  - 0.13
+  - 0.14
+  - 0.15
+  - 0.16
+  - 0.17
+  - 0.18
+  - 0.19
+  - 0.2
+  - 0.21
+  - 0.22
+  - 0.23
+  - 0.24
+  - 0.25
+  - 0.26
+  - 0.27
+  - 0.28
+  - 0.29
+  - 0.3
+  - 0.31
+  - 0.32
+  - 0.33
+  - 0.34
+  - 0.35
+  - 0.36
+  - 0.37
+  - 0.38
+  - 0.39
+  - 0.4
+  - 0.41
+  - 0.42
+  - 0.43
+  - 0.44
+  - 0.45
+  - 0.46
+  - 0.47
+  - 0.48
+  - 0.49
+  - 0.5
+  - 0.51
+  - 0.52
+  - 0.53
+  - 0.54
+  - 0.55
+  - 0.56
+  - 0.57
+  - 0.58
+  - 0.59
+  - 0.6
+  - 0.61
+  - 0.62
+  - 0.63
+  - 0.64
+  - 0.65
+  - 0.66
+  - 0.67
+  - 0.68
+  - 0.69
+  - 0.7
+  - 0.71
+  - 0.72
+  - 0.73
+  - 0.74
+  - 0.75
+  - 0.76
+  - 0.77
+  - 0.78
+  - 0.79
+  - 0.8
+  - 0.81
+  - 0.82
+  - 0.83
+  - 0.84
+  - 0.85
+  - 0.86
+  - 0.87
+  - 0.88
+  - 0.89
+  - 0.9
+  - 0.91
+  - 0.92
+  - 0.93
+  - 0.94
+  - 0.95
+  - 0.96
+  - 0.97
+  - 0.98
+  - 0.99
+  - 1.0
+  V:
+  - 2.6118
+  - 3.0351
+  - 3.1572
+  - 3.2335
+  - 3.282
+  - 3.3068
+  - 3.3215
+  - 3.3317
+  - 3.3403
+  - 3.3486
+  - 3.3571
+  - 3.3673
+  - 3.3797
+  - 3.3934
+  - 3.4062
+  - 3.4189
+  - 3.4314
+  - 3.443
+  - 3.4535
+  - 3.4634
+  - 3.4736
+  - 3.4835
+  - 3.4937
+  - 3.5033
+  - 3.5122
+  - 3.5201
+  - 3.5279
+  - 3.5351
+  - 3.5423
+  - 3.5484
+  - 3.5549
+  - 3.5611
+  - 3.5668
+  - 3.5726
+  - 3.5782
+  - 3.5835
+  - 3.5892
+  - 3.5949
+  - 3.6003
+  - 3.6057
+  - 3.6116
+  - 3.6168
+  - 3.6226
+  - 3.6286
+  - 3.6346
+  - 3.6406
+  - 3.6473
+  - 3.654
+  - 3.6607
+  - 3.6675
+  - 3.6754
+  - 3.6833
+  - 3.692
+  - 3.7008
+  - 3.711
+  - 3.7218
+  - 3.7339
+  - 3.746
+  - 3.758
+  - 3.769
+  - 3.7796
+  - 3.7895
+  - 3.7994
+  - 3.8086
+  - 3.8179
+  - 3.8272
+  - 3.8358
+  - 3.8444
+  - 3.853
+  - 3.8616
+  - 3.8696
+  - 3.8776
+  - 3.8856
+  - 3.8942
+  - 3.9021
+  - 3.9101
+  - 3.9187
+  - 3.9274
+  - 3.9362
+  - 3.9459
+  - 3.9558
+  - 3.9657
+  - 3.9763
+  - 3.9875
+  - 3.9984
+  - 4.0099
+  - 4.0213
+  - 4.0322
+  - 4.0429
+  - 4.0537
+  - 4.0632
+  - 4.0725
+  - 4.0805
+  - 4.0884
+  - 4.0958
+  - 4.1038
+  - 4.113
+  - 4.1236
+  - 4.1368
+  - 4.1534
+  - 4.1803
+  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (10.0 mV: 0.145 A x 69.0 mOhm, the fitted model''s
+    steady resistance, rising near empty as the model''s does)'
+valid_for:
+  temperature_C:
+  - 25.0
+  - 27.9
+  soc:
+  - 0.074
+  - 0.998
+  discharge_C:
+  - 0.48
+  - 5.81
+  charge_C: null
+  pulse_s: 54.1
+  note: 'the tests covered these; outside them the model is extrapolating. One temperature only: the temperature
+    behaviour is not fitted.'
+identifiability:
+  correlated_pairs:
+  - values:
+    - soc_a
+    - soc_b
+    correlation: -0.95
+    meaning: 'these trade off: the tests pin a combination'
+  about_the_ranges: '95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show
+    how far the tests disagree, not a guarantee; a value the tests barely touch is flagged'
+errors:
+  fitted_on:
+    pulses at 20-95% SOC:
+      rmse_mV: 8.87
+      max_mV: 82.25
+      samples: 22083
+      parts: 50
+    pulses below 20% SOC:
+      rmse_mV: 27.45
+      max_mV: 376.71
+      samples: 5230
+      parts: 12
+    steps at 20-95% SOC:
+      rmse_mV: 7.57
+      max_mV: 17.25
+      samples: 132
+      parts: 19
+    steps below 20% SOC:
+      rmse_mV: 42.28
+      max_mV: 88.01
+      samples: 31
+      parts: 5
+  held_out:
+  - file: 03-21-17_00.29 25degC_UDDS_Pan18650PF_first20min.mat
+    rmse_mV: 5.31
+    max_mV: 58.82
+    soc_start: 1.0
+    anchored: '100.0% from the first voltage: the test has no rest, so this is not a settled open-circuit voltage
+      and may be off by a few percent'
+    compare: library Panasonic NCR18650PF
+    compare_rmse_mV: 10.11
+    compare_max_mV: 65.58
+state_of_charge_anchors:
+  pulses: 99.7% from the voltage at the end of the settled 20-minute rest at 0.34 h
+  steps: 95.0% from the voltage at the end of the settled 25-minute rest at 0.52 h
+data_warnings:
+- 'the slow charge and discharge differ by about 91 mV beyond their drops (hysteresis): the curve follows the discharge,
+  as the library''s does'
+- '05-08-17_13.26 C20 OCV Test_C20_25dC.mat: 2 rows with a repeated time were dropped'
+- '05-08-17_13.26 C20 OCV Test_C20_25dC.mat: 1 gap in the record (longest 13 h 36 min at 40 h 47 min): no current
+  is logged across them'
+- '05-08-17_13.26 C20 OCV Test_C20_25dC.mat: median time step 60 s is coarse for pulse tests (1 s or finer is usual)'
+- '03-11-17_08.47 25degC_5Pulse_HPPC_Pan18650PF.mat: 153 rows with a repeated time were dropped'
+- '03-11-17_08.47 25degC_5Pulse_HPPC_Pan18650PF.mat: 13 gaps in the record (longest 1 h 02 min at 3 h 16 min): no
+  current is logged across them'
+- '03-11-17_08.47 25degC_5Pulse_HPPC_Pan18650PF.mat: the tester''s charge counter shows 1.456 Ah moved during 13
+  of those gaps, current the record does not log: it is counted, as unlogged parts'
+- '03-11-17_10.10 3390_dis5_10p.mat: 21 rows with a repeated time were dropped'
+- '03-11-17_10.10 3390_dis5_10p.mat: 26 gaps in the record (longest 3 h 30 min at 25 h 47 min): no current is logged
+  across them'
+- '03-11-17_10.10 3390_dis5_10p.mat: the tester''s charge counter shows 4.388 Ah moved during 26 of those gaps,
+  current the record does not log: it is counted, as unlogged parts'
+- '03-11-17_10.10 3390_dis5_10p.mat: median time step 60 s is coarse for pulse tests (1 s or finer is usual)'
+provenance:
+  packtherm: 0.6.1
+  fitted_at: '2026-11-16T13:38:31+00:00'
+  settings:
+    pulse window: 5 s before each pulse to 40 s after
+    kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all
+    temperature behaviour: the library NCR18650PF's (not fitted at one temperature)
+    uncertainty: '95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show how
+      far the tests disagree, not a guarantee; a value the tests barely touch is flagged'
+  inputs:
+  - role: slow
+    file: 05-08-17_13.26 C20 OCV Test_C20_25dC.mat
+    sha256: c52c1941bc6ef8897578efea5316521297a05d5f6c042d07e66003bd5427f7fa
+    samples: 2451
+    duration_h: 54.4
+    conversions:
+    - 'current sign flipped to + = discharge (the voltage agreed at 6 of 6 checks: 2 current starting, 2 current
+      stopping, 2 steady current)'
+  - role: pulses
+    file: 03-11-17_08.47 25degC_5Pulse_HPPC_Pan18650PF.mat
+    sha256: 21f5d94812f5059bc484ce44cccf1485c3b0dc02e36f36d80f9d24173ac1a8e6
+    samples: 102647
+    duration_h: 27.11
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 100% of 134 jumps)
+  - role: steps
+    file: 03-11-17_10.10 3390_dis5_10p.mat
+    sha256: 357628c2d008afcfaf705699d8436567531a2877e0f253b1f54cb5206554bd94
+    samples: 490
+    duration_h: 45.46
+    conversions:
+    - 'current sign flipped to + = discharge (the voltage agreed at 70 of 71 checks: 25 current starting, 26 current
+      stopping, 20 steady current)'
+  - role: checks
+    file: 03-21-17_00.29 25degC_UDDS_Pan18650PF_first20min.mat
+    sha256: 7dae451379805963bb73e40a20c004affa3128d4898af0b7300b9fb1b0f50c19
+    samples: 12001
+    duration_h: 0.3333
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 97% of 773 jumps)
+  dataset:
+    citation: P. Kollmeyer, Panasonic 18650PF Li-ion Battery Data, Mendeley Data v1 (2018), doi:10.17632/wykht8y7tg.1
+    licence: CC BY 4.0

@@ -8,7 +8,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from packtherm.testdata import TestDataError, current_sign, find_columns, label_segments, load_test_data
+from packtherm.testdata import (
+    TestDataError,
+    current_sign,
+    find_columns,
+    interval_charge_Ah,
+    label_segments,
+    load_test_data,
+)
 
 R0, R1, TAU = 0.03, 0.015, 20.0  # a simple cell for synthetic records
 CAP = 3.0  # Ah
@@ -295,6 +302,27 @@ def test_real_hppc_test():
     assert len(unlogged) == 13 and all(s.charge_Ah > 0.03 for s in unlogged)
     assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("5Pulse_HPPC"), rel=0.01)
     assert any("counter shows" in w for w in rec.warnings)
+
+
+def test_real_sparse_steps():
+    # Logged every 1 min under load and every 5 min in rests: each step ends
+    # between two samples. Averaging the two ends would count about 0.036 Ah
+    # that never moved at every step; the tester's counter knows when it stopped.
+    rec = real("dis5_10p")
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("dis5_10p"), rel=0.01)
+    assert not any("disagree" in w for w in rec.warnings)
+    kinds = [s.kind for s in rec.segments()]
+    assert kinds.count("rest") == 26 and kinds.count("unlogged") == 26
+
+
+def test_counter_across_a_step_between_samples():
+    # A 1 A step that stops just after t = 60 s, logged next at 300 s: the counter says what moved.
+    t = np.array([0.0, 30.0, 60.0, 300.0, 600.0])
+    current = np.array([1.0, 1.0, 1.0, 0.0, 0.0])
+    counter = np.array([0.0, 30.0, 60.0, 62.0, 62.0]) / 3600
+    dq = interval_charge_Ah(t, current, counter)
+    assert dq.sum() * 3600 == pytest.approx(62.0)
+    assert interval_charge_Ah(t, current).sum() * 3600 == pytest.approx(180.0)  # without one: the trapezium
 
 
 def test_real_c20_test():
