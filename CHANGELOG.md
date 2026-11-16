@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.6.1
+
+Fitting a cell model at one temperature, the second v0.6 mini update.
+
+- **New: `packtherm fit` and `packtherm.fitting`.** The command fits PackTherm's circuit model (`packtherm.ecm.ECM`) to a slow discharge, a pulse test and, optionally, steady steps with rests, all at one temperature.
+  - **Through time:** each pulse, and each rest after a step, is replayed through the same simulation PackTherm runs (a test checks they agree to 1e-9 V) and fitted on how the voltage changes. Pulses that follow each other within a minute are replayed from the last long rest before them, so the slow recovery from one pulse is not mistaken for the next one's response.
+  - **The open-circuit voltage and capacity** come from the slow discharge, with the cell's own drop added back from the fitted model. **The state of charge** is anchored at a settled rest and carried by the charge counted.
+  - **Held-out tests** (`--check`) are predicted afterwards, never fitted to, alongside a library cell (`--compare`).
+  - The fitting code treats a model as an interface, so a generic circuit with a chosen number of branches can be added later and share the rest.
+- **New: the fitted cell file** (YAML) and **an HTML report** beside it:
+  - each value with its source (`fitted`, `data`, `default` or `not fitted`), a 95% range and flags;
+  - pairs of values that trade off;
+  - where the model is valid (cell temperature, state of charge and C-rates the tests covered);
+  - its errors on each kind of part fitted and on each held-out test;
+  - measured against rated capacity;
+  - every data warning;
+  - provenance: each input's SHA-256, the dataset's citation and licence, the PackTherm version, the date and the settings.
+- **Studies refuse a fitted cell file for now.** Fitted at one temperature, its temperature behaviour is borrowed from the library NCR18650PF, which would make thermal results look more certain than they are. Every route into a study (study files, `get_cell`, the API, the web app's engine) gives the same message; v0.6.2 fits that behaviour from tests at several temperatures.
+- **Honest ranges.** The usual least-squares ranges treat every sample as independent. On noise-free test data with known answers, every true value fell outside them, because what is left after a fit like this is the model's misfit, shared across a whole pulse. The ranges now count each pulse and step as one piece of evidence (cluster-robust), and 7 of 8 true values lie inside them.
+- **Checked against known answers**: tests made by a cell with known values come back within 1–5% (`R0` within 0.1%), and a drive cycle the fit never saw is predicted to 0.2 mV RMS.
+- **Checked on real data in every CI run.** The Panasonic NCR18650PF at 25 °C (Kollmeyer, CC BY 4.0) gives:
+  - 2.995 Ah measured (rated 2.9 Ah);
+  - a UDDS drive cycle the fit never saw predicted to 5.3 mV RMS, against 10.1 mV for the library cell;
+  - pulses at 20–95% state of charge to 8.9 mV, and rests after steps to 7.6 mV.
+  - One more file from the dataset is in `tests/data` (16 KB, unchanged): the steps and rests that complete the pulse test.
+- **Fixed: charge across a step that falls between two samples.** Where logging is sparse (every 5 min in a rest), averaging the current at the two ends counted charge that never moved: 0.036 Ah at every step of the Panasonic steps file, and a false "counter disagrees by 20%" warning. Where the current changes between two samples, the tester's charge counter is used.
+- **Docs:** [docs/FITTING.md](docs/FITTING.md): the tests it needs, the method, the file, the results and the known limits. The model's two branches cannot follow every time scale a cell responds on. This is now a backlog item, and the case for the planned generic circuit.
+
 ## 0.6.0
 
 Cell test data, the first v0.6 mini update. v0.6 fits a cell model to measured test data; this step reads and checks the data.

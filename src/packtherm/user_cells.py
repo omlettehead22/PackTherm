@@ -125,6 +125,10 @@ def validate_cell(doc: Any, where: str = "cell.") -> tuple[dict, list[str]]:
     errors: list[str] = []
     if not isinstance(doc, dict):
         raise CellError(f"{where.rstrip('.')}: a cell definition must be a mapping of keys to values")
+    if "packtherm_fitted_cell" in doc:
+        from .fitting.cellfile import refusal
+
+        raise CellError("Fitted cell file, not usable in studies yet:\n  " + refusal(doc, where))
     spec = _check_section(doc, CELL_KEYS, where, errors)
     for k in REQUIRED:
         if k not in doc:

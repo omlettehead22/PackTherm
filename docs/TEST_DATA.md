@@ -62,7 +62,7 @@ The summary warns about:
 - rows dropped for missing time, current or voltage;
 - repeated times, and time running backwards (a logger restart): rows not later than an earlier row are dropped;
 - **gaps**, meaning steps over 10 times the usual step and at least 60 s. No current is logged across a gap, but the cell is not necessarily resting: some testers pause logging during long steps. The Panasonic pulse tests leave out every discharge between pulse levels. If the file has a charge counter, the charge that moved across each gap is counted, as an `unlogged` part. If it has none, a gap across which the voltage moved by more than 20 mV is flagged, because current probably flowed there that nothing records;
-- a charge counter that disagrees with the logged current by more than 10% (it is then used only across gaps);
+- a charge counter that disagrees with the logged current by more than 10% (it is then used only across gaps, and across steps where the current changes between two samples);
 - a coarse time step (over 10 s), too coarse for pulse tests;
 - a median voltage that isn't a single cell's (a module or pack?);
 - cell temperatures that can't be °C;

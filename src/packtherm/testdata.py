@@ -244,14 +244,30 @@ def gap_threshold(t: np.ndarray) -> float:
 def interval_charge_Ah(t: np.ndarray, current: np.ndarray, counter: np.ndarray | None = None) -> np.ndarray:
     """Charge discharged over each sample interval (Ah).
 
-    Across a gap the current is unknown: the tester's charge counter, if the
-    file has one, says what moved; without one, nothing is counted.
+    Within the logged record, the trapezium rule. Two kinds of interval it
+    cannot see into, and where the tester's charge counter, if the file has
+    one, says what moved instead:
+
+    - a gap, where nothing is logged (without a counter, nothing is counted);
+    - a step, where the current changes between two samples: when in the
+      interval it changed is unknown, and with sparse logging (a sample every
+      few minutes in a rest) averaging the two ends can be far off.
     """
     dt = np.diff(t)
     dq = 0.5 * (current[1:] + current[:-1]) * dt / 3600.0
     gap = dt > gap_threshold(t)
-    dq[gap] = np.diff(counter)[gap] if counter is not None else 0.0
+    if counter is None:
+        dq[gap] = 0.0
+        return dq
+    dc = np.diff(counter)
+    use = gap | _steps(current)
+    dq[use] = dc[use]
     return dq
+
+
+def _steps(current: np.ndarray) -> np.ndarray:
+    """Intervals across which the current changes by more than noise."""
+    return np.abs(np.diff(current)) > _threshold(current)
 
 
 UNLOGGED_AH = 1e-3  # a gap across which the counter moved more than this hid some current
@@ -652,6 +668,7 @@ def _counter(arrays: dict, t: np.ndarray, I: np.ndarray, gaps: np.ndarray, warni
     dt = np.diff(t)
     logged = np.ones(dt.size, bool)
     logged[gaps] = False
+    logged[_steps(I)] = False  # the current's own charge is unclear across a step; compare where it is clear
     dq = 0.5 * (I[1:] + I[:-1]) * dt / 3600.0
     dc = np.diff(c)
     q_logged, c_logged = float(np.sum(np.abs(dq[logged]))), float(np.sum(np.abs(dc[logged])))
@@ -663,7 +680,7 @@ def _counter(arrays: dict, t: np.ndarray, I: np.ndarray, gaps: np.ndarray, warni
     if abs(ratio - 1) > 0.1:
         warnings.append(
             f"the charge counter and the logged current disagree by {100 * (ratio - 1):+.0f}% over the logged parts; "
-            "the counter is used only across gaps"
+            "the counter is used only across gaps and steps"
         )
     return c - c[0]
 
