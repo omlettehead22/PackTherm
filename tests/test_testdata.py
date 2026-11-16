@@ -249,15 +249,115 @@ def test_cli(tmp_path, capsys):
     assert e.value.code == 2 and "file not found" in capsys.readouterr().err
 
 
-PF = os.environ.get("PACKTHERM_PF_DATA")  # the Panasonic NCR18650PF dataset, if present
+# -- real files (tests/data/panasonic_18650pf, CC BY 4.0) ----------------------------------------------
+# Each check is a fact about the file that does not depend on this reader: the
+# test's design (pulse C-rates), or the tester's own amp-hour counter, which the
+# file records alongside the current.
+
+REAL = Path(__file__).parent / "data" / "panasonic_18650pf"
+CAP_PF = 2.9  # Ah
+
+
+def real(name: str):
+    return load_test_data(next(REAL.glob(f"*{name}*")), capacity_Ah=CAP_PF)
+
+
+def counter_Ah_of(name: str) -> float:
+    """Charge discharged by the tester's own counter, from the start to the end of the file."""
+    import scipy.io as sio
+
+    m = sio.loadmat(next(REAL.glob(f"*{name}*")), squeeze_me=True, struct_as_record=False)["meas"]
+    ah = -np.atleast_1d(m.Ah).astype(float)  # the counter falls as the cell discharges
+    return float(ah[-1] - ah[0])
+
+
+def test_real_hppc_test():
+    rec = real("5Pulse_HPPC")
+    pulses = [s for s in rec.segments() if s.kind == "pulse"]
+    # Kollmeyer's design: 10 s pulses at 0.5, 1, 2, 4 and 6C of 2.9 Ah. The
+    # highest are left out at low charge, as in the test itself.
+    rates = np.round([p.current_A / CAP_PF for p in pulses], 1)
+    assert {r: int((rates == r).sum()) for r in (0.5, 1.0, 2.0, 4.0, 6.0)} == {
+        0.5: 14,
+        1.0: 14,
+        2.0: 14,
+        4.0: 13,
+        6.0: 12,
+    }
+    # Each pulse lasts 10 s, except three near empty that stop at the tester's 2.5 V cut-off.
+    short = [p for p in pulses if p.duration_s < 9.5]
+    assert all(9.5 <= p.duration_s < 11.5 for p in pulses if p not in short)
+    assert len(short) == 3 and all(rec.voltage_V[p.start : p.stop].min() < 2.51 for p in short)
+    assert any("flipped" in c for c in rec.conversions)  # recorded with discharge negative
+    # The discharges between pulse levels happen while logging pauses: the
+    # tester's counter shows them, and they are counted as unlogged parts.
+    unlogged = [s for s in rec.segments() if s.kind == "unlogged"]
+    assert len(unlogged) == 13 and all(s.charge_Ah > 0.03 for s in unlogged)
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("5Pulse_HPPC"), rel=0.01)
+    assert any("counter shows" in w for w in rec.warnings)
+
+
+def test_real_c20_test():
+    rec = real("C20 OCV")
+    steady = [s for s in rec.segments() if s.kind == "constant"]
+    assert [round(s.current_A, 3) for s in steady] == [0.145, -0.145]  # C/20 = 2.9 / 20 A
+    assert steady[0].charge_Ah == pytest.approx(3.0, abs=0.05)  # the full discharge
+    assert steady[0].duration_s / 3600 == pytest.approx(20.7, abs=0.1)
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("C20 OCV"), rel=0.01)
+
+
+def test_real_discharge_logged_from_partway():
+    rec = real("Dis1C_1")
+    (cc,) = [s for s in rec.segments() if s.kind != "rest"]
+    assert cc.kind == "constant" and cc.current_A == pytest.approx(CAP_PF, rel=0.01)  # 1C
+    # No step from rest at the start: the sign comes from the drift and the recovery.
+    assert any("flipped" in c and "steady current" in c for c in rec.conversions)
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("Dis1C_1"), rel=0.01)
+
+
+def test_real_cc_cv_charge():
+    rec = real("Charge2")
+    (cc,) = [s for s in rec.segments() if s.kind != "rest"]
+    assert cc.kind == "cc-cv" and cc.charge_Ah < 0
+    # Logged once a minute, so the taper is coarse: within 2 % of the tester.
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("Charge2"), rel=0.02)
+
+
+def test_real_drive_cycle():
+    rec = real("UDDS")
+    assert [s.kind for s in rec.segments() if s.kind != "rest"] == ["dynamic"]
+    assert any("flipped" in c and "jumps" in c for c in rec.conversions)
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("UDDS"), rel=0.01)
+    assert rec.temperature_C is not None and rec.ambient_C is not None
+
+
+def test_real_single_sample_file():
+    with pytest.raises(TestDataError, match="single sample"):
+        load_test_data(next(REAL.glob("*TS002973*")))
+
+
+PF = os.environ.get("PACKTHERM_PF_DATA")  # the whole Panasonic dataset (371 MB), if present
 
 
 @pytest.mark.skipif(not PF, reason="set PACKTHERM_PF_DATA to the Panasonic 18650PF dataset folder")
-def test_panasonic_dataset():
-    root = Path(PF)
-    hppc = load_test_data(next(root.rglob("*25degC_5Pulse_HPPC*.mat")), capacity_Ah=2.9)
-    assert [s.kind for s in hppc.segments()].count("pulse") == 67
-    assert any("flipped" in c for c in hppc.conversions)
-    udds = load_test_data(next(root.rglob("*25degC_UDDS_Pan18650PF.mat")))
-    assert [s.kind for s in udds.segments()].count("dynamic") == 1
-    assert udds.charge_Ah()[-1] > 2.0  # a full discharge, read as positive
+def test_whole_panasonic_dataset():
+    """Every file: read, or reported; and those whose names say what they are, the right way round."""
+    read = stubs = 0
+    for f in sorted(Path(PF).rglob("*.mat")):
+        try:
+            rec = load_test_data(f)
+        except TestDataError as e:
+            assert "single sample" in str(e)
+            stubs += 1
+            continue
+        read += 1
+        name = f.name
+        if any("could not tell" in w for w in rec.warnings):
+            continue
+        q = rec.charge_Ah()[-1]
+        if "Charge" in name:
+            assert q < 0.01, name
+        elif ("Dis" in name and "Pause" not in name) or any(k in name for k in ("US06", "HWFET", "UDDS", "LA92")):
+            moved = sum(s.charge_Ah for s in rec.segments() if s.kind in ("dynamic", "pulse", "constant", "unlogged"))
+            assert moved > 0, name
+    assert (read, stubs) == (191, 7)

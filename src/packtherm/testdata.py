@@ -69,9 +69,15 @@ COLUMN_PATTERNS: dict[str, tuple[str, ...]] = {
         r"^t[ _]?cell",
     ),
     "ambient": (r"^chamber", r"^ambient", r"^t[ _]?amb", r"^env"),
+    # The tester's own charge counter: it keeps counting while logging pauses.
+    "charge": (r"^ah\b", r"^amp[ _-]?hours?", r"^capacity", r"^\(q-qo\)", r"^q[ _-]?charge", r"^cap\b"),
+    "charge_in": (r"^charge[ _]?capacity", r"^chg[ _]?cap"),  # Arbin, Maccor: separate counters
+    "charge_out": (r"^discharge[ _]?capacity", r"^dchg[ _]?cap"),
 }
 
-_UNIT = re.compile(r"[\(\[/]\s*(ms|s|sec|h|hr|min|ma|a|mv|v|degc|°c|c|k)\s*[\)\]]?\s*(?:_\d+)?$", re.IGNORECASE)
+_UNIT = re.compile(
+    r"[\(\[/]\s*(ms|s|sec|h|hr|min|mah|ah|ma|a|mv|v|degc|°c|c|k|ma\.h)\s*[\)\]]?\s*(?:_\d+)?$", re.IGNORECASE
+)
 
 PULSE_MAX_S = 60.0  # a steady current this short is a pulse
 SECTION_REST_S = 300.0  # rests this long separate the parts of a test
@@ -86,7 +92,7 @@ class TestDataError(ValueError):
 
 @dataclass(frozen=True)
 class Segment:
-    kind: str  # rest, pulse, constant, cc-cv, dynamic
+    kind: str  # rest, pulse, constant, cc-cv, dynamic, unlogged
     start: int  # index of the first sample
     stop: int  # index after the last sample
     t0: float  # s
@@ -110,6 +116,9 @@ class TestRecord:
     voltage_V: np.ndarray
     temperature_C: np.ndarray | None = None
     ambient_C: np.ndarray | None = None
+    # The tester's own count of charge discharged (Ah, + = discharge), if the file has one. It keeps
+    # counting when logging pauses, so it fills gaps in the record (see charge_Ah).
+    counter_Ah: np.ndarray | None = None
     source: str = ""
     columns: dict[str, str] = field(default_factory=dict)  # role -> column it came from
     conversions: list[str] = field(default_factory=list)  # what was changed on reading, in words
@@ -125,10 +134,10 @@ class TestRecord:
 
     def charge_Ah(self) -> np.ndarray:
         """Cumulative charge discharged since the start (Ah), by the trapezium rule."""
-        return np.concatenate([[0.0], np.cumsum(interval_charge_Ah(self.t, self.current_A))])
+        return np.concatenate([[0.0], np.cumsum(interval_charge_Ah(self.t, self.current_A, self.counter_Ah))])
 
     def segments(self) -> list[Segment]:
-        return label_segments(self.t, self.current_A, self.voltage_V)
+        return label_segments(self.t, self.current_A, self.voltage_V, self.counter_Ah)
 
     def summary(self) -> str:
         segs = self.segments()
@@ -232,12 +241,20 @@ def gap_threshold(t: np.ndarray) -> float:
     return max(10.0 * float(np.median(np.diff(t))), 60.0) if t.size > 1 else math.inf
 
 
-def interval_charge_Ah(t: np.ndarray, current: np.ndarray) -> np.ndarray:
-    """Charge discharged over each sample interval (Ah); nothing across a gap, where the cell is taken as resting."""
+def interval_charge_Ah(t: np.ndarray, current: np.ndarray, counter: np.ndarray | None = None) -> np.ndarray:
+    """Charge discharged over each sample interval (Ah).
+
+    Across a gap the current is unknown: the tester's charge counter, if the
+    file has one, says what moved; without one, nothing is counted.
+    """
     dt = np.diff(t)
     dq = 0.5 * (current[1:] + current[:-1]) * dt / 3600.0
-    dq[dt > gap_threshold(t)] = 0.0
+    gap = dt > gap_threshold(t)
+    dq[gap] = np.diff(counter)[gap] if counter is not None else 0.0
     return dq
+
+
+UNLOGGED_AH = 1e-3  # a gap across which the counter moved more than this hid some current
 
 
 # -- labelling ---------------------------------------------------------------
@@ -249,8 +266,65 @@ def _threshold(current: np.ndarray) -> float:
     return max(0.005, 0.005 * peak)
 
 
-def label_segments(t: np.ndarray, current: np.ndarray, voltage: np.ndarray) -> list[Segment]:
-    """Split a record into rests, pulses, constant-current steps, CC-CV charges and dynamic stretches."""
+def label_segments(
+    t: np.ndarray, current: np.ndarray, voltage: np.ndarray, counter: np.ndarray | None = None
+) -> list[Segment]:
+    """Split a record into rests, pulses, constant-current steps, CC-CV charges and dynamic stretches.
+
+    With the tester's charge counter, a gap across which charge moved is an
+    ``unlogged`` part of its own: its charge is known, but not how it flowed.
+    """
+    segs = _label(t, current, voltage, counter)
+    if counter is None or t.size < 2:
+        return segs
+    dt = np.diff(t)
+    hidden = np.flatnonzero((dt > gap_threshold(t)) & (np.abs(np.diff(counter)) > UNLOGGED_AH))
+    if hidden.size == 0:
+        return segs
+    dq = interval_charge_Ah(t, current, counter)
+    out: list[Segment] = []
+    for sg in segs:
+        # A segment owns the intervals from each of its samples to the next one.
+        inside = [int(g) for g in hidden if sg.start <= g < sg.stop]
+        if not inside:
+            out.append(sg)
+            continue
+        a = sg.start
+        for g in inside:
+            if g + 1 > a:  # the part before the gap: samples a..g, intervals a..g-1
+                out.append(
+                    Segment(
+                        sg.kind,
+                        a,
+                        g + 1,
+                        float(t[a]),
+                        float(t[g]),
+                        float(np.mean(current[a : g + 1])),
+                        float(np.sum(dq[a:g])),
+                    )
+                )
+            out.append(
+                Segment(
+                    "unlogged", g + 1, g + 1, float(t[g]), float(t[g + 1]), float(dq[g] * 3600.0 / dt[g]), float(dq[g])
+                )
+            )
+            a = g + 1
+        if a < sg.stop:  # the part after the last gap keeps the segment's end
+            out.append(
+                Segment(
+                    sg.kind,
+                    a,
+                    sg.stop,
+                    float(t[a]),
+                    sg.t1,
+                    float(np.mean(current[a : sg.stop])),
+                    float(np.sum(dq[a : sg.stop])),
+                )
+            )
+    return out
+
+
+def _label(t: np.ndarray, current: np.ndarray, voltage: np.ndarray, counter: np.ndarray | None) -> list[Segment]:
     n = t.size
     if n == 0:
         return []
@@ -261,7 +335,7 @@ def label_segments(t: np.ndarray, current: np.ndarray, voltage: np.ndarray) -> l
     starts = np.concatenate([[0], edges])
     stops = np.concatenate([edges, [n]])
     # Charge per sample interval, assigned to the interval's first sample.
-    dq = np.concatenate([interval_charge_Ah(t, current), [0.0]])
+    dq = np.concatenate([interval_charge_Ah(t, current, counter), [0.0]])
 
     def t_end(stop: int) -> float:
         return float(t[stop]) if stop < n else float(t[-1])
@@ -381,10 +455,14 @@ def find_columns(names: list[str]) -> dict[str, str]:
 
 
 def _scale(role: str, unit: str | None, values: np.ndarray, conversions: list[str], col: str) -> np.ndarray:
+    mah = {"mah": 1e-3, "ma.h": 1e-3}
     factor = {
         "time": {"ms": 1e-3, "min": 60.0, "h": 3600.0, "hr": 3600.0},
         "current": {"ma": 1e-3},
         "voltage": {"mv": 1e-3},
+        "charge": mah,
+        "charge_in": mah,
+        "charge_out": mah,
     }
     f = factor.get(role, {}).get(unit or "")
     if f:
@@ -507,12 +585,30 @@ def _clean(arrays: dict[str, np.ndarray], cols: dict[str, str], conversions: lis
     dt = np.diff(t)
     med = float(np.median(dt))
     gaps = np.flatnonzero(dt > gap_threshold(t))
+    counter = _counter(arrays, t, I, gaps, warnings)
     if gaps.size:
         worst = float(dt[gaps].max())
         warnings.append(
             f"{gaps.size} gap{'s' if gaps.size > 1 else ''} in the record (longest {_hms(worst)} at "
-            f"{_hms(float(t[gaps[np.argmax(dt[gaps])]]))}); a fit treats the cell as resting across them"
+            f"{_hms(float(t[gaps[np.argmax(dt[gaps])]]))}): no current is logged across them"
         )
+        if counter is not None:
+            moved = np.abs(np.diff(counter)[gaps])
+            hidden = moved > UNLOGGED_AH
+            if hidden.any():
+                warnings.append(
+                    f"the tester's charge counter shows {moved[hidden].sum():.3f} Ah moved during {int(hidden.sum())} of "
+                    "those gaps, current the record does not log: it is counted, as unlogged parts"
+                )
+        else:
+            jump = np.abs(V[gaps + 1] - V[gaps])
+            moved = jump > 0.02
+            if moved.any():
+                warnings.append(
+                    f"the voltage changed by up to {jump.max() * 1e3:.0f} mV across {int(moved.sum())} of those gaps: "
+                    "current probably flowed that the record does not log, and there is no charge counter "
+                    "(Ah or capacity column) to count it"
+                )
     if med > 10:
         warnings.append(f"median time step {med:.0f} s is coarse for pulse tests (1 s or finer is usual)")
 
@@ -522,6 +618,7 @@ def _clean(arrays: dict[str, np.ndarray], cols: dict[str, str], conversions: lis
         voltage_V=V,
         temperature_C=arrays.get("temperature"),
         ambient_C=arrays.get("ambient"),
+        counter_Ah=counter,
         source=source,
         columns=dict(cols),
         conversions=conversions,
@@ -534,6 +631,41 @@ def _clean(arrays: dict[str, np.ndarray], cols: dict[str, str], conversions: lis
                 f"cell temperature {T.min():.0f} to {T.max():.0f}: not degC? (kelvin is converted if the column says K)"
             )
     return rec
+
+
+def _counter(arrays: dict, t: np.ndarray, I: np.ndarray, gaps: np.ndarray, warnings: list[str]) -> np.ndarray | None:
+    """The tester's charge counter as Ah discharged since the start (+ = discharge), or None.
+
+    Testers count either way round, and some keep charge and discharge apart
+    (Arbin's Charge_Capacity and Discharge_Capacity): the direction is taken
+    from the logged current, over the intervals that are not gaps.
+    """
+    if "charge" in arrays:
+        c = np.asarray(arrays["charge"], float)
+    elif "charge_out" in arrays and "charge_in" in arrays:
+        c = np.asarray(arrays["charge_out"], float) - np.asarray(arrays["charge_in"], float)
+    else:
+        return None
+    if not np.all(np.isfinite(c)):
+        warnings.append("the charge counter has missing values; it is not used")
+        return None
+    dt = np.diff(t)
+    logged = np.ones(dt.size, bool)
+    logged[gaps] = False
+    dq = 0.5 * (I[1:] + I[:-1]) * dt / 3600.0
+    dc = np.diff(c)
+    q_logged, c_logged = float(np.sum(np.abs(dq[logged]))), float(np.sum(np.abs(dc[logged])))
+    if q_logged < 1e-6 or c_logged < 1e-6:
+        return None  # nothing moved while logged: no way to orient it, and nothing to fill
+    if float(np.dot(dc[logged], dq[logged])) < 0:
+        c = -c
+    ratio = c_logged / q_logged
+    if abs(ratio - 1) > 0.1:
+        warnings.append(
+            f"the charge counter and the logged current disagree by {100 * (ratio - 1):+.0f}% over the logged parts; "
+            "the counter is used only across gaps"
+        )
+    return c - c[0]
 
 
 def current_sign(t: np.ndarray, current: np.ndarray, voltage: np.ndarray) -> tuple[int, str]:
