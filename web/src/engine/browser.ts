@@ -143,6 +143,12 @@ export class BrowserEngine {
     return parse<StudyCheck>(await w.call("check_study", [JSON.stringify(study)]));
   }
 
+  /** What each running worker downloaded (diagnostics: the end-to-end check reports it). */
+  async downloadStats(): Promise<unknown[]> {
+    const pool = [this.main, ...this.extra].filter((w): w is PyWorker => w !== null);
+    return Promise.all(pool.map(async (w) => JSON.parse(await w.call("stats", [])) as unknown));
+  }
+
   /** Run a study across the pool. Rejects with an AbortError if cancelled. */
   async run(study: Study, progress: (p: RunProgress) => void, signal: AbortSignal): Promise<Results> {
     const doc = JSON.stringify(study);

@@ -1,11 +1,12 @@
 // Screen 3: a finished study's results.
 import { useId, useMemo, useState } from "react";
 import { api } from "../api";
-import { failWords, PICK_LABEL, pickNumbers, TradeoffChart } from "../chart/TradeoffChart";
+import { chartSvg, svgToPng } from "../chart/export";
+import { chartLegend, failWords, PICK_LABEL, pickNumbers, TradeoffChart } from "../chart/TradeoffChart";
 import { fileStem, toYaml } from "../study";
 import { studyLink } from "../share";
 import type { Design, Pick, Results as ResultsDoc } from "../types";
-import { designsCsv, download } from "./download";
+import { designsCsv, download, downloadBlob } from "./download";
 
 /** Where the results came from, which decides how they are downloaded and shared. */
 export type ResultsSource =
@@ -35,6 +36,21 @@ export function Results({ source, results, onEdit, onNew }: Props) {
   const s = results.summary;
   const fast = s.mode === "fast";
   const userCell = (s.cell_model ?? "").startsWith("user-defined");
+
+  const saveChart = async (kind: "svg" | "png") => {
+    const svg = document.querySelector<SVGSVGElement>(".chart__plot svg");
+    if (!svg) return;
+    const numbers = pickNumbers(results.designs, results.picks);
+    const text = chartSvg(svg, {
+      title: `${typeof results.study.name === "string" ? results.study.name : s.cell}: trade-off (lower left is better)`,
+      yLabel: labels.energy_axis,
+      legend: chartLegend(results.designs, labels.kinds),
+      key: [...numbers.entries()].map(([i, { n, names }]) => `${n}  ${names.join(" / ")}: ${results.designs[i].design}`),
+    });
+    const stem = `${fileStem(results.study)}_tradeoff`;
+    if (kind === "svg") download(`${stem}.svg`, text, "image/svg+xml");
+    else downloadBlob(`${stem}.png`, await svgToPng(text));
+  };
 
   return (
     <div className="results">
@@ -133,6 +149,12 @@ export function Results({ source, results, onEdit, onNew }: Props) {
                 onClick={() => download(`${fileStem(results.study)}_designs.csv`, designsCsv(results.designs), "text/csv")}
               >
                 Every design (CSV)
+              </button>
+              <button type="button" className="button button--secondary" onClick={() => saveChart("png")}>
+                Chart (PNG)
+              </button>
+              <button type="button" className="button button--secondary" onClick={() => saveChart("svg")}>
+                Chart (SVG)
               </button>
             </>
           )}

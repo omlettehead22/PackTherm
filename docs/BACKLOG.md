@@ -1,6 +1,6 @@
 # Known issues and improvement backlog
 
-Open items as of v0.5.6, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
+Open items as of v0.5.7, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
 
 ## Cell model
 1. **LG M50 circuit is derived, not measured.** It comes from PyBaMM's DFN with the ORegan2022 parameter set and matches that model's heat within 0.94–1.13× ([VALIDATION.md](VALIDATION.md#lg-m50-checked-against-a-physics-model-not-measured)), but no measured M50 temperatures check it. The Warwick M50 core-temperature data (Mendeley bf6fksxpp2) would; it is not reachable from this build. Its cold voltage knee arrives late (cut-off up to 0.75 Ah after the DFN at 0 °C, 1.4C).
@@ -62,3 +62,4 @@ Open items as of v0.5.6, ranked within each group by how much they could change 
 | v0.5.4 | LFP user-defined cells |
 | v0.5.5 | Web app |
 | v0.5.6 | Public site with the in-browser engine; release wheels |
+| v0.5.7 | Fixes from a full audit |

@@ -1,12 +1,24 @@
 # Changelog
 
+## 0.5.7
+
+Fixes from a full audit (every test, the command line, the API's edge cases, the docs' links and the web app's files), the eighth v0.5 mini update.
+
+- **Fixed: a duty the cell cannot deliver no longer passes as a cool design.** A cell with a voltage model (M50, PF) stops at its voltage cut-off, so a current it cannot sustain is cut short, at the extreme to nothing. The M50 at 30C delivered no current, showed a 25 °C peak, and was reported feasible with no warning; at 20C it reached 176 °C. Now each design checks how much of the requested discharge the cell delivered during the event. Below 80% it fails with reason `short` and a warning giving the share. Normal duties deliver 87–100% (the shortfall is the taper near empty). This applies to module studies and the single-cell design study.
+- **Fixed: warnings in results files carry their `WARNING:` prefix**, so the web app shows them as warnings, and a design with two warnings lists them separately.
+- **Fixed: a first visit to the public site downloaded 56 MB, not 28.** Each extra worker downloaded SciPy's 14 MB package again, because the browser's own cache did not keep a file that large; CI now reports each worker's downloads, which showed it. The engine's files are now kept in the page's Cache Storage, shared by every worker and by later visits, so the extra workers download nothing. Measured in CI: 28.3 MB in all, and the first run starts sooner.
+- **New: chart downloads on the public site.** The trade-off chart downloads as SVG or PNG, made in the page, with its title, axis label, legend and pick key drawn in. The server still gives its PNG.
+- **New: `packtherm --version`.** Piping output into a command that stops reading (`| head`) no longer ends with an error.
+- **Example results regenerated** in normal mode with 0.5.7. Every design's numbers are unchanged; the files now carry the chart labels and the cell model.
+- **Docs:** the results format lists every fail reason, and says the `study` block re-runs as a study file.
+
 ## 0.5.6
 
 The public site, the seventh v0.5 mini update: PackTherm runs in the visitor's browser, published free on GitHub Pages.
 
 - **New: an in-browser engine.** The public site ([omlettehead22.github.io/PackTherm](https://omlettehead22.github.io/PackTherm/)) runs PackTherm itself in the page, with Pyodide (Python compiled to WebAssembly). It needs no server, so it costs nothing to host, has no queue or design limits, and nothing a visitor enters leaves their computer.
   - Designs run in parallel Web Workers: one per core, leaving one for the page, at most four.
-  - Measured in CI (headless Chromium, 4 cores): the engine is ready about 6 s into a first visit, after a 28 MB download; the hot road-trip example (39 designs, fast mode) took 41–54 s on 3 workers across runs.
+  - Measured in CI (headless Chromium, 4 cores): the engine is ready about 6 s into a first visit, after a 28 MB download; the hot road-trip example (39 designs, fast mode) took 41–101 s on 3 workers across CI runs (shared machines vary).
   - **Same results as `packtherm run`**: CI runs a study in the browser and compares the results file with a native run. All text and verdicts match; numbers agree to 1e-11 (the browser's NumPy is a different build).
 - **New: `packtherm.browser`**, the Python side of the engine: a study in steps (check, evaluate each design, assemble the results with any worst-case re-checks), with values crossing between workers as exact JSON text. A test drives it as the workers do and gets `packtherm run`'s results exactly. `run_module_study` and the engine share the final step (`module_study_result`).
 - **Sharing without a server:** a link carries the study and fills in the form for whoever opens it; a downloaded results file opens in the app. Results JSON and the designs CSV download from the page.

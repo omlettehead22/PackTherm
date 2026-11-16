@@ -163,9 +163,12 @@ Every combination is simulated (ribbons widen to their minimum gap; duplicates a
 |---|---|
 | `packtherm_results`, `packtherm_version` | Format and software version |
 | `created`, `elapsed_s` | When it ran (UTC) and how long it took |
-| `study` | The study as run, with every default filled in |
+| `study` | The study as run, with every default filled in. It is a valid study file itself: `packtherm run` and the web app re-run it as it is |
 | `summary` | Cell, duty, mode, number of designs, feasible, on the trade-off front, the temperature limit, and the text summary |
 | `picks` | `lightest`, `lowest_energy`, `balanced` (where they exist), each with every column of its design |
-| `notes` | Warnings and notes from the study |
+| `notes` | Warnings (each starting `WARNING:`) and notes (`NOTE:`) from the study |
+| `labels` | The chart's axis titles and the names of the cooling kinds (from 0.5.5) |
 | `assumptions` | Resolution, coolant and air reference points, chiller, wall, resistance margin and pack-level parts |
 | `designs` | Every design, one object per row of the designs CSV |
+
+Each design's `fail_reason` lists what it fails, joined by ` · `: `hot` (peak over the limit), `uneven` (in-cell spread over the limit), `slow` (not ready again in time), `spread` (cell-to-cell over the limit) and `short`, when the cell reached its voltage cut-off and delivered less than 80% of the discharge the duty asks for. A run like that understates the heat, so it fails whatever the cooling, and `rating_warning` says how much was delivered. `rating_warning` also holds datasheet-rating breaches, which are warnings only.
