@@ -54,6 +54,7 @@ COLUMN_PATTERNS: dict[str, tuple[str, ...]] = {
         r"^total[ _]?time",  # Neware "Total Time"
         r"^time\b",  # "Time", "Time (s)", "time/s" (Biologic), Kollmeyer "Time"
         r"^t\b",
+        r"^t_s$",  # "t_s": time in seconds
         r"^elapsed",
         r"^runtime|^run[ _]time",
     ),
@@ -819,6 +820,8 @@ def load_test_data(
     if not p.is_file():
         raise TestDataError(f"file not found: {p}")
     suffix = p.suffix.lower()
+    if suffix in (".gz", ".bz2", ".xz", ".zip") and len(p.suffixes) >= 2:
+        suffix = p.suffixes[-2].lower()  # a compressed CSV: read through its compression
     if suffix == ".mat":
         rec = read_mat(p, columns)
     elif suffix in (".csv", ".tsv", ".txt"):
@@ -826,7 +829,7 @@ def load_test_data(
     elif suffix in (".xlsx", ".xls"):
         raise TestDataError(f"{p.name}: Excel files are not read yet; save the sheet as CSV")
     else:
-        raise TestDataError(f"{p.name}: unknown file type {suffix!r} (CSV, TSV or .mat)")
+        raise TestDataError(f"{p.name}: unknown file type {suffix!r} (CSV, TSV or .mat, or a compressed CSV)")
     rec.capacity_Ah = capacity_Ah
     if capacity_Ah:
         q = rec.charge_Ah()

@@ -54,7 +54,7 @@ from .design import (
     _map,
     select_front,
 )
-from .electrothermal import MIN_DELIVERED, check_limits, delivered_share, shortfall_warning
+from .electrothermal import MIN_DELIVERED, check_fitted_range, check_limits, delivered_share, shortfall_warning
 from .hardware import PackHardware, hardware_mass_per_cell
 from .materials import get_pcm, melt_midpoint_C
 from .module import (
@@ -287,7 +287,7 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         ("spread", not c2c_ok),
         ("short", share < MIN_DELIVERED),
     )
-    rating = [w for w in check_limits(cell, r.load, res) if "rating" in w]
+    rating = [w for w in check_limits(cell, r.load, res) if "rating" in w] + check_fitted_range(cell, r.load, res)
     if share < MIN_DELIVERED:
         rating.insert(0, shortfall_warning(share))
     show_gap = len(study.gaps_mm) > 1 or d.gap_mm not in study.gaps_mm

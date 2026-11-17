@@ -17,6 +17,8 @@ altered. `tests/test_testdata.py` reads them all in every CI run, and `tests/tes
 | `07-22-17_22.44 4020_Dis1C_1.mat` | 1C discharge, logged from partway through |
 | `07-22-17_23.40 4020_Charge2.mat` | CC-CV charge, logged once a minute |
 | `03-11-17_10.10 3390_dis5_10p.mat` | The other half of the HPPC experiment: steady discharges with rests of 25 to 55 min after them, logged every 1 to 5 min (the pulse sets are the gaps) |
+| `03-27-17_09.06 10degC_5Pulse_HPPC_Pan18650PF.mat`, `05-20-17_10.44 0degC_5pulse_HPPC_Pan18650PF.mat`, `06-07-17_12.29 n10degC_5pulse_HPPC_Pan18650PF.mat`, `06-15-17_11.31 n20degC_5Pulse_HPPC_Pan18650PF.mat` | The pulse tests at 10, 0, −10 and −20 °C (fitting across temperatures, v0.6.2) |
+| `03-27-17_10.29 3423_dis5_10p.mat`, `05-20-17_12.07 3619_dis5_10p.mat`, `06-07-17_14.11 3740_dis5_10p.mat` | Their steps and rests at 10, 0 and −10 °C (the −20 °C file is incomplete and is not here) |
 | `03-21-17_00.29 25degC_UDDS_Pan18650PF_first20min.mat` | The first 20 minutes of a UDDS drive cycle |
 | `03-09-17_15.12 3349_TS002973.mat` | A single-sample file, as the dataset has several |
 

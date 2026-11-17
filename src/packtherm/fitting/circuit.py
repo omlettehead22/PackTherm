@@ -39,9 +39,10 @@ from .soc import track_soc
 
 T_REF = 298.15
 # The temperature behaviour used until v0.6.2 fits it: the library NCR18650PF's.
-DEFAULT_TEMPERATURE_LAWS = {"Ea_R0": 0.0, "Ea_I0": 45.2e3, "Ea_Rd": 26.8e3, "Ea_soc": 20.7e3}
+DEFAULT_TEMPERATURE_LAWS = {"Ea_R0": 0.0, "Ea_I0": 45.2e3, "Ea_Rm": 26.8e3, "Ea_Rd": 26.8e3, "Ea_soc": 20.7e3}
 MID_SOC = (0.2, 0.95)  # the kinetics fit on these pulses; the near-empty rise then on all
 PRE_S, POST_S = 5.0, 40.0  # each pulse window: this long before, and after the pulse
+ROUNDS = 3
 MIN_STEP_S = 5 * 60  # a steady step this long has settled by its end
 SETTLED_REST_S = 10 * 60  # a rest this long leaves the cell settled enough to replay a pulse from
 
@@ -54,6 +55,7 @@ class Param:
     hi: float
     start: float
     what: str  # in words, for the cell file and report
+    scale: float = 1.0  # fitted in these units (an energy in kJ/mol), so finite differences are a sensible size
 
 
 class CellModel:
@@ -79,21 +81,36 @@ class CircuitModel(CellModel):
         Param("R0_25C", "Ohm", 1e-4, 0.5, 0.03, "instant (ohmic) resistance"),
         Param("I0_25C", "A", 0.05, 500.0, 5.0, "exchange current of the charge-transfer branch"),
         Param("gamma", "-", 0.1, 30.0, 2.0, "shape of the charge-transfer branch (multiplies 2RT/F)"),
-        Param("tau_ct", "s", 0.2, 60.0, 3.0, "time constant of the charge-transfer branch"),
+        Param("tau_ct", "s", 0.1, 10.0, 2.0, "time constant of the charge-transfer branch (seconds)"),
+        Param("Rm_25C", "Ohm", 1e-5, 0.5, 0.01, "resistance of the middle branch"),
+        Param("tau_m", "s", 5.0, 300.0, 30.0, "time constant of the middle branch (tens of seconds)"),
         Param("Rd_25C", "Ohm", 1e-4, 0.5, 0.02, "resistance of the slow (diffusion) branch"),
-        Param("tau_d", "s", 30.0, 5000.0, 400.0, "time constant of the slow branch"),
+        Param("tau_d", "s", 120.0, 10000.0, 600.0, "time constant of the slow branch (minutes)"),
         Param("soc_a", "-", 0.0, 50.0, 1.0, "size of the rise near empty"),
         Param("soc_b", "-", 0.01, 0.5, 0.08, "how far up from empty the rise reaches (SOC)"),
     )
+    # The temperature laws (Arrhenius, about 25 degC): fitted only from tests at several temperatures.
+    temperature_params = (
+        Param("Ea_R0", "J/mol", -20e3, 120e3, 0.0, "how the instant resistance grows in the cold", 1e3),
+        Param("Ea_I0", "J/mol", -20e3, 150e3, 45e3, "how the charge-transfer branch's exchange current falls in the cold", 1e3),
+        Param("Ea_Rm", "J/mol", -20e3, 150e3, 27e3, "how the middle branch's resistance grows in the cold", 1e3),
+        Param("Ea_Rd", "J/mol", -20e3, 150e3, 27e3, "how the slow branch's resistance grows in the cold", 1e3),
+        Param("Ea_soc", "J/mol", -40e3, 120e3, 20e3, "how the rise near empty grows in the cold", 1e3),
+    )
 
-    def ecm(self, values: dict[str, float], ocv: OCVCurve, V_max: float = 4.2, cv_cutoff_A: float = 0.05) -> ECM:
+    def param(self, name: str) -> Param:
+        return next(q for q in (*self.params, *self.temperature_params) if q.name == name)
+
+    def ecm(
+        self, values: dict[str, float], ocv: OCVCurve, V_max: float = 4.2, cv_cutoff_A: float = 0.05, by_T=()
+    ) -> ECM:
         return ECM(
             ocv_soc=tuple(float(x) for x in ocv.soc),
             ocv_V=tuple(float(x) for x in ocv.V),
             R0_25C=values["R0_25C"],
-            Ea_R0=DEFAULT_TEMPERATURE_LAWS["Ea_R0"],
+            Ea_R0=values.get("Ea_R0", DEFAULT_TEMPERATURE_LAWS["Ea_R0"]),
             I0_25C=values["I0_25C"],
-            Ea_I0=DEFAULT_TEMPERATURE_LAWS["Ea_I0"],
+            Ea_I0=values.get("Ea_I0", DEFAULT_TEMPERATURE_LAWS["Ea_I0"]),
             gamma=values["gamma"],
             tau_ct=values["tau_ct"],
             Rd_25C=values["Rd_25C"],
@@ -103,9 +120,13 @@ class CircuitModel(CellModel):
             cv_cutoff_A=cv_cutoff_A,
             soc_a=values["soc_a"],
             soc_b=values["soc_b"],
-            Ea_soc=DEFAULT_TEMPERATURE_LAWS["Ea_soc"],
-            Ea_Rd=DEFAULT_TEMPERATURE_LAWS["Ea_Rd"],
+            Ea_soc=values.get("Ea_soc", DEFAULT_TEMPERATURE_LAWS["Ea_soc"]),
+            Ea_Rd=values.get("Ea_Rd", DEFAULT_TEMPERATURE_LAWS["Ea_Rd"]),
+            Rm_25C=values.get("Rm_25C", 0.0),
+            tau_m=values.get("tau_m", 30.0),
+            Ea_Rm=values.get("Ea_Rm", DEFAULT_TEMPERATURE_LAWS["Ea_Rm"]),
             sources=("fitted by packtherm.fitting",),
+            by_T=tuple(by_T),
         )
 
     def simulate(self, ecm: ECM, t, current, soc, T_K, current_now=None, steady_start=False) -> np.ndarray:
@@ -124,24 +145,26 @@ class CircuitModel(CellModel):
         """
         now = current if current_now is None else current_now
         out = np.empty(t.size)
-        R0, Rd = ecm.R0, ecm.Rd
-        eta = vd = 0.0
+        R0, Rd, Rm = ecm.R0, ecm.Rd, ecm.Rm
+        eta = vd = vm = 0.0
         if steady_start:
             I0, T0 = float(now[0]), float(T_K[0])
             f0 = ecm.soc_factor(float(soc[0]), T0) if I0 > 0 else 1.0
-            eta, vd = f0 * ecm.eta_ss(I0, T0), f0 * Rd(T0) * I0
+            eta, vd, vm = f0 * ecm.eta_ss(I0, T0), f0 * Rd(T0) * I0, f0 * Rm(T0) * I0
         for k in range(t.size):
             Tk = float(T_K[k])
             if k:
                 Im = float(current[k])
                 dt = float(t[k] - t[k - 1])
-                e1, e2 = math.exp(-dt / ecm.tau_ct), math.exp(-dt / ecm.tau_d)
+                e1, e2 = math.exp(-dt / ecm.tau_ct_at(Tk)), math.exp(-dt / ecm.tau_d_at(Tk))
                 f = ecm.soc_factor(float(soc[k]), Tk) if Im > 0 else 1.0
                 eta = eta * e1 + f * ecm.eta_ss(Im, Tk) * (1.0 - e1)
                 vd = vd * e2 + f * Rd(Tk) * Im * (1.0 - e2)
+                e3 = math.exp(-dt / ecm.tau_m_at(Tk))
+                vm = vm * e3 + f * Rm(Tk) * Im * (1.0 - e3)
             In = float(now[k])
             fn = ecm.soc_factor(float(soc[k]), Tk) if In > 0 else 1.0
-            out[k] = ecm.ocv(float(soc[k])) - In * fn * R0(Tk) - eta - vd
+            out[k] = ecm.ocv(float(soc[k])) - In * fn * R0(Tk) - eta - vm - vd
         return out
 
 
@@ -182,8 +205,9 @@ class Trace:
 class Window:
     """A part of a trace the fit is scored on: a pulse with the rest after it, or the rest after a step.
 
-    It is scored on the voltage's change from its first sample, so an error in
-    the open-circuit voltage's level does not count, only its slope.
+    Short windows are scored on the voltage's change from their first sample,
+    so an error in the open-circuit voltage's level does not count, only its
+    slope; long tests on the voltage itself.
     """
 
     kind: str  # pulse or step
@@ -192,6 +216,15 @@ class Window:
     k1: int
     c_rate: float
     soc0: float
+    # Scored on the change from its first sample (pulses, rests after steps: short, so an error in the
+    # open-circuit voltage's level should not count), or on the voltage itself (long tests: over hours,
+    # one sample's error carried through every other would dominate).
+    relative: bool = True
+    end: int | None = None  # a long test's last sample, past the knee (k1 stops at the knee)
+
+    def to_end(self) -> Window:
+        """The whole of a long test, through the knee: what the rise near empty is fitted on."""
+        return replace(self, k1=self.end) if self.end is not None else self
 
     @property
     def t(self) -> np.ndarray:
@@ -308,34 +341,50 @@ class FitResult:
     soc_anchors: dict[str, str]
     settings: dict = field(default_factory=dict)
     plot_data: dict = field(default_factory=dict)
+    temperatures: list = field(default_factory=list)  # the sets' temperatures, with several
+    per_temperature: list = field(default_factory=list)  # each temperature's own fit, against the laws
 
 
 def _vec_to_values(model: CellModel, x: np.ndarray, names: list[str], fixed: dict[str, float]) -> dict[str, float]:
     v = dict(fixed)
     for n, xi in zip(names, x):
-        p = next(q for q in model.params if q.name == n)
-        v[n] = float(np.exp(xi)) if p.lo > 0 else float(xi)
+        p = model.param(n)
+        v[n] = float(np.exp(xi)) if p.lo > 0 else float(xi) * p.scale
     return v
 
 
 def _x0(model: CellModel, names: list[str], values: dict[str, float]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, lo, hi = [], [], []
     for n in names:
-        p = next(q for q in model.params if q.name == n)
+        p = model.param(n)
         if p.lo > 0:  # positive: fit its logarithm
             x.append(math.log(min(max(values[n], p.lo * 1.0001), p.hi * 0.9999)))
             lo.append(math.log(p.lo))
             hi.append(math.log(p.hi))
         else:
-            x.append(min(max(values[n], p.lo), p.hi))
-            lo.append(p.lo)
-            hi.append(p.hi)
+            x.append(min(max(values[n], p.lo), p.hi) / p.scale)
+            lo.append(p.lo / p.scale)
+            hi.append(p.hi / p.scale)
     return np.array(x), np.array(lo), np.array(hi)
 
 
-def _residuals(model, ocv, values, windows: list[Window], V_max) -> np.ndarray:
-    """Model minus measured change in voltage through each window, from its first sample."""
-    ecm = model.ecm(values, ocv, V_max)
+def _weight(w: Window) -> float:
+    """Each window counts equally, however densely it was logged.
+
+    A pulse logged every 0.1 s has hundreds of samples; the rest after a step,
+    logged every few minutes, a handful. Weighted by sample, the pulses decide
+    everything and the slow branch fits their tens of seconds, not the minutes
+    a rest (and a drive cycle's heat) shows.
+    """
+    return 1.0 / math.sqrt(max(w.k1 - w.k0 - 1, 1))
+
+
+def _residuals(model, ocv, values, windows: list[Window], V_max, weighted: bool = True) -> np.ndarray:
+    """Model minus measured change in voltage through each window, from its first sample (weighted for the fit)."""
+    return _residuals_ecm(model, model.ecm(values, ocv, V_max), windows, weighted)
+
+
+def _residuals_ecm(model, ecm: ECM, windows: list[Window], weighted: bool = False) -> np.ndarray:
     sims: dict[int, np.ndarray] = {}
     parts = []
     for w in windows:
@@ -343,7 +392,8 @@ def _residuals(model, ocv, values, windows: list[Window], V_max) -> np.ndarray:
         if key not in sims:
             sims[key] = w.trace.simulate(model, ecm)
         Vm, V = w.model_V(sims[key]), w.V
-        parts.append(((Vm - Vm[0]) - (V - V[0]))[1:])
+        r = ((Vm - Vm[0]) - (V - V[0]))[1:] if w.relative else (Vm - V)[1:]
+        parts.append(r * _weight(w) if weighted else r)
     return np.concatenate(parts) if parts else np.zeros(0)
 
 
@@ -362,142 +412,410 @@ def _rms_mV(r: np.ndarray) -> tuple[float, float]:
     return float(1e3 * np.sqrt(np.mean(r**2))), float(1e3 * np.max(np.abs(r)))
 
 
+@dataclass
+class TestSet:
+    """The tests at one temperature: a pulse test and, optionally, steps with rests."""
+
+    __test__ = False  # not a pytest class
+
+    pulses: TestRecord
+    steps: TestRecord | None = None
+    at_C: float | None = None  # the chamber's setpoint, as a label; the fit uses the measured cell temperature
+    # Full discharges at a working rate (1C, say), each starting rested at a known state of charge
+    # (full, straight after a charge and a rest): the slow branch and the rise near empty over minutes.
+    discharges: list[TestRecord] = field(default_factory=list)
+    # Drive cycles (or any dynamic test) to fit on, each starting rested at a known state of charge.
+    cycles: list[TestRecord] = field(default_factory=list)
+    discharge_soc0: float = 1.0  # where the discharges and cycles start (full, straight after a charge)
+
+    def label(self) -> str:
+        return f"{self.at_C:g} degC" if self.at_C is not None else ""
+
+
+@dataclass
+class _SetFit:
+    """One temperature's own fit, and its windows."""
+
+    test: TestSet
+    wins: list[Window]
+    step_wins: list[Window]
+    values: dict[str, float]
+    names: list[str]
+    res: object
+    T_C: float  # the median measured cell temperature in its windows
+    stages: dict = field(default_factory=dict)  # the slow branch's and the rise's stages: names, result, windows
+
+    @property
+    def slow(self):
+        return self.stages.get("slow")
+
+
+BASE_NAMES = ["R0_25C", "I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m", "soc_a", "soc_b"]
+SLOW_NAMES = ["Rd_25C", "tau_d"]
+
+
+def _scored(wins: list[Window], step_wins: list[Window]) -> list[Window]:
+    """What the final fit is scored on: every pulse and every long test (steps, discharges)."""
+    return list(wins) + list(step_wins)
+
+
+def _long_for_slow(step_wins: list[Window]) -> list[Window]:
+    """What the slow branch is fitted on: discharges, and steps at 20-95% SOC (all steps if none are)."""
+    mid = [w for w in step_wins if w.kind in ("discharge", "cycle") or MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
+    return mid or list(step_wins)
+
+
+LONG_DT_S = 1.0  # long tests logged faster than this are thinned to it for the fit
+# Long tests are scored down to the knee: 40% of the way up from the cut-off to full (3.18 V on a
+# 2.5-4.2 V cell). Below it the voltage collapses within minutes; a few minutes of large errors there
+# would decide the whole fit (the rise near empty comes from the pulses and steps instead).
+KNEE_SHARE = 0.4
+
+
+def discharge_windows(
+    rec: TestRecord, soc0: float, ocv: OCVCurve, cap: float, kind: str = "discharge"
+) -> tuple[Window, str]:
+    """A whole long test (a discharge, a drive cycle, and any rest after it), replayed from a rested start.
+
+    A test logged every 0.1 s for hours is thinned to about LONG_DT_S: every
+    n-th sample, with the mean current over each interval from the charge
+    counted between them, so no charge is lost.
+    """
+    soc, how = track_soc(rec, ocv, cap, soc0=soc0)
+    I = interval_current(rec)
+    T = temperature_K(rec)
+    dt = float(np.median(np.diff(rec.t))) if len(rec) > 1 else LONG_DT_S
+    n = max(1, int(LONG_DT_S / max(dt, 1e-9)))
+    if n > 1:
+        keep = np.arange(0, len(rec), n)
+        t = rec.t[keep]
+        q = rec.charge_Ah()[keep]
+        dtk = np.diff(t)
+        Im = np.concatenate([[0.0], np.diff(q) * 3600.0 / np.where(dtk > 0, dtk, 1.0)])
+        tr = Trace(t, Im, soc[keep], T[keep], rec.voltage_V[keep], rec.current_A[keep])
+    else:
+        tr = _trace(rec, I, soc, T, 0, len(rec))
+    rate = float(np.max(np.abs(rec.current_A))) / cap
+    knee = ocv.V_min + KNEE_SHARE * (ocv.V_top - ocv.V_min)
+    below = np.flatnonzero(tr.V < knee)
+    k1 = int(below[0]) if below.size else tr.t.size
+    return Window(kind, tr, 0, max(k1, 2), rate, soc0, relative=False, end=tr.t.size), how
+
+
+def _windows(test: TestSet, ocv: OCVCurve, cap: float, anchors: dict[str, str]) -> tuple[list[Window], list[Window]]:
+    tag = f" at {test.label()}" if test.at_C is not None else ""
+    soc_p, anchors["pulses" + tag] = track_soc(test.pulses, ocv, cap)
+    wins = pulse_windows(test.pulses, soc_p, cap)
+    if len(wins) < 5:
+        raise ValueError(f"{test.pulses.source}: only {len(wins)} pulses found; a pulse test needs at least 5")
+    step_wins: list[Window] = []
+    if test.steps is not None:
+        soc_s, anchors["steps" + tag] = track_soc(test.steps, ocv, cap)
+        step_wins = step_windows(test.steps, soc_s, cap)
+        if len(step_wins) < 2:
+            raise ValueError(
+                f"{test.steps.source}: {len(step_wins)} steady steps followed by a rest of 5 min or more; needs 2"
+            )
+    for kind, recs in (("discharge", test.discharges), ("cycle", test.cycles)):
+        for i, rec in enumerate(recs):
+            w, anchors[f"{kind} {i + 1}{tag}"] = discharge_windows(rec, test.discharge_soc0, ocv, cap, kind)
+            step_wins.append(w)  # the long tests: they fit the slow branch together
+    return wins, step_wins
+
+
+def _fit_one(model, ocv, values, wins, step_wins, V_max):
+    """The staged fit at one temperature, each part of the model on the tests that show it.
+
+    1. The kinetics (R0, the charge-transfer branch I0, gamma, tau_ct, and the
+       middle branch Rm, tau_m) on pulses at 20-95% SOC.
+    2. The slow branch (Rd, tau_d) on the long tests only: steps, discharges
+       and drive cycles (down to the knee). Fitted with the pulses, both
+       branches go to the pulses' seconds and tens of seconds, and the minutes
+       a drive cycle's heat builds over are lost: predicted cycles ran cold.
+    3. The rise near empty (soc_a, soc_b) on the pulses and the long tests
+       run to their end: the knee at the end of a discharge is that rise.
+    4. The kinetics again, on all the pulses, with the rest held. Not on the
+       long tests: there the middle branch (up to minutes) can take over the
+       slow branch's part, and the two drift apart round after round (on
+       tests made by a known cell, the slow branch's time constant ran to 10x).
+
+    Returns the values, the names fitted in the last stage and its result, and
+    the stages for the slow branch and the rise (names, result, windows), for
+    their ranges.
+    """
+    values = dict(values)
+    mid = [w for w in wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
+    kin = ["R0_25C", "I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m"]
+    values, _ = _fit(model, ocv, values, kin, mid, V_max)
+    stages = {}
+    if step_wins:
+        long_w = _long_for_slow(step_wins)
+        values, r = _fit(model, ocv, values, SLOW_NAMES, long_w, V_max)
+        stages["slow"] = (list(SLOW_NAMES), r, long_w)
+    rise_w = list(wins) + [w.to_end() for w in step_wins]
+    values, r = _fit(model, ocv, values, ["soc_a", "soc_b"], rise_w, V_max)
+    stages["rise"] = (["soc_a", "soc_b"], r, rise_w)
+    values, res = _fit(model, ocv, values, kin, list(wins), V_max)
+    return values, kin, res, stages
+
+
+def _median_T_C(wins: list[Window]) -> float:
+    return float(np.median(np.concatenate([w.trace.T_K[w.k0 : w.k1] for w in wins]))) - 273.15
+
+
+ARRHENIUS = {  # value -> (its law, sign: +1 grows in the cold, -1 falls)
+    "R0_25C": ("Ea_R0", 1.0),
+    "I0_25C": ("Ea_I0", -1.0),
+    "Rm_25C": ("Ea_Rm", 1.0),
+    "Rd_25C": ("Ea_Rd", 1.0),
+    "soc_a": ("Ea_soc", 1.0),
+}
+R_GAS = 8.314462618
+
+
+def _row(f: _SetFit) -> tuple[float, ...]:
+    """One temperature's own values as a row of the table (see ecm.BY_T_COLUMNS)."""
+    v = f.values
+    return (
+        f.T_C + 273.15,
+        v["R0_25C"],
+        v["I0_25C"],
+        v["gamma"],
+        v["tau_ct"],
+        v["Rm_25C"],
+        v["tau_m"],
+        v["Rd_25C"],
+        v["tau_d"],
+        v["soc_a"],
+        v["soc_b"],
+    )
+
+
+def _laws_through(fits: list[_SetFit], model) -> list[ParamResult]:
+    """Arrhenius laws through each temperature's own values (log value against 1/T), with 95% ranges.
+
+    They carry the table beyond the coldest and warmest temperatures fitted,
+    and show how far a single law would describe the cell. The slow branch's
+    law uses only the temperatures with long tests.
+    """
+    from scipy import stats
+
+    out = []
+    for name, (law, sign) in ARRHENIUS.items():
+        use = [f for f in fits if f.slow is not None] if name == "Rd_25C" else fits
+        # A value at the edge of its range was not determined by its tests: it does not set a law.
+        vp = model.param(name)
+        use = [f for f in use if not _at_edge(f.values[name], vp)]
+        prm = model.param(law)
+        if len(use) < 2:
+            continue
+        x = np.array([(1.0 / (f.T_C + 273.15) - 1.0 / T_REF) / R_GAS for f in use])
+        y = np.log([max(f.values[name], 1e-6) for f in use])
+        slope, icpt = np.polyfit(x, y, 1)
+        Ea = float(np.clip(sign * slope, prm.lo, prm.hi))
+        ci, note = None, ""
+        if len(use) > 2:
+            resid = y - (slope * x + icpt)
+            se = math.sqrt(float(np.sum(resid**2)) / (len(use) - 2) / float(np.sum((x - x.mean()) ** 2)))
+            q = float(stats.t.ppf(0.975, len(use) - 2))
+            ci = (Ea - q * se, Ea + q * se)
+            # How far the temperatures' own values sit off the line (a factor, at worst).
+            off = float(np.exp(np.max(np.abs(resid))))
+            if off > 1.25:
+                note = f"the temperatures' own values sit up to {off:.2g}x off this law: the table follows them"
+        else:
+            note = "a law through two temperatures: not checked by a third"
+        what = prm.what + " (through the temperatures' own values; used beyond the coldest and warmest)"
+        out.append(ParamResult(law, "J/mol", Ea, "fitted", what, ci, None, note))
+    return out
+
+
+def _at_edge(v: float, p: Param) -> bool:
+    return abs(v - p.lo) <= 1e-3 * max(abs(p.lo), 1e-9) or abs(v - p.hi) <= 1e-3 * abs(p.hi)
+
+
+def _laws_only(model, values, ocv, V_max) -> ECM:
+    return model.ecm(values, ocv, V_max)
+
+
 def fit_cell(
     slow: TestRecord,
-    pulses: TestRecord,
+    pulses: TestRecord | None = None,
     steps: TestRecord | None = None,
     checks: list[TestRecord] | None = None,
     compare_ecm: tuple[str, ECM, float] | None = None,
     V_max: float | None = None,
+    sets: list[TestSet] | None = None,
+    check_soc0: list[float | None] | None = None,
 ) -> FitResult:
-    """Fit the circuit model at one temperature.
+    """Fit the circuit model, at one temperature or several.
 
     slow: a slow full discharge (C/20) from full to the cut-off: the open-circuit voltage and capacity.
-    pulses: a pulse (HPPC) test: R0, the charge-transfer branch, the near-empty rise.
-    steps: optional, a test with long steady steps and rests: the slow branch (Rd, tau_d).
-    checks: tests the fit does not see, predicted afterwards (a drive cycle, say).
+    pulses, steps: the tests at one temperature (see TestSet); or sets: the tests at several.
+      A pulse (HPPC) test fits R0, the charge-transfer branch and the near-empty rise;
+      steps with rests after them fit the slow branch (Rd, tau_d).
+    checks: tests the fit does not see, predicted afterwards (a drive cycle, say); check_soc0, where each
+      starts, if known (otherwise a rest in it, or its first voltage, anchors it).
     compare_ecm: (name, ECM, capacity) of a model to predict the checks with too, such as a library cell's.
+
+    With tests at several temperatures, each is first fitted on its own (its
+    values at its temperature), straight lines through those (log value
+    against 1/T) start the temperature laws, and a joint fit over every test,
+    each replayed at its measured cell temperature, gives the model. With one,
+    the temperature laws are the library NCR18650PF's, and the fitted cell
+    file says so.
     """
+    if sets is None:
+        if pulses is None:
+            raise ValueError("give the pulse test (pulses) or the tests by temperature (sets)")
+        sets = [TestSet(pulses, steps)]
+    elif pulses is not None or steps is not None:
+        raise ValueError("give either pulses and steps, or sets, not both")
+    multi = len(sets) > 1
+    if multi and any(t.at_C is None for t in sets):
+        raise ValueError("with tests at several temperatures, give each set its temperature (at_C)")
+    long_at = [t.steps is not None or bool(t.discharges) or bool(t.cycles) for t in sets]
+    have_steps = any(long_at)  # long tests (steps or discharges): the slow branch is fitted
+
     model = CircuitModel()
     notes: list[str] = []
     ocv = ocv_from_slow_test(slow)
     cap = ocv.capacity_Ah
     notes += ocv.notes
+    records = [slow, *(r for t in sets for r in (t.pulses, t.steps, *t.discharges, *t.cycles) if r is not None)]
     if V_max is None:
-        V_max = round(float(max(np.max(r.voltage_V) for r in (slow, pulses, *(c for c in [steps] if c)))), 2)
+        V_max = round(float(max(np.max(r.voltage_V) for r in records)), 2)
         V_max = min(max(V_max, 3.4), 4.5)
+    T_slow = T_REF
+    if slow.temperature_C is not None and ocv.discharge_span is not None:
+        a, b = ocv.discharge_span
+        Ts = slow.temperature_C[a:b]
+        if np.isfinite(Ts).any():
+            T_slow = float(np.nanmedian(Ts)) + 273.15
 
-    values = {p.name: p.start for p in model.params}
-    # The fit is iterated twice: the open-circuit voltage needs the model's
-    # steady resistance (for the slow test's own drop), and the state of charge
-    # in each test needs the curve.
+    start = {p.name: p.start for p in model.params}
+    if multi:  # each temperature's own values: no law inside one set
+        start.update({p.name: 0.0 for p in model.temperature_params})
     anchors: dict[str, str] = {}
-    for _ in range(2):
-        soc_p, anchors["pulses"] = track_soc(pulses, ocv, cap)
-        wins = pulse_windows(pulses, soc_p, cap)
-        if len(wins) < 5:
-            raise ValueError(f"{pulses.source}: only {len(wins)} pulses found; a pulse test needs at least 5")
-        mid = [w for w in wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
-        values["soc_a"] = 0.0
-        values, _ = _fit(model, ocv, values, ["R0_25C", "I0_25C", "gamma", "tau_ct"], mid, V_max)
-        step_wins: list[Window] = []
-        if steps is not None:
-            soc_s, anchors["steps"] = track_soc(steps, ocv, cap)
-            step_wins = step_windows(steps, soc_s, cap)
-            if len(step_wins) < 2:
-                raise ValueError(
-                    f"{steps.source}: {len(step_wins)} steady steps followed by a rest of 5 min or more; needs 2"
-                )
-            step_mid = [w for w in step_wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
-            values, _ = _fit(model, ocv, values, ["Rd_25C", "tau_d"], step_mid or step_wins, V_max)
-        values["soc_a"] = 1.0
-        values, _ = _fit(model, ocv, values, ["soc_a", "soc_b"], wins, V_max)
-        ecm0 = model.ecm(values, ocv, V_max)
-        # Steady resistance at the slow test's current: what its voltage sits below the curve by.
+    fits: list[_SetFit] = []
+    values = dict(start)
+    laws: list[ParamResult] = []
+    rows: tuple = ()
+    starts: dict[int, dict[str, float]] = {}
+    # In rounds: the open-circuit voltage needs the model's steady resistance (for the slow
+    # test's own drop), the state of charge in each test needs the curve, and each stage of
+    # the fit holds the others' values from the round before. Three rounds bring tests made
+    # by a known cell to within a few percent (two left the slow branch 17% off).
+    for _ in range(ROUNDS):
+        fits = []
+        for t in sets:
+            wins, step_wins = _windows(t, ocv, cap, anchors)
+            v, nm, res, stages = _fit_one(model, ocv, starts.get(id(t), start), wins, step_wins, V_max)
+            fits.append(_SetFit(t, wins, step_wins, v, nm, res, _median_T_C(wins), stages))
+            starts[id(t)] = v
+        if multi:
+            # Each temperature's own values become a row; laws through them go beyond the coldest and warmest.
+            laws = _laws_through(fits, model)
+            values = {**min(fits, key=lambda f: abs(f.T_C - 25.0)).values, **{p.name: p.value for p in laws}}
+            rows = tuple(_row(f) for f in fits)
+            ecm0 = model.ecm(values, ocv, V_max, by_T=rows)
+            values.update({n: _law_value(ecm0, n, T_REF) for n in BASE_NAMES + SLOW_NAMES})  # the 25 degC values
+        else:
+            values = fits[0].values
+            ecm0 = model.ecm(values, ocv, V_max)
         I_s = ocv.current_A
-        R_ss = ecm0.R0(T_REF) + ecm0.eta_ss(I_s, T_REF) / I_s + (ecm0.Rd(T_REF) if steps is not None else 0.0)
-        ocv = ocv_from_slow_test(slow, R_ss, factor=lambda soc, e=ecm0: e.soc_factor(soc))
+        R_ss = (
+            ecm0.R0(T_slow)
+            + ecm0.eta_ss(I_s, T_slow) / I_s
+            + ecm0.Rm(T_slow)
+            + (ecm0.Rd(T_slow) if have_steps else 0.0)
+        )
+        ocv = ocv_from_slow_test(slow, R_ss, factor=lambda soc, e=ecm0, T=T_slow: e.soc_factor(soc, T))
 
-    # Final: all fitted values together, for their uncertainties and correlations.
-    names = ["R0_25C", "I0_25C", "gamma", "tau_ct", "soc_a", "soc_b"] + (["Rd_25C", "tau_d"] if steps else [])
-    all_wins = list(wins) + [w for w in step_wins if w.soc0 >= MID_SOC[0]]
-    values, res = _fit(model, ocv, values, names, all_wins, V_max)
-    ecm = model.ecm(values, ocv, V_max)
-
-    params, correlated = _uncertainty(model, names, values, res, steps is not None, [w.k1 - w.k0 - 1 for w in all_wins])
+    ecm = model.ecm(values, ocv, V_max, by_T=rows)
+    correlated: list[tuple[str, str, float]] = []
+    if multi:
+        params = list(laws)
+    else:
+        f = fits[0]
+        sizes = [w.k1 - w.k0 - 1 for w in f.wins]  # the kinetics stage: the pulses
+        params, correlated = _uncertainty(model, f.names, f.values, f.res, sizes)
+        params += _stage_params(model, f.values, f.stages.get("rise"))
+        params += _slow_params(model, f.values, f.slow)
     params.append(ParamResult("capacity_Ah", "Ah", cap, "data", "capacity: the slow discharge's charge"))
     params.append(ParamResult("V_min", "V", ocv.V_min, "data", "discharge cut-off: where the slow discharge stopped"))
     params.append(ParamResult("V_max", "V", V_max, "data", "charge limit: the highest voltage in the tests"))
     for k, v in DEFAULT_TEMPERATURE_LAWS.items():
-        params.append(
-            ParamResult(
-                k,
-                "J/mol",
-                v,
-                "default",
-                f"temperature behaviour ({k}): the library NCR18650PF's, not fitted",
-                note="fitted from tests at several temperatures in v0.6.2",
-            )
+        if multi and any(p.name == k for p in laws):
+            continue
+        what = f"temperature behaviour ({k}): the library NCR18650PF's, not fitted"
+        note = (
+            "give long tests (steps, discharges or cycles) at two temperatures or more to fit it"
+            if multi
+            else "fitted from tests at several temperatures (see docs/FITTING.md)"
         )
+        params.append(ParamResult(k, "J/mol", v, "default", what, note=note))
 
-    # Errors on what the fit saw.
-    errors = {}
-    for label, ws in (
-        ("pulses at 20-95% SOC", [w for w in wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
-        ("pulses below 20% SOC", [w for w in wins if w.soc0 < MID_SOC[0]]),
-        ("steps at 20-95% SOC", [w for w in step_wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
-        ("steps below 20% SOC", [w for w in step_wins if w.soc0 < MID_SOC[0]]),
-    ):
-        if ws:
-            r = _residuals(model, ocv, values, ws, V_max)
+    # Errors on what the fit saw, with the model as fitted (with several temperatures: the table).
+    errors: dict[str, dict] = {}
+    per_temperature = []
+    for f in fits:
+        tag = f", {f.test.label()}" if multi else ""
+        steps_only = [w for w in f.step_wins if w.kind == "step"]
+        for label, ws in (
+            ("pulses at 20-95% SOC", [w for w in f.wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
+            ("pulses below 20% SOC", [w for w in f.wins if w.soc0 < MID_SOC[0]]),
+            ("steps at 20-95% SOC", [w for w in steps_only if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
+            ("steps below 20% SOC", [w for w in steps_only if w.soc0 < MID_SOC[0]]),
+            ("discharges", [w for w in f.step_wins if w.kind == "discharge"]),
+            ("drive cycles fitted on", [w for w in f.step_wins if w.kind == "cycle"]),
+        ):
+            if not ws:
+                continue
+            r = _residuals_ecm(model, ecm, ws)
             rms, mx = _rms_mV(r)
-            errors[label] = {"rmse_mV": rms, "max_mV": mx, "samples": int(r.size), "parts": len(ws)}
+            errors[label + tag] = {"rmse_mV": rms, "max_mV": mx, "samples": int(r.size), "parts": len(ws)}
+        if multi:
+            sizes = [w.k1 - w.k0 - 1 for w in f.wins]  # the kinetics stage: the pulses
+            own_params, own_corr = _uncertainty(model, f.names, f.values, f.res, sizes)
+            own_params += _stage_params(model, f.values, f.stages.get("rise"))
+            own_params += _slow_params(model, f.values, f.slow)
+            correlated += [(a, b, c) for a, b, c in own_corr if (a, b) not in {(x, y) for x, y, _ in correlated}]
+            per_temperature.append(
+                {
+                    "at_C": f.test.at_C,
+                    "cell_C": round(f.T_C, 1),
+                    "pulses": len(f.wins),
+                    "params": own_params,
+                    "law": {n: _law_value(_laws_only(model, values, ocv, V_max), n, f.T_C + 273.15) for n in ARRHENIUS},
+                }
+            )
 
-    # Held-out tests.
-    check_out = []
-    plot_checks = []
-    for rec in checks or []:
-        row = {"file": rec.source}
-        soc_c, how = track_soc(rec, ocv, cap)
-        I = interval_current(rec)
-        T = temperature_K(rec)
-        Vm = model.simulate(ecm, rec.t, I, soc_c, T, rec.current_A)
-        r = (Vm - rec.voltage_V)[1:]
-        row["rmse_mV"], row["max_mV"] = _rms_mV(r)
-        row["soc_start"] = float(soc_c[0])
-        row["anchored"] = how
-        plot = {"file": rec.source, "t": rec.t, "V": rec.voltage_V, "fit": Vm}
-        if compare_ecm is not None:
-            name, lib, lib_cap = compare_ecm
-            lib_curve = OCVCurve(np.array(lib.ocv_soc), np.array(lib.ocv_V), lib_cap, lib.V_min, 0, 0, "library")
-            soc_l, _ = track_soc(rec, lib_curve, lib_cap)
-            Vl = model.simulate(lib, rec.t, I, soc_l, T, rec.current_A)
-            rl = (Vl - rec.voltage_V)[1:]
-            row["compare"] = name
-            row["compare_rmse_mV"], row["compare_max_mV"] = _rms_mV(rl)
-            plot["compare"], plot["compare_name"] = Vl, name
-        check_out.append(row)
-        plot_checks.append(plot)
+    check_out, plot_checks = _checks(model, ecm, ocv, cap, checks or [], compare_ecm, check_soc0)
 
-    validity = _validity(slow, ocv, wins, step_wins)
+    wins_all = [w for f in fits for w in f.wins]
+    steps_all = [w for f in fits for w in f.step_wins]
+    validity = _validity(slow, ocv, wins_all, steps_all, multi)
     h = hysteresis_mV(ocv)
     if h is not None:
         notes.append(
             f"the slow charge and discharge differ by about {2 * h:.0f} mV beyond their drops (hysteresis): "
             "the curve follows the discharge, as the library's does"
         )
-    if steps is None:
+    if not have_steps:
         notes.append("no test with long steps and rests: the slow branch (Rd, tau_d) is not fitted")
-    for rec in (slow, pulses, *([steps] if steps else []), *(checks or [])):
+    for rec in (*records, *(checks or [])):
         for w in rec.warnings:
             notes.append(f"{rec.source}: {w}")
 
     plot_data = {
         "ocv": ocv,
-        "pulses": [(w, w.simulate(model, ecm)) for w in wins],
-        "steps": [(w, w.simulate(model, ecm)) for w in step_wins],
+        "pulses": [(w, w.simulate(model, ecm)) for w in fits[0].wins] if not multi else [],
+        "steps": [(w, w.simulate(model, ecm)) for w in fits[0].step_wins] if not multi else [],
+        "pulses_by_T": {f.test.label(): [(w, w.simulate(model, ecm)) for w in f.wins] for f in fits} if multi else {},
         "checks": plot_checks,
     }
+    temps = sorted({f.test.at_C for f in fits if f.test.at_C is not None})
     return FitResult(
         model=model,
         ocv=ocv,
@@ -509,23 +827,115 @@ def fit_cell(
         validity=validity,
         correlated=correlated,
         notes=notes,
-        records={"slow": [slow], "pulses": [pulses], "steps": [steps] if steps else [], "checks": list(checks or [])},
+        records={
+            "slow": [slow],
+            "pulses": [t.pulses for t in sets],
+            "steps": [t.steps for t in sets if t.steps is not None],
+            "checks": list(checks or []),
+        },
         soc_anchors=anchors,
         settings={
             "pulse window": f"{PRE_S:g} s before each pulse to {POST_S:g} s after",
             "kinetics fitted on": f"pulses at {MID_SOC[0]:.0%}-{MID_SOC[1]:.0%} SOC, then the near-empty rise on all",
-            "temperature behaviour": "the library NCR18650PF's (not fitted at one temperature)",
+            "temperature behaviour": (
+                "Arrhenius laws fitted jointly over tests at "
+                + ", ".join(f"{x:g}" for x in temps)
+                + " degC, each replayed at its measured cell temperature; the time constants, gamma and soc_b "
+                "do not change with temperature, as in PackTherm's model"
+                if multi
+                else "the library NCR18650PF's (not fitted at one temperature)"
+            ),
             "uncertainty": (
                 "95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show how "
                 "far the tests disagree, not a guarantee; a value the tests barely touch is flagged"
             ),
         },
         plot_data=plot_data,
+        temperatures=temps,
+        per_temperature=per_temperature,
     )
 
 
+def _stage_params(model, values, stage) -> list[ParamResult]:
+    """Values fitted in a stage of their own, with ranges from it."""
+    if stage is None:
+        return []
+    nms, res, wins = stage
+    out, _ = _uncertainty(model, nms, values, res, [w.k1 - w.k0 - 1 for w in wins])
+    return out
+
+
+def _slow_params(model, values, stage) -> list[ParamResult]:
+    """The slow branch's values, with ranges from its own stage (fitted on long tests), or marked not fitted."""
+    if stage is None:
+        out = []
+        for nme in SLOW_NAMES:
+            prm = model.param(nme)
+            out.append(
+                ParamResult(nme, prm.unit, values[nme], "not fitted", prm.what, note="a starting value: give a steps test")
+            )
+        return out
+    nms, res, wins = stage
+    out, _ = _uncertainty(model, nms, values, res, [w.k1 - w.k0 - 1 for w in wins])
+    for p in out:
+        p.what += " (fitted on the long tests: steps and discharges)"
+    return out
+
+
+def _law_value(ecm: ECM, name: str, T: float) -> float:
+    """A value as the fitted laws give it at temperature T (what each temperature's own fit is compared with)."""
+    return {
+        "R0_25C": lambda: ecm.R0(T),
+        "I0_25C": lambda: ecm.I0(T),
+        "Rd_25C": lambda: ecm.Rd(T),
+        "Rm_25C": lambda: ecm.Rm(T),
+        "tau_m": lambda: ecm.tau_m_at(T),
+        "soc_a": lambda: ecm.soc_factor(0.0, T) - 1.0,
+        "gamma": lambda: ecm.gamma_at(T),
+        "tau_ct": lambda: ecm.tau_ct_at(T),
+        "tau_d": lambda: ecm.tau_d_at(T),
+        "soc_b": lambda: ecm.soc_b,
+    }[name]()
+
+
+def _checks(model, ecm, ocv, cap, checks, compare_ecm, soc0s=None):
+    """Tests the fit never saw: replayed with their measured cell temperature, voltage against measured."""
+    check_out, plot_checks = [], []
+    soc0s = list(soc0s or []) + [None] * len(checks)
+    for rec, soc0 in zip(checks, soc0s):
+        row = {"file": rec.source}
+        soc_c, how = track_soc(rec, ocv, cap, soc0=soc0)
+        I = interval_current(rec)
+        T = temperature_K(rec)
+        Vm = model.simulate(ecm, rec.t, I, soc_c, T, rec.current_A)
+        # Down to the knee near empty, as the fit scores its long tests; the whole record beside it.
+        knee = ocv.V_min + KNEE_SHARE * (ocv.V_top - ocv.V_min)
+        use = (rec.voltage_V > knee)[1:]
+        r_all = (Vm - rec.voltage_V)[1:]
+        r = r_all[use] if use.any() else r_all
+        row["rmse_mV"], row["max_mV"] = _rms_mV(r)
+        row["rmse_whole_mV"] = _rms_mV(r_all)[0]
+        row["cell_C"] = round(float(np.median(T)) - 273.15, 1)
+        row["soc_start"] = float(soc_c[0])
+        row["anchored"] = how
+        plot = {"file": rec.source, "t": rec.t, "V": rec.voltage_V, "fit": Vm}
+        if compare_ecm is not None:
+            name, lib, lib_cap = compare_ecm
+            lib_curve = OCVCurve(np.array(lib.ocv_soc), np.array(lib.ocv_V), lib_cap, lib.V_min, 0, 0, "library")
+            soc_l, _ = track_soc(rec, lib_curve, lib_cap, soc0=soc0)
+            Vl = model.simulate(lib, rec.t, I, soc_l, T, rec.current_A)
+            rl_all = (Vl - rec.voltage_V)[1:]
+            rl = rl_all[use] if use.any() else rl_all
+            row["compare"] = name
+            row["compare_rmse_mV"], row["compare_max_mV"] = _rms_mV(rl)
+            plot["compare"], plot["compare_name"] = Vl, name
+        check_out.append(row)
+        plot_checks.append(plot)
+    return check_out, plot_checks
+
+
 def _uncertainty(
-    model, names, values, res, have_steps, sizes: list[int]
+    model, names, values, res, sizes: list[int]
 ) -> tuple[list[ParamResult], list[tuple[str, str, float]]]:
     """95% ranges and correlations, counting each window (a pulse, a step) as one piece of evidence.
 
@@ -557,16 +967,17 @@ def _uncertainty(
         corr = cov / np.outer(sd, sd)
     out = []
     for i, nme in enumerate(names):
-        prm = next(q for q in model.params if q.name == nme)
+        prm = model.param(nme)
         v = values[nme]
-        if not np.isfinite(sd[i]) or sd[i] > 5:  # a range of more than e^10: the tests do not pin it
+        if not np.isfinite(sd[i]) or (prm.lo > 0 and sd[i] > 5):  # a range of more than e^10: the tests do not pin it
             ci, rel = None, None
         elif prm.lo > 0:  # fitted in logs: a multiplicative range
             ci = (v * math.exp(-1.96 * sd[i]), v * math.exp(1.96 * sd[i]))
             rel = float(sd[i])
         else:
-            ci = (v - 1.96 * sd[i], v + 1.96 * sd[i])
-            rel = float(sd[i] / abs(v)) if v else None
+            sd_i = sd[i] * prm.scale
+            ci = (v - 1.96 * sd_i, v + 1.96 * sd_i)
+            rel = float(sd_i / abs(v)) if v else None
         ci = None if ci is None else (float(ci[0]), float(ci[1]))
         note = ""
         if ci is None:
@@ -577,14 +988,6 @@ def _uncertainty(
         if at_bound:
             note = "at the edge of its allowed range: not determined by these tests"
         out.append(ParamResult(nme, prm.unit, v, "fitted", prm.what, ci, rel, note))
-    if not have_steps:
-        for nme in ("Rd_25C", "tau_d"):
-            prm = next(q for q in model.params if q.name == nme)
-            out.append(
-                ParamResult(
-                    nme, prm.unit, values[nme], "not fitted", prm.what, note="a starting value: give a steps test"
-                )
-            )
     pairs = []
     for i in range(len(names)):
         for j in range(i + 1, len(names)):
@@ -593,7 +996,7 @@ def _uncertainty(
     return out, pairs
 
 
-def _validity(slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: list[Window]) -> dict:
+def _validity(slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: list[Window], multi: bool = False) -> dict:
     """What the fit saw: the cell temperatures in the parts it used, the state of charge and rates of its pulses."""
     temps = [w.trace.T_K[w.k0 : w.k1] - 273.15 for w in (*wins, *step_wins)]
     if slow.temperature_C is not None and ocv.discharge_span is not None:
@@ -610,8 +1013,12 @@ def _validity(slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: li
         "charge_C": [round(float(min(chg)), 2), round(float(max(chg)), 2)] if chg else None,
         "pulse_s": round(float(np.median([w.t[-1] - w.t[0] for w in wins])), 1),
         "note": (
-            "the tests covered these; outside them the model is extrapolating. One temperature only: "
-            "the temperature behaviour is not fitted."
+            "the tests covered these; outside them the model is extrapolating"
+            + (
+                " (beyond the coldest and warmest, by the fitted laws)."
+                if multi
+                else ". One temperature only: the temperature behaviour is not fitted."
+            )
         ),
     }
 

@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 from .cells import CELLS, get_cell
-from .electrothermal import check_limits, constant_current, simulate_cell
+from .electrothermal import check_fitted_range, check_limits, constant_current, simulate_cell
 from .materials import PCM_LIBRARY
 from .metrics import summarise_result, summary_table
 from .params import DEFAULT_AUX_POWER, DEFAULT_H, KELVIN, default_params
@@ -192,48 +192,90 @@ def _fit_cell(args) -> None:
         except TestDataError as e:
             raise ValueError(str(e)) from None
 
-    slow, pulses = read(args.slow), read(args.pulses)
-    steps = read(args.steps) if args.steps else None
-    checks = [read(f) for f in args.check or []]
-    compare = None
-    if args.compare:
-        from .cells import get_cell
+    thermal: list[dict] = []
+    if args.tests:
+        from .fitting.testlist import read_test_list, run_test_list
 
-        lib = get_cell(args.compare)
-        if lib.ecm is None:
-            raise ValueError(f"--compare {args.compare}: that cell has no circuit model to compare with")
-        compare = (f"library {lib.name}", lib.ecm, lib.capacity_Ah)
-    fit = fit_cell(slow, pulses, steps=steps, checks=checks, compare_ecm=compare)
-    name = args.name or Path(args.output).stem
-    dataset = {k: v for k, v in (("citation", args.citation), ("licence", args.licence)) if v}
-    paths = {"slow": [args.slow], "pulses": [args.pulses]}
-    if args.steps:
-        paths["steps"] = [args.steps]
-    if args.check:
-        paths["checks"] = list(args.check)
-    doc = fitted_cell_doc(fit, name, paths, rated_capacity_Ah=args.rated_capacity, dataset=dataset or None)
-    out = write_fitted_cell(args.output, doc)
-    report = Path(args.report) if args.report else out.with_suffix(".html")
-    write_report(report, fit, doc)
+        single = ("slow", "pulses", "steps", "check", "compare", "rated_capacity", "citation", "licence")
+        given = [f"--{k.replace('_', '-')}" for k in single if getattr(args, k)]
+        if given:
+            raise ValueError(f"{', '.join(given)}: give these in the test list, not with it")
+        tl = read_test_list(args.tests)
+        print(f"Fitting {tl.name} from {tl.path}")
+        fit, doc, thermal = run_test_list(tl)
+        name = tl.name
+        out_path = Path(args.output) if args.output else (tl.output or tl.path.with_name(tl.path.stem + "_cell.yaml"))
+        report = Path(args.report) if args.report else (tl.report or out_path.with_suffix(".html"))
+    else:
+        if not (args.slow and args.pulses):
+            raise ValueError("give a test list (packtherm fit tests.yaml), or --slow and --pulses")
+        slow, pulses = read(args.slow), read(args.pulses)
+        steps = read(args.steps) if args.steps else None
+        checks = [read(f) for f in args.check or []]
+        compare = None
+        if args.compare:
+            from .cells import get_cell
+
+            lib = get_cell(args.compare)
+            if lib.ecm is None:
+                raise ValueError(f"--compare {args.compare}: that cell has no circuit model to compare with")
+            compare = (f"library {lib.name}", lib.ecm, lib.capacity_Ah)
+        fit = fit_cell(slow, pulses, steps=steps, checks=checks, compare_ecm=compare)
+        out_path = Path(args.output or "fitted_cell.yaml")
+        name = args.name or out_path.stem
+        dataset = {k: v for k, v in (("citation", args.citation), ("licence", args.licence)) if v}
+        paths = {"slow": [args.slow], "pulses": [args.pulses]}
+        if args.steps:
+            paths["steps"] = [args.steps]
+        if args.check:
+            paths["checks"] = list(args.check)
+        doc = fitted_cell_doc(fit, name, paths, rated_capacity_Ah=args.rated_capacity, dataset=dataset or None)
+        report = Path(args.report) if args.report else out_path.with_suffix(".html")
+    if args.name:
+        doc["name"] = name = args.name
+    out = write_fitted_cell(out_path, doc)
+    write_report(report, fit, doc, thermal)
 
     T = doc["valid_for"]["temperature_C"]
     where = f" ({T[0]:g} to {T[1]:g} degC)" if T else ""
-    print(f"{name}: fitted at one temperature{where}; not usable in studies yet")
-    print(
-        f"  capacity {fit.capacity_Ah:.4g} Ah" + (f" (rated {args.rated_capacity:g} Ah)" if args.rated_capacity else "")
-    )
+    temps = fit.temperatures
+    how = f"fitted at {', '.join(f'{x:g}' for x in temps)} degC" if len(temps) > 1 else "fitted at one temperature"
+    use = "usable in studies" if doc["usable_in_studies"] else "not usable in studies: " + doc.get("why_not_usable", "")
+    print(f"{name}: {how}{where}; {use}")
+    cap = doc["capacity"]
+    print(f"  capacity {fit.capacity_Ah:.4g} Ah" + (f" (rated {cap['rated_Ah']:g} Ah)" if "rated_Ah" in cap else ""))
+    if fit.per_temperature:
+        names = ("R0_25C", "I0_25C", "Rm_25C", "Rd_25C", "tau_d")
+        print("  by temperature:  " + "  ".join(f"{n.replace('_25C', ''):>9}" for n in names))
+        for pt in fit.per_temperature:
+            v = {p.name: p.value for p in pt["params"]}
+            print(f"    {pt['at_C']:>5g} degC     " + "  ".join(f"{v[n]:>9.4g}" for n in names))
     for p in fit.params:
         if p.source not in ("fitted", "not fitted"):
             continue
         rng = f"  95% {p.ci95[0]:.4g} to {p.ci95[1]:.4g}" if p.ci95 else ""
         flag = f"  [{p.note}]" if p.note else ""
-        print(f"  {p.name:<8} {p.value:>10.4g} {p.unit:<4}{rng}{flag}")
+        print(f"  {p.name:<8} {p.value:>10.4g} {p.unit:<5}{rng}{flag}")
     for k, e in fit.errors.items():
         print(f"  error, {k}: {e['rmse_mV']:.1f} mV RMS, {e['max_mV']:.0f} mV worst")
     for c in fit.checks:
         line = f"  held out, {c['file']}: {c['rmse_mV']:.1f} mV RMS"
         if "compare" in c:
             line += f" (the {c['compare']}: {c['compare_rmse_mV']:.1f} mV)"
+        print(line)
+    if thermal:
+        from .fitting.thermal import summary
+
+        sm = summary(thermal)
+        line = (
+            f"  held out, voltage and temperature from the current alone ({sm['tests']} tests): "
+            f"{sm['median_V_rmse_mV']:.1f} mV, {100 * sm['within_1K']:.0f}% within 1 K"
+        )
+        if "compare" in sm:
+            line += (
+                f" (the {sm['compare']}: {sm['compare_median_V_rmse_mV']:.1f} mV, "
+                f"{100 * sm['compare_within_1K']:.0f}% within 1 K)"
+            )
         print(line)
     for a, b, r in fit.correlated:
         print(f"  {a} and {b} trade off (correlation {r:+.2f}): the tests pin a combination")
@@ -301,7 +343,7 @@ def _cell(args) -> None:
     )
     print(f"  PCM peak liquid frac    {m['PCM_fraction_peak']:.2f}")
     print(f"  Energy balance error    {res.balance_error_pct:.1e} %")
-    for w in check_limits(cell, load, res):
+    for w in check_limits(cell, load, res) + check_fitted_range(cell, load, res):
         print(f"  WARNING: {w}")
 
 
@@ -590,22 +632,21 @@ def parser() -> argparse.ArgumentParser:
 
     ft = sub.add_parser(
         "fit",
-        help="Fit PackTherm's circuit model to cell tests at one temperature.",
+        help="Fit PackTherm's circuit model to cell tests.",
         description=(
-            "Fit the circuit model to a slow discharge (open-circuit voltage and capacity), a pulse test, and "
-            "optionally a test with long steps and rests (the slow branch). Writes a fitted cell file with each "
-            "value's source and 95%% range, where it is valid, its errors and what went in, and an HTML report. "
-            "One temperature only: studies refuse the file until v0.6.2. See docs/FITTING.md."
+            "Fit the circuit model to cell tests: a test list (YAML) with tests at several temperatures, or, at "
+            "one temperature, --slow and --pulses. Writes a fitted cell file with each value's source and 95%% "
+            "range, where it is valid, its errors and what went in, and an HTML report. Fitted at three "
+            "temperatures or more, with a cell named under 'like', studies can use it. See docs/FITTING.md."
         ),
     )
-    ft.add_argument("--slow", required=True, metavar="FILE", help="a slow full discharge (C/20 or slower), from full")
-    ft.add_argument("--pulses", required=True, metavar="FILE", help="a pulse test (HPPC) with rests between pulses")
+    ft.add_argument("tests", nargs="?", metavar="TESTS", help="a test list (.yaml): the tests by temperature")
+    ft.add_argument("--slow", metavar="FILE", help="one temperature: a slow full discharge (C/20 or slower), from full")
+    ft.add_argument("--pulses", metavar="FILE", help="one temperature: a pulse test (HPPC) with rests between pulses")
     ft.add_argument("--steps", metavar="FILE", help="a test with steady steps followed by rests of 5 min or more")
     ft.add_argument("--check", action="append", metavar="FILE", help="a test to predict, not fitted to (repeatable)")
     ft.add_argument("--compare", metavar="CELL", help="a library cell to predict the --check tests with too, e.g. PF")
-    ft.add_argument(
-        "-o", "--output", default="fitted_cell.yaml", help="the fitted cell file (default fitted_cell.yaml)"
-    )
+    ft.add_argument("-o", "--output", help="the fitted cell file (default: the test list's, or fitted_cell.yaml)")
     ft.add_argument("--report", metavar="HTML", help="the report (default: the cell file's name, .html)")
     ft.add_argument("--name", help="the cell's name (default: the output file's name)")
     ft.add_argument("--rated-capacity", type=POS, metavar="AH", help="the datasheet capacity, to compare with")

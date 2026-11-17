@@ -210,6 +210,8 @@ class Cell:
     # How the electrical side is modelled, as shown to users (cells table, results).
     model_label: str = "lumped DCIR"
     user_defined: bool = False
+    # A fitted cell's tested range: cell temperature (degC), discharge and charge C-rates. Studies warn beyond it.
+    validity: dict | None = None
 
     @property
     def radius(self) -> float:
@@ -349,8 +351,7 @@ def with_R0(cell: Cell, R0: float) -> Cell:
     f = R0 / cell.R0_25C
     if cell.ecm is None:
         return replace(cell, R0_25C=R0)
-    e = cell.ecm
-    return replace(cell, R0_25C=R0, ecm=replace(e, R0_25C=e.R0_25C * f, Rd_25C=e.Rd_25C * f, I0_25C=e.I0_25C / f))
+    return replace(cell, R0_25C=R0, ecm=cell.ecm.scaled(f))
 
 
 def get_cell(key: str) -> Cell:

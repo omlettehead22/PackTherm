@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.2
+
+Fitting across temperatures, the third v0.6 mini update. Fitted cells can now be used in studies.
+
+- **New: test lists.** `packtherm fit tests.yaml` takes a cell's tests by temperature: pulse tests, steps, full discharges and drive cycles, plus checks the fit never sees. Paths are relative to the list; every problem in a list is reported at once. Compressed CSVs (`.csv.gz`) are read too.
+- **New: values by temperature.** Each temperature is fitted on its own, and PackTherm's circuit model now holds a table of values by temperature (`ECM.by_T`): interpolated in 1/T between the fitted temperatures, and carried beyond the coldest and warmest by Arrhenius laws fitted through them. Existing cells are unchanged.
+- **New: a third branch.** A middle RC branch (tens of seconds) sits between the charge transfer (seconds) and the slow branch (minutes). With two, the fit had to choose, and predicted drive cycles ran cold. Off in the library cells.
+- **New: fitted cells in studies.** A file fitted at three temperatures or more, naming a cell for its size, mass and thermal properties (`like: PF`), loads as `cell: my_cell.yaml` in a study, the API and the CLI. Runs that go beyond the tested temperatures (by more than 2 K) or C-rates get a warning in the results.
+- **New: checks as a study runs the cell.** With `like` and the chamber's convection given, each check is run electro-thermally from its measured current alone, and its voltage and surface temperature are compared with what was measured, beside a library cell's (`errors.held_out_electrothermal`, and a chart in the report).
+- **The fit, reworked from what the checks showed:**
+  - the slow branch is fitted on long tests only (steps, discharges, drive cycles): fitted with the pulses, it went to tens of seconds, and drive cycles ran cold;
+  - long tests are scored on their voltage down to the knee near empty, not relative to their first sample, which carried one sample's error through hours;
+  - the rise near empty is fitted on pulses and long tests run to their end;
+  - three rounds, not two.
+- **Fixed, found by the known-answer tests:** the rise near empty was set to zero while the slow branch was fitted, so the slow branch made up for it. On tests made by a known cell, the slow branch's time constant ran to 10x its true value. It now comes back within 10%.
+- **Results.** The Panasonic NCR18650PF fitted at five temperatures (−20 to 25 °C), from files in the repository, predicts 43 tests it never saw, from their current alone: 28.2 mV median voltage error against 32.7 mV for the hand-tuned library cell, and 79% within 1 K against 86%. Its temperature peaks run about 1 K cold, in the last minutes near empty (BACKLOG item 6). See [docs/FITTING.md](docs/FITTING.md); the worked example is in `docs/examples/fitting/`.
+- **Tests:** known answers at one and three temperatures (values following known laws), the temperature table and middle branch, fitted cells in studies and their range warnings, test lists, and a real three-temperature fit. Six more Panasonic files in `tests/data` (the 10, 0, −10 and −20 °C pulse tests and their steps, unchanged, CC BY 4.0).
+- **Docs:** FITTING.md rewritten for test lists, the table and the results; BACKLOG item 6 rewritten (the cold peaks); README and HISTORY.
+
 ## 0.6.1
 
 Fitting a cell model at one temperature, the second v0.6 mini update.

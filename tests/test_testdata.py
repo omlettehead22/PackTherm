@@ -265,21 +265,27 @@ REAL = Path(__file__).parent / "data" / "panasonic_18650pf"
 CAP_PF = 2.9  # Ah
 
 
+def one(name: str) -> Path:
+    """The one test-data file whose name holds this (several would make a test read the wrong one)."""
+    (p,) = REAL.glob(f"*{name}*")
+    return p
+
+
 def real(name: str):
-    return load_test_data(next(REAL.glob(f"*{name}*")), capacity_Ah=CAP_PF)
+    return load_test_data(one(name), capacity_Ah=CAP_PF)
 
 
 def counter_Ah_of(name: str) -> float:
     """Charge discharged by the tester's own counter, from the start to the end of the file."""
     import scipy.io as sio
 
-    m = sio.loadmat(next(REAL.glob(f"*{name}*")), squeeze_me=True, struct_as_record=False)["meas"]
+    m = sio.loadmat(one(name), squeeze_me=True, struct_as_record=False)["meas"]
     ah = -np.atleast_1d(m.Ah).astype(float)  # the counter falls as the cell discharges
     return float(ah[-1] - ah[0])
 
 
 def test_real_hppc_test():
-    rec = real("5Pulse_HPPC")
+    rec = real("25degC_5Pulse_HPPC")
     pulses = [s for s in rec.segments() if s.kind == "pulse"]
     # Kollmeyer's design: 10 s pulses at 0.5, 1, 2, 4 and 6C of 2.9 Ah. The
     # highest are left out at low charge, as in the test itself.
@@ -300,7 +306,7 @@ def test_real_hppc_test():
     # tester's counter shows them, and they are counted as unlogged parts.
     unlogged = [s for s in rec.segments() if s.kind == "unlogged"]
     assert len(unlogged) == 13 and all(s.charge_Ah > 0.03 for s in unlogged)
-    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("5Pulse_HPPC"), rel=0.01)
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("25degC_5Pulse_HPPC"), rel=0.01)
     assert any("counter shows" in w for w in rec.warnings)
 
 
@@ -308,8 +314,8 @@ def test_real_sparse_steps():
     # Logged every 1 min under load and every 5 min in rests: each step ends
     # between two samples. Averaging the two ends would count about 0.036 Ah
     # that never moved at every step; the tester's counter knows when it stopped.
-    rec = real("dis5_10p")
-    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("dis5_10p"), rel=0.01)
+    rec = real("3390_dis5_10p")
+    assert rec.charge_Ah()[-1] == pytest.approx(counter_Ah_of("3390_dis5_10p"), rel=0.01)
     assert not any("disagree" in w for w in rec.warnings)
     kinds = [s.kind for s in rec.segments()]
     assert kinds.count("rest") == 26 and kinds.count("unlogged") == 26
