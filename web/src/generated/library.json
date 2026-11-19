@@ -34,5 +34,23 @@
   "V_nominal": 3.6,
   "DCIR_25C_mOhm": 46.0,
   "mass_g": 47.0
+ },
+ "30T-LUMPED": {
+  "name": "Samsung INR21700 30T (lumped DCIR)",
+  "model": "lumped DCIR",
+  "format": "21700",
+  "capacity_Ah": 3.0,
+  "V_nominal": 3.6,
+  "DCIR_25C_mOhm": 14.3,
+  "mass_g": 65.0
+ },
+ "30T": {
+  "name": "Samsung INR21700 30T",
+  "model": "circuit (fitted)",
+  "format": "21700",
+  "capacity_Ah": 3.0326,
+  "V_nominal": 3.6,
+  "DCIR_25C_mOhm": 14.277533189175186,
+  "mass_g": 65.0
  }
 }

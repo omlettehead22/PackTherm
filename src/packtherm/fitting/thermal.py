@@ -7,9 +7,14 @@ the cell's surface temperature and voltage come out, to compare with the
 thermocouple and the voltage logged. A library cell can be run the same way
 for comparison.
 
-The test chamber's convection (h) is a property of the rig, not the cell: it
-is given, not fitted. For the Panasonic dataset it is the 38.7 W/(m2 K)
-calibrated in ``packtherm.validation`` from the measured heat alone.
+The rig is not the cell. The chamber's convection (h) is given, or calibrated
+on tests that are fitted to (``calibrate_rig``), with the heat from their
+measured voltage, so the checks are not tuned to the circuit model. For the
+Panasonic dataset h is the 38.7 W/(m2 K) calibrated in ``packtherm.validation``.
+With two calibration tests or more, one steady and one dynamic, the heat
+capacity the cell's fixture adds (J/K: clips, leads, holder) is calibrated
+too: a steady test's rise sets h, a drive cycle's peaks the heat capacity. It
+is the rig's, used for the checks only, never stored on the cell.
 """
 
 from __future__ import annotations
@@ -70,8 +75,79 @@ def run_check(c: ThermalCheck, cell, h: float, dt: float = 2.0) -> dict:
     }
 
 
-def thermal_checks(checks: list[ThermalCheck], cell, h: float, compare=None, compare_name: str = "") -> list[dict]:
-    """Every held-out test, with the fitted cell and (optionally) a cell to compare with."""
+def rig_cell(cell, fixture_J_K: float = 0.0):
+    """The cell as the rig holds it: the fixture's heat capacity lumped with the cell's."""
+    if not fixture_J_K:
+        return cell
+    from dataclasses import replace
+
+    return replace(cell, cp=cell.cp + fixture_J_K / cell.mass)
+
+
+def calibrate_rig(cals: list[ThermalCheck], cell, dt: float = 2.0) -> dict:
+    """The rig's convection (h), and with two tests or more the fixture's heat capacity, from measured heat.
+
+    The heat is I (OCV - V) with V as measured: the circuit model plays no part
+    beyond the open-circuit voltage, so the checks that follow are not tuned to
+    it. Use tests that are fitted to, not the checks: a steady one (a constant
+    current discharge) for h, and a dynamic one (a drive cycle) for the heat
+    capacity. Scored on the RMS of the tests' temperature errors.
+    """
+    from scipy.optimize import minimize, minimize_scalar
+
+    from ..validation import TestRecord as VTest
+    from ..validation import run_test
+
+    tests = []
+    for c in cals:
+        rec = c.record
+        if rec.temperature_C is None or not np.isfinite(rec.temperature_C).any():
+            raise ValueError(f"{rec.source}: no cell temperature in the file: calibrating the rig needs it")
+        amb = _ambient(c)
+        test = VTest(
+            rec.source, "calibration", "calibration", amb, amb, c.soc0,
+            rec.t - rec.t[0], rec.current_A, rec.voltage_V, rec.temperature_C,
+        )  # fmt: skip
+        tests.append(test)
+
+    def rms(h: float, fixture: float) -> float:
+        c = rig_cell(cell, fixture)
+        return float(np.sqrt(np.mean([run_test(t, c, h, "thermal", dt)["T_rmse_K"] ** 2 for t in tests])))
+
+    H_LO, H_HI = 2.0, 200.0
+    own = cell.mass * cell.cp  # J/K
+    if len(tests) == 1:
+        r = minimize_scalar(lambda h: rms(h, 0.0), bounds=(H_LO, H_HI), method="bounded", options={"xatol": 0.05})
+        h, fixture = float(r.x), 0.0
+    else:
+        # log h, and the fixture as a share of the cell's own heat capacity (0 to 3x)
+        def f(x):
+            return rms(float(np.exp(np.clip(x[0], np.log(H_LO), np.log(H_HI)))), own * float(np.clip(x[1], 0.0, 3.0)))
+
+        r = minimize(f, np.array([np.log(40.0), 0.3]), method="Nelder-Mead", options={"xatol": 2e-3, "fatol": 1e-3})
+        h = float(np.exp(np.clip(r.x[0], np.log(H_LO), np.log(H_HI))))
+        fixture = own * float(np.clip(r.x[1], 0.0, 3.0))
+    notes = []
+    if h < 1.25 * H_LO or h > 0.995 * H_HI:
+        notes.append(f"h at the edge of {H_LO:g} to {H_HI:g} W/(m2 K): check the tests")
+    if len(tests) > 1 and fixture > 2.9 * own:
+        notes.append("the fixture's heat capacity at the edge (3x the cell's): check the tests")
+    return {
+        "files": [t.name for t in tests],
+        "h_W_m2K": h,
+        "fixture_J_K": fixture,
+        "cell_J_K": own,
+        "T_rmse_K": rms(h, fixture),
+        "note": "; ".join(notes),
+    }
+
+
+def thermal_checks(
+    checks: list[ThermalCheck], cell, h: float, compare=None, compare_name: str = "", fixture_J_K: float = 0.0
+) -> list[dict]:
+    """Every held-out test, with the fitted cell and (optionally) a cell to compare with, in the rig."""
+    cell = rig_cell(cell, fixture_J_K)
+    compare = None if compare is None else rig_cell(compare, fixture_J_K)
     out = []
     for c in checks:
         row = run_check(c, cell, h)

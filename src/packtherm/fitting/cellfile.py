@@ -242,7 +242,13 @@ def fitted_cell_doc(
     )
     if multi:
         doc["by_temperature"] = [
-            {"at_C": pt["at_C"], "cell_C": pt["cell_C"], "pulses": pt["pulses"], "values": _values(pt["params"])}
+            {
+                "at_C": pt["at_C"],
+                "cell_C": pt["cell_C"],
+                "pulses": pt["pulses"],
+                "tau_m_from": pt.get("tau_m_from", "pulses"),
+                "values": _values(pt["params"]),
+            }
             for pt in fit.per_temperature
         ]
         # The order a reader wants: the per-temperature values right after the summary values.

@@ -36,6 +36,7 @@ How PackTherm grew from an MSc thesis model to a module design tool. Results on 
 | **v0.6.0** | Cell test data: CSV and `.mat` reading, column, unit and sign detection, checks, and the test's parts labelled (`packtherm data`) |
 | **v0.6.1** | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
 | **v0.6.2** | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
+| **v0.6.3** | The Samsung INR21700-30T fitted at six temperatures (−20 to 40 °C) and added to the library (`30T`); 82 tests it never saw: 27.7 mV median voltage error, 62% within 1 K. The middle branch's time constant set by the long tests where they fit better; the test rig (convection and fixture) calibrated on fitted tests. The Panasonic refitted: 24.4 mV, 81% within 1 K |
 
 ## v0.3.1: single-cell design advisor
 

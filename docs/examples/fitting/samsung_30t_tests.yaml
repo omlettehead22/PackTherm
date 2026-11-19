@@ -1,0 +1,135 @@
+# The Samsung INR21700 30T fitted at six temperatures, from the tests in this repository.
+# Run from the repository's root:  packtherm fit docs/examples/fitting/samsung_30t_tests.yaml
+# Data: P. Kollmeyer and M. Skells, Samsung INR21700 30T 3Ah Li-ion Battery Data, Mendeley Data v2 (2023),
+# doi:10.17632/9xyvy2njj3.2, CC BY 4.0. Fitted on each temperature's pulse test (its pulses, and the
+# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and the 25 degC C/20 discharge;
+# every other test is a check, never fitted to. The rig is calibrated on the 25 degC 1C discharge #1 and
+# Mixed1 (both fitted to), with the heat from their measured voltage. Each test's ambient is the cell
+# temperature after the settled rest before it, and its start the charge the tester counted before logging
+# began (validation/data/samsung_30t/manifest.json).
+packtherm_fit: 1
+name: Samsung INR21700 30T (fitted)
+like: 30T-LUMPED
+rated_capacity_Ah: 3.0
+dataset:
+  citation: P. Kollmeyer and M. Skells, Samsung INR21700 30T 3Ah Li-ion Battery Data, Mendeley Data v2 (2023), doi:10.17632/9xyvy2njj3.2
+  licence: CC BY 4.0
+slow: "../../../tests/data/samsung_30t/03-16-19_04.00 729_C20DisCh_25degC_IN21700_30T.mat"
+temperatures:
+  - at: 25
+    pulses: "../../../tests/data/samsung_30t/03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/25C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/25C_Mixed1.csv.gz"]
+  - at: 40
+    pulses: "../../../tests/data/samsung_30t/03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/40C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/40C_Mixed1.csv.gz"]
+  - at: 10
+    pulses: "../../../tests/data/samsung_30t/03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/10C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/10C_Mixed1.csv.gz"]
+  - at: 0
+    pulses: "../../../tests/data/samsung_30t/05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/0C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/0C_Mixed1.csv.gz"]
+  - at: -10
+    pulses: "../../../tests/data/samsung_30t/06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/m10C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/m10C_Mixed1.csv.gz"]
+  - at: -20
+    pulses: "../../../tests/data/samsung_30t/06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat"
+    steps: "../../../tests/data/samsung_30t/06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat"
+    discharges: ["../../../validation/data/samsung_30t/m20C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/samsung_30t/m20C_Mixed1.csv.gz"]
+chamber_calibration:  # the rig: h from the 1C discharge, the fixture's heat capacity from the drive cycle
+  - {file: "../../../validation/data/samsung_30t/25C_1C_discharge_1.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed1.csv.gz", start_soc: 1, ambient_C: 24.29}
+checks:
+  - {file: "../../../validation/data/samsung_30t/40C_0p5C_discharge.csv.gz", start_soc: 0.9888, ambient_C: 38.8}
+  - {file: "../../../validation/data/samsung_30t/40C_2C_discharge.csv.gz", start_soc: 1, ambient_C: 38.12}
+  - {file: "../../../validation/data/samsung_30t/40C_HWFET.csv.gz", start_soc: 1, ambient_C: 38.17}
+  - {file: "../../../validation/data/samsung_30t/40C_LA92.csv.gz", start_soc: 1, ambient_C: 38.22}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed2.csv.gz", start_soc: 1, ambient_C: 38.18}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed3.csv.gz", start_soc: 1, ambient_C: 38.33}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed4.csv.gz", start_soc: 1, ambient_C: 38.18}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed5.csv.gz", start_soc: 1, ambient_C: 38.28}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed6.csv.gz", start_soc: 1, ambient_C: 38.19}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed7.csv.gz", start_soc: 1, ambient_C: 38.17}
+  - {file: "../../../validation/data/samsung_30t/40C_Mixed8.csv.gz", start_soc: 1, ambient_C: 38.21}
+  - {file: "../../../validation/data/samsung_30t/40C_UDDS.csv.gz", start_soc: 1, ambient_C: 37.78}
+  - {file: "../../../validation/data/samsung_30t/40C_US06.csv.gz", start_soc: 1, ambient_C: 38.07}
+  - {file: "../../../validation/data/samsung_30t/25C_0p5C_discharge.csv.gz", start_soc: 0.9866, ambient_C: 23.98}
+  - {file: "../../../validation/data/samsung_30t/25C_2C_discharge.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_HWFET.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_LA92.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed2.csv.gz", start_soc: 1, ambient_C: 24.08}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed3.csv.gz", start_soc: 1, ambient_C: 24.08}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed4.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed5.csv.gz", start_soc: 1, ambient_C: 24.03}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed6.csv.gz", start_soc: 1, ambient_C: 24.14}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed7.csv.gz", start_soc: 1, ambient_C: 24.08}
+  - {file: "../../../validation/data/samsung_30t/25C_Mixed8.csv.gz", start_soc: 1, ambient_C: 24.08}
+  - {file: "../../../validation/data/samsung_30t/25C_UDDS.csv.gz", start_soc: 1, ambient_C: 24.19}
+  - {file: "../../../validation/data/samsung_30t/25C_US06.csv.gz", start_soc: 1, ambient_C: 24.08}
+  - {file: "../../../validation/data/samsung_30t/10C_0p5C_discharge.csv.gz", start_soc: 0.9877, ambient_C: 9.46}
+  - {file: "../../../validation/data/samsung_30t/10C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: 10.2}
+  - {file: "../../../validation/data/samsung_30t/10C_2C_discharge.csv.gz", start_soc: 1, ambient_C: 9.99}
+  - {file: "../../../validation/data/samsung_30t/10C_HWFET.csv.gz", start_soc: 1, ambient_C: 10.15}
+  - {file: "../../../validation/data/samsung_30t/10C_LA92.csv.gz", start_soc: 1, ambient_C: 10.15}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed2.csv.gz", start_soc: 1, ambient_C: 10.2}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed3.csv.gz", start_soc: 1, ambient_C: 10.04}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed4.csv.gz", start_soc: 1, ambient_C: 10.1}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed5.csv.gz", start_soc: 1, ambient_C: 9.98}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed6.csv.gz", start_soc: 1, ambient_C: 10.17}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed7.csv.gz", start_soc: 1, ambient_C: 10.13}
+  - {file: "../../../validation/data/samsung_30t/10C_Mixed8.csv.gz", start_soc: 1, ambient_C: 10.1}
+  - {file: "../../../validation/data/samsung_30t/10C_UDDS.csv.gz", start_soc: 1, ambient_C: 10.06}
+  - {file: "../../../validation/data/samsung_30t/10C_US06.csv.gz", start_soc: 1, ambient_C: 10.15}
+  - {file: "../../../validation/data/samsung_30t/0C_0p5C_discharge.csv.gz", start_soc: 0.9834, ambient_C: 0.32}
+  - {file: "../../../validation/data/samsung_30t/0C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: -0.19}
+  - {file: "../../../validation/data/samsung_30t/0C_2C_discharge.csv.gz", start_soc: 0.9671, ambient_C: -0.68}
+  - {file: "../../../validation/data/samsung_30t/0C_HWFET.csv.gz", start_soc: 1, ambient_C: -1.94}
+  - {file: "../../../validation/data/samsung_30t/0C_LA92.csv.gz", start_soc: 1, ambient_C: -1.76}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed2.csv.gz", start_soc: 1, ambient_C: -0.11}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed3.csv.gz", start_soc: 1, ambient_C: 0.15}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed4.csv.gz", start_soc: 1, ambient_C: 0.55}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed5.csv.gz", start_soc: 1, ambient_C: 0.58}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed6.csv.gz", start_soc: 1, ambient_C: 0.51}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed7.csv.gz", start_soc: 1, ambient_C: 0.53}
+  - {file: "../../../validation/data/samsung_30t/0C_Mixed8.csv.gz", start_soc: 1, ambient_C: 0.53}
+  - {file: "../../../validation/data/samsung_30t/0C_UDDS.csv.gz", start_soc: 1, ambient_C: -1.48}
+  - {file: "../../../validation/data/samsung_30t/0C_US06.csv.gz", start_soc: 1, ambient_C: -1}
+  - {file: "../../../validation/data/samsung_30t/m10C_0p5C_discharge.csv.gz", start_soc: 0.8472, ambient_C: -9.83}
+  - {file: "../../../validation/data/samsung_30t/m10C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: -9.57}
+  - {file: "../../../validation/data/samsung_30t/m10C_2C_discharge.csv.gz", start_soc: 0.4731, ambient_C: -13.15}
+  - {file: "../../../validation/data/samsung_30t/m10C_HWFET.csv.gz", start_soc: 1, ambient_C: -9.16}
+  - {file: "../../../validation/data/samsung_30t/m10C_LA92.csv.gz", start_soc: 1, ambient_C: -9.15}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed2.csv.gz", start_soc: 1, ambient_C: -9.04}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed3.csv.gz", start_soc: 1, ambient_C: -9.29}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed4.csv.gz", start_soc: 1, ambient_C: -9.46}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed5.csv.gz", start_soc: 1, ambient_C: -9.15}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed6.csv.gz", start_soc: 1, ambient_C: -9.04}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed7.csv.gz", start_soc: 1, ambient_C: -9.15}
+  - {file: "../../../validation/data/samsung_30t/m10C_Mixed8.csv.gz", start_soc: 1, ambient_C: -9.15}
+  - {file: "../../../validation/data/samsung_30t/m10C_UDDS.csv.gz", start_soc: 1, ambient_C: -12.61}
+  - {file: "../../../validation/data/samsung_30t/m10C_US06.csv.gz", start_soc: 1, ambient_C: -9.15}
+  - {file: "../../../validation/data/samsung_30t/m20C_0p5C_discharge.csv.gz", start_soc: 0.95, ambient_C: -19.93}
+  - {file: "../../../validation/data/samsung_30t/m20C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: -20.09}
+  - {file: "../../../validation/data/samsung_30t/m20C_2C_discharge.csv.gz", start_soc: 0.9671, ambient_C: -18.87}
+  - {file: "../../../validation/data/samsung_30t/m20C_HWFET.csv.gz", start_soc: 1, ambient_C: -20.03}
+  - {file: "../../../validation/data/samsung_30t/m20C_LA92.csv.gz", start_soc: 1, ambient_C: -19.24}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed2.csv.gz", start_soc: 1, ambient_C: -19.82}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed3.csv.gz", start_soc: 1, ambient_C: -19.21}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed4.csv.gz", start_soc: 1, ambient_C: -19.35}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed5.csv.gz", start_soc: 1, ambient_C: -19.67}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed6.csv.gz", start_soc: 1, ambient_C: -20.69}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed7.csv.gz", start_soc: 1, ambient_C: -19.77}
+  - {file: "../../../validation/data/samsung_30t/m20C_Mixed8.csv.gz", start_soc: 1, ambient_C: -19.87}
+  - {file: "../../../validation/data/samsung_30t/m20C_UDDS.csv.gz", start_soc: 1, ambient_C: -19.92}
+  - {file: "../../../validation/data/samsung_30t/m20C_US06.csv.gz", start_soc: 1, ambient_C: -19.14}
+output: samsung_30t_fitted.yaml

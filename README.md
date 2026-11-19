@@ -67,6 +67,8 @@ LG M50 at a 1.5C full discharge, 25 °C, hex packing, 0.05 g/s coolant per cell 
 
 ![Cold-weather validation, before and after v0.4.10](docs/validation/cold_weather.png)
 
+**Fitted cell (Samsung INR21700-30T):** fitted by `packtherm fit` from its own tests at six temperatures (McMaster, CC BY 4.0), and checked on 82 others from current alone: 27.7 mV median voltage error, 62% within 1 K, all within 1 K at 25 and 40 °C (see [docs/FITTING.md](docs/FITTING.md)).
+
 **LG M50 (the design cell):** no open temperature data for it is reachable, so its equivalent circuit is **derived** from a physics model (PyBaMM DFN with the ORegan2022 parameter set, measured on the LG M50T). Its heat matches that model within −6 % to +13 % on discharges and pulsed loads at 25, 10 and 0 °C, where the earlier lumped model was up to 42 % high.
 
 ![M50 circuit against the physics model](docs/validation/m50_vs_dfn.png)
@@ -75,7 +77,7 @@ Method, per-test results and known gaps: [docs/VALIDATION.md](docs/VALIDATION.md
 
 ## What the model covers
 
-- **Cells:** electro-thermal heat from current (equivalent circuit with Butler–Volmer kinetics and a slow branch, temperature- and SOC-dependent, with entropic heat where the cell has data), coulomb-counted SOC, voltage cut-off and CC-CV charging. Library: Panasonic NCR18650PF (measured), LG M50 (derived), LG MJ1 (lumped resistance); `packtherm cells` lists them. Your own cylindrical NMC, NCA or LFP cell can be described from its datasheet (lumped resistance, labelled as less accurate; see below).
+- **Cells:** electro-thermal heat from current (equivalent circuit with Butler–Volmer kinetics and a slow branch, temperature- and SOC-dependent, with entropic heat where the cell has data), coulomb-counted SOC, voltage cut-off and CC-CV charging. Library: Samsung INR21700-30T (fitted from tests at −20 to 40 °C), Panasonic NCR18650PF (measured), LG M50 (derived), LG MJ1 (lumped resistance); `packtherm cells` lists them. Your own cylindrical NMC, NCA or LFP cell can be described from its datasheet (lumped resistance, labelled as less accurate; see below).
 - **Module:** one cell's share of a hex or square array. Gap filler: air, PCM (RT31, RT42 and others) or PCM + expanded graphite. Cooling: forced air through the gaps, a bottom cold plate (2D, radius × height) or a side ribbon (2D, radius × angle). The coolant warms along the channel with its own thermal mass. Every design is judged on four cells: interior and on the module wall, at the coolant inlet and outlet.
 - **Energy:** fan and pump power from flow and pressure drop over the whole loop (laminar coolant channels, cross-flow air over the cans), the radiator fan, and chiller electricity with an ambient-dependent COP and heat leak.
 - **Mass:** filler plus cooling hardware built up from sourced dimensions (plate sheets and channels, ribbon walls and ribs, bond lines, pack-level loop, fans and chiller).
@@ -147,7 +149,12 @@ print(run.result.summary())  # run.to_json() is the results document
 
 **Fitting a cell model.** `packtherm fit tests.yaml` fits PackTherm's circuit model to a cell's tests at several temperatures: pulse tests, steps, discharges and drive cycles, listed by temperature. It writes a fitted cell file and an HTML report: the values by temperature, each with its source and 95% range, where the model is valid, its errors on what it was fitted to and on tests it never saw, the data warnings, and each input's SHA-256. Fitted at three temperatures or more, with a cell named for size and thermal properties, the file goes straight into a study (`cell: my_cell.yaml`), and the study warns when a run goes beyond what the tests covered.
 
-On the Panasonic NCR18650PF at five temperatures (−20 to 25 °C), 43 tests the fit never saw were predicted from their current alone, as a study runs the cell. The fitted cell predicts voltage at least as well as the hand-tuned library cell (28.2 vs 32.7 mV median), and 79% of tests come within 1 K, against 86%; its temperature peaks run about 1 K cold. See [docs/FITTING.md](docs/FITTING.md).
+Tests the fit never saw were predicted from their current alone, as a study runs the cell:
+
+- **Panasonic NCR18650PF**, five temperatures (−20 to 25 °C), 43 tests: 24.4 mV median voltage error, against 32.7 mV for the hand-tuned library cell; 81% within 1 K, against 86%.
+- **Samsung INR21700-30T**, six temperatures (−20 to 40 °C), 82 tests: 27.7 mV, and 62% within 1 K (all within 1 K at 25 and 40 °C; the cold is weaker). It is in the library as `30T`.
+
+The 30T was the second check of the method. It exposed a loose middle branch, which v0.6.3 fixes, so it is not fully blind. See [docs/FITTING.md](docs/FITTING.md).
 
 **Study files.** A study (cell, duty, ambient, limits, design space, options, normal or fast) can be written as one YAML or JSON file; `packtherm design` flags build the same document. Every key is described in [docs/STUDY_FILES.md](docs/STUDY_FILES.md). Each example study in [`docs/examples/`](docs/examples/) has its file and its results JSON, and every number this README quotes from them is checked in CI (`tests/test_docs.py`). CI also re-runs the examples in fast mode and checks they still match their committed results (`tests/test_examples_rerun.py`).
 
@@ -186,8 +193,9 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.5.7** | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
 | **v0.6.0** | Cell test data: CSV and `.mat` reading, column, unit and sign detection, checks, and the test's parts labelled (`packtherm data`) |
 | **v0.6.1** | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
-| **v0.6.2** (current) | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
-| v0.6.3 (next) | The Samsung 30T, an independent check of the method; then the generic circuit, web fitting and the 3D view |
+| **v0.6.2** | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
+| **v0.6.3** (current) | The Samsung INR21700-30T fitted at six temperatures and added to the library; the middle branch's time constant no longer left loose by the pulses; the test rig calibrated for the thermal checks |
+| v0.6.4 (next) | The LG HG2, a third cell fitted with the method as it stands; then an LFP cell, the generic circuit, web fitting and the 3D view |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
@@ -203,7 +211,7 @@ src/packtherm/api/    the HTTP API (FastAPI): settings and limits, jobs, endpoin
 src/packtherm/browser.py  the in-browser engine's side in Python (the study in steps, for Web Workers)
 web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/, or
                       as the public site with the in-browser engine: web/scripts/build_pages.py)
-src/packtherm/data/   WLTC Class 3b trace (UN GTR 15), NCR18650PF and LG M50 OCV tables
+src/packtherm/data/   WLTC Class 3b trace (UN GTR 15), NCR18650PF and LG M50 OCV tables, the fitted 30T
 validation/           dataset preparation, identification, M50 derivation and checks, processed test data
 docs/examples/        example study files, their results (JSON, CSV, charts) and module comparisons
 docs/figures/         model picture and 2D fields, with the scripts that draw them

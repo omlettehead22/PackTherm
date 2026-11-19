@@ -21,7 +21,10 @@ checks:                     # optional: tests the fit never sees, predicted afte
     start_soc: 1.0
     ambient_C: 25           # if the file has no chamber column (for the thermal check)
 compare: PF                 # optional: a library cell to predict the checks with too
-chamber_h_W_m2K: 38.7       # optional: the test chamber's convection, for the thermal check
+chamber_h_W_m2K: 38.7       # optional: the test chamber's convection, for the thermal check; or instead
+chamber_calibration:        # calibrate the rig on tests fitted to (heat from their measured voltage): one
+  - {file: dis1c.mat, start_soc: 1.0, ambient_C: 25}   # sets h; a drive cycle too sets the heat capacity
+  - {file: cycle1.mat, start_soc: 1.0, ambient_C: 25}  # the cell's fixture adds (both for the checks only)
 output: pf_fitted.yaml      # optional: where to write the fitted cell file
 ```
 
@@ -37,7 +40,7 @@ from typing import Any
 FORMAT = 1
 TOP_KEYS = {
     "packtherm_fit", "name", "like", "rated_capacity_Ah", "dataset", "slow", "temperatures", "checks",
-    "compare", "chamber_h_W_m2K", "output", "report",
+    "compare", "chamber_h_W_m2K", "chamber_calibration", "output", "report",
 }  # fmt: skip
 SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc"}
 CHECK_KEYS = {"file", "start_soc", "ambient_C"}
@@ -61,6 +64,7 @@ class TestList:
     checks: list[dict] = field(default_factory=list)
     compare: str | None = None
     chamber_h: float | None = None
+    chamber_calibration: list[dict] | None = None
     output: Path | None = None
     report: Path | None = None
 
@@ -194,6 +198,30 @@ def read_test_list(path: str | Path) -> TestList:
         except KeyError as e:
             errors.append(f"compare: {e.args[0]}")
     h = number(doc.get("chamber_h_W_m2K"), "chamber_h_W_m2K", 1, 1000)
+    cal = None
+    raw_cal = doc.get("chamber_calibration")
+    if raw_cal is not None:
+        if h is not None:
+            errors.append("chamber_calibration: give it or chamber_h_W_m2K, not both")
+        items = raw_cal if isinstance(raw_cal, list) else [raw_cal]
+        cal = []
+        for i, item in enumerate(items):
+            at = f"chamber_calibration[{i}]" if isinstance(raw_cal, list) else "chamber_calibration"
+            if isinstance(item, str):
+                item = {"file": item}
+            if not isinstance(item, dict):
+                errors.append(f"{at}: a file, or a mapping (file, start_soc, ambient_C)")
+                continue
+            for k in sorted(set(item) - CHECK_KEYS):
+                errors.append(f"{at}.{k}: unknown key (known: {', '.join(sorted(CHECK_KEYS))})")
+            one = {
+                "file": file(item.get("file"), f"{at}.file"),
+                "start_soc": number(item.get("start_soc", 1.0), f"{at}.start_soc", 0, 1),
+                "ambient_C": number(item.get("ambient_C"), f"{at}.ambient_C", -60, 80),
+            }
+            if one["file"] is not None and any(c.get("file") == one["file"] for c in checks):
+                errors.append(f"{at}: that test is one of the checks; calibrate on tests fitted to")
+            cal.append(one)
     name = doc.get("name")
     if not isinstance(name, str) or not name:
         errors.append("name: give the cell a name")
@@ -212,6 +240,7 @@ def read_test_list(path: str | Path) -> TestList:
         checks=checks,
         compare=None if compare is None else str(compare),
         chamber_h=h,
+        chamber_calibration=cal,
         output=None if out is None else base / out,
         report=None if rep is None else base / rep,
     )
@@ -253,10 +282,33 @@ def run_test_list(tl: TestList, progress=print):
     kw = {"rated_capacity_Ah": tl.rated_capacity_Ah, "dataset": tl.dataset, "like": tl.like}
     doc = fitted_cell_doc(fit, tl.name, tl.files(), **kw)
     thermal: list[dict] = []
-    if checks and tl.like and tl.chamber_h:
+    h = tl.chamber_h
+    cal = None
+    if checks and tl.like and tl.chamber_calibration:
+        from .thermal import calibrate_rig
+
+        names = ", ".join(c["file"].name for c in tl.chamber_calibration)
+        progress(f"  calibrating the test rig on {names}")
+        cal = calibrate_rig(
+            [ThermalCheck(read(c["file"]), c["start_soc"], c["ambient_C"]) for c in tl.chamber_calibration],
+            cell_from_doc(doc),
+        )
+        h = cal["h_W_m2K"]
+    if checks and tl.like and h:
         progress("  predicting the checks' voltage and temperature from their current")
         cell = cell_from_doc(doc)
         tc = [ThermalCheck(r, c["start_soc"] if c["start_soc"] is not None else 1.0, c["ambient_C"]) for r, c in checks]
-        thermal = thermal_checks(tc, cell, tl.chamber_h, compare, f"library {compare.name}" if compare else "")
+        fixture = cal["fixture_J_K"] if cal else 0.0
+        thermal = thermal_checks(tc, cell, h, compare, f"library {compare.name}" if compare else "", fixture)
         doc = fitted_cell_doc(fit, tl.name, tl.files(), thermal_checks=thermal, **kw)
+        if cal:
+            rig = (
+                f"{h:.1f} W/(m2 K)"
+                + (f", fixture {cal['fixture_J_K']:.0f} J/K (the cell: {cal['cell_J_K']:.0f} J/K)" if fixture else "")
+                + f", calibrated on {', '.join(cal['files'])} with the heat from their measured voltage"
+                + f" ({cal['T_rmse_K']:.2f} K RMS there){'; ' + cal['note'] if cal['note'] else ''}"
+            )
+        else:
+            rig = f"{h:.1f} W/(m2 K), as given"
+        doc["provenance"]["settings"]["test rig"] = rig
     return fit, doc, thermal

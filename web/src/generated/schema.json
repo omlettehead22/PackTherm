@@ -627,6 +627,14 @@
    "PF": {
     "name": "Panasonic NCR18650PF",
     "model": "circuit (measured)"
+   },
+   "30T-LUMPED": {
+    "name": "Samsung INR21700 30T (lumped DCIR)",
+    "model": "lumped DCIR"
+   },
+   "30T": {
+    "name": "Samsung INR21700 30T",
+    "model": "circuit (fitted)"
    }
   },
   "fillers": [

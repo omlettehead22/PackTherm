@@ -535,28 +535,61 @@ def _fit_one(model, ocv, values, wins, step_wins, V_max):
     3. The rise near empty (soc_a, soc_b) on the pulses and the long tests
        run to their end: the knee at the end of a discharge is that rise.
     4. The kinetics again, on all the pulses, with the rest held. Not on the
-       long tests: there the middle branch (up to minutes) can take over the
-       slow branch's part, and the two drift apart round after round (on
-       tests made by a known cell, the slow branch's time constant ran to 10x).
+       long tests: there the middle branch's resistance can take over the slow
+       branch's part, and the two drift apart round after round (on tests made
+       by a known cell, the slow branch's time constant ran to 10x).
+
+    The middle branch's time constant (tau_m) is fitted both ways when there
+    are long tests: with the kinetics, on the pulses (as above), and with the
+    slow branch, on the long tests (stage 2; held in stage 4). Pulses can leave
+    it loose: the Samsung 30T's at 25 degC fit as well (10 mV) with it at 30 s
+    as at 290 s, where a middle branch four times too strong held its 1C
+    discharge 50-60 mV low. The way that fits the discharges and drive cycles
+    better is kept (the steps, if there are none), as long as the pulses at
+    20-95% SOC still fit within PULSE_SLACK of the other way. Not the steps
+    when there are discharges or cycles: on the Panasonic at 0 degC, the
+    steps' rests favoured the long tests' tau_m while its drive cycle fitted
+    on went from 31 to 56 mV.
 
     Returns the values, the names fitted in the last stage and its result, and
     the stages for the slow branch and the rise (names, result, windows), for
-    their ranges.
+    their ranges; stages["middle"] says which way tau_m was set.
     """
     values = dict(values)
     mid = [w for w in wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
     kin = ["R0_25C", "I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m"]
     values, _ = _fit(model, ocv, values, kin, mid, V_max)
-    stages = {}
-    if step_wins:
-        long_w = _long_for_slow(step_wins)
-        values, r = _fit(model, ocv, values, SLOW_NAMES, long_w, V_max)
-        stages["slow"] = (list(SLOW_NAMES), r, long_w)
+    if not step_wins:
+        rise_w = list(wins)
+        values, r = _fit(model, ocv, values, ["soc_a", "soc_b"], rise_w, V_max)
+        values, res = _fit(model, ocv, values, kin, list(wins), V_max)
+        return values, kin, res, {"rise": (["soc_a", "soc_b"], r, rise_w), "middle": "pulses"}
+
+    long_w = _long_for_slow(step_wins)
     rise_w = list(wins) + [w.to_end() for w in step_wins]
-    values, r = _fit(model, ocv, values, ["soc_a", "soc_b"], rise_w, V_max)
-    stages["rise"] = (["soc_a", "soc_b"], r, rise_w)
-    values, res = _fit(model, ocv, values, kin, list(wins), V_max)
-    return values, kin, res, stages
+    # Judged on what a study runs: the discharges and drive cycles (the steps if there are none).
+    judge = [w for w in long_w if w.kind in ("discharge", "cycle")] or long_w
+    ways = {}
+    for way in ("pulses", "long tests"):
+        own = ["tau_m"] if way == "long tests" else []
+        slow, k = [*SLOW_NAMES, *own], [n for n in kin if n not in own]
+        v, r_slow = _fit(model, ocv, dict(values), slow, long_w, V_max)
+        v, r_rise = _fit(model, ocv, v, ["soc_a", "soc_b"], rise_w, V_max)
+        v, res = _fit(model, ocv, v, k, list(wins), V_max)
+        stages = {"slow": (slow, r_slow, long_w), "rise": (["soc_a", "soc_b"], r_rise, rise_w), "middle": way}
+        score = (_rms(_residuals(model, ocv, v, judge, V_max)), _rms(_residuals(model, ocv, v, mid, V_max)))
+        ways[way] = (v, k, res, stages, score)
+    a, b = ways["pulses"], ways["long tests"]
+    better_long = b[4][0] < a[4][0]
+    pulses_hold = b[4][1] <= (1.0 + PULSE_SLACK) * a[4][1]
+    return (b if better_long and pulses_hold else a)[:4]
+
+
+PULSE_SLACK = 0.1  # the pulses may fit up to 10% worse for the long tests to set tau_m
+
+
+def _rms(r: np.ndarray) -> float:
+    return float(np.sqrt(np.mean(r**2))) if r.size else 0.0
 
 
 def _median_T_C(wins: list[Window]) -> float:
@@ -787,6 +820,7 @@ def fit_cell(
                     "cell_C": round(f.T_C, 1),
                     "pulses": len(f.wins),
                     "params": own_params,
+                    "tau_m_from": f.stages.get("middle", "pulses"),
                     "law": {n: _law_value(_laws_only(model, values, ocv, V_max), n, f.T_C + 273.15) for n in ARRHENIUS},
                 }
             )
@@ -804,6 +838,13 @@ def fit_cell(
         )
     if not have_steps:
         notes.append("no test with long steps and rests: the slow branch (Rd, tau_d) is not fitted")
+    from_long = [f for f in fits if f.stages.get("middle") == "long tests"]
+    if from_long:
+        at = ", ".join(f"{f.T_C:.0f}" for f in from_long)
+        notes.append(
+            f"the middle branch's time constant (tau_m) set by the long tests at {at} degC, where they fit "
+            "better that way and the pulses still fit (elsewhere by the pulses)"
+        )
     for rec in (*records, *(checks or [])):
         for w in rec.warnings:
             notes.append(f"{rec.source}: {w}")
