@@ -1,29 +1,56 @@
 # Fitting a cell model to test data
 
-`packtherm fit` fits PackTherm's circuit model to tests of one cell at one temperature, and writes:
+`packtherm fit` fits PackTherm's circuit model to tests of a cell, and writes:
 
 - a **fitted cell file** (YAML): the values, where each came from, how certain it is, where the model is valid, its errors, and what went in;
 - an **HTML report** beside it: the same, with charts, on one page you can send.
 
-**v0.6.1 fits one temperature.** A cell's resistances change several-fold between 0 and 40 °C, and that behaviour needs tests at several temperatures. Until v0.6.2 fits it, the file says `usable_in_studies: false` and studies refuse it with a message saying why. A study run with borrowed temperature behaviour would give thermal results that look more certain than they are.
+**Fitted at three temperatures or more, with a cell named for its size, mass and thermal properties, the file can be used in studies** (`cell: my_cell.yaml`). Fitted at one temperature, studies refuse it: a cell's losses change several-fold between −20 and 25 °C, and borrowing that behaviour would make every thermal result look more certain than it is.
 
-The tests are read as in [TEST_DATA.md](TEST_DATA.md) (CSV or `.mat`, any common tester export).
+The tests are read as in [TEST_DATA.md](TEST_DATA.md) (CSV, compressed CSV or `.mat`, any common tester export).
 
-## The tests it needs
+## The test list
 
-| Option | Test | What it gives |
-|---|---|---|
-| `--slow` (required) | A slow full discharge, C/10 or slower (C/20 is usual), from full to the cut-off | The open-circuit voltage curve and the capacity |
-| `--pulses` (required) | A pulse test (HPPC): short pulses with rests between, at several states of charge, with a rest of 20 min or more somewhere to fix the state of charge | The instant resistance, the charge-transfer branch, and the rise near empty |
-| `--steps` (optional) | Steady steps of 5 min or more, each followed by a rest of 5 min or more | The slow branch. Without it, the slow branch keeps a starting value and the file says so |
-| `--check` (optional, repeatable) | Anything else, typically a drive cycle | Not fitted to: predicted afterwards, as the honest test of the fit |
-| `--compare CELL` | A library cell, e.g. `PF` | Predicts the `--check` tests too, for comparison |
+A test list (YAML) names the tests by temperature. Paths are relative to it.
+
+```yaml
+packtherm_fit: 1
+name: Panasonic NCR18650PF (fitted)
+like: PF                    # size, mass and thermal properties: a library cell or a cell file
+rated_capacity_Ah: 2.9      # optional, to compare with the measured capacity
+dataset:                    # optional, kept in the fitted cell file
+  citation: Kollmeyer (2018), doi:10.17632/wykht8y7tg.1
+  licence: CC BY 4.0
+slow: c20.mat               # a slow full discharge: the open-circuit voltage and the capacity
+temperatures:               # one entry per test temperature (three or more for studies)
+  - at: 25                  # the chamber setpoint (a label: the fit uses the measured cell temperature)
+    pulses: hppc_25.mat     # required: a pulse (HPPC) test
+    steps: steps_25.mat     # optional: steady steps with rests after them
+    discharges: [dis1c.mat] # optional: full discharges at a working rate
+    cycles: [cycle1.csv.gz] # optional: drive cycles to fit on
+    start_soc: 1.0          # where the discharges and cycles start (default 1: full)
+  - at: 0
+    pulses: hppc_0.mat
+    cycles: [cycle1_0C.csv.gz]
+checks:                     # optional: tests the fit never sees, predicted afterwards
+  - {file: udds_25.csv.gz, start_soc: 1.0, ambient_C: 25}
+compare: PF                 # optional: a library cell to predict the checks with too
+chamber_h_W_m2K: 38.7       # optional: the test chamber's convection, for the thermal check
+output: pf_fitted.yaml      # optional: where to write the fitted cell file
+```
 
 ```
-packtherm fit --slow c20.mat --pulses hppc.mat --steps steps.mat --check udds.mat --compare PF \
-  --name "Panasonic NCR18650PF (fitted, 25 degC)" --rated-capacity 2.9 \
-  --citation "Kollmeyer (2018), doi:10.17632/wykht8y7tg.1" --licence "CC BY 4.0" -o pf_25C.yaml
+packtherm fit tests.yaml
 ```
+
+At one temperature, flags do the same without a list: `packtherm fit --slow c20.mat --pulses hppc.mat --steps steps.mat --check udds.mat --compare PF`.
+
+| Test | What it gives |
+|---|---|
+| Slow discharge (C/10 or slower, from full to the cut-off), at one temperature | The open-circuit voltage and the capacity |
+| Pulse test (HPPC) at each temperature, with a rest of 20 min or more somewhere to fix the state of charge | The instant resistance, the charge-transfer branch (seconds) and the middle branch (tens of seconds) |
+| Long tests at each temperature: steps with rests, full discharges, drive cycles | The slow branch (minutes) and the rise near empty. **A drive cycle or a full discharge at each temperature matters**: without them the slow branch is fitted on steps alone, and the cold behaviour is poorly known (see the results) |
+| Checks | Not fitted to: predicted afterwards, as the honest test of the fit |
 
 ## The model
 
@@ -31,61 +58,112 @@ The model is the one PackTherm's electro-thermal runs use (`packtherm.ecm.ECM`):
 
 - the open-circuit voltage, from a table over the state of charge;
 - an instant (ohmic) resistance `R0`;
-- a charge-transfer branch: a Butler–Volmer-shaped overpotential `gamma · 2RT/F · asinh(I / 2I0)`, reached with time constant `tau_ct`;
-- a slow (diffusion) branch: resistance `Rd`, time constant `tau_d`;
+- a charge-transfer branch: a Butler–Volmer-shaped overpotential `gamma · 2RT/F · asinh(I / 2I0)`, reached with time constant `tau_ct` (seconds);
+- a middle branch: resistance `Rm`, time constant `tau_m` (tens of seconds). New in v0.6.2; off in the library cells;
+- a slow branch: resistance `Rd`, time constant `tau_d` (minutes);
 - a rise of all of them near empty, `1 + soc_a · exp(−SOC / soc_b)`, on discharge.
 
-Fitted cell files name the model (`model.form: packtherm-circuit-1`). The fitting code treats a model as an interface (parameters, a simulator, what PackTherm runs), so a generic circuit with the user's choice of RC branches can be added later and share everything else.
+**Values by temperature.** A cell fitted at several temperatures holds every value at each one. PackTherm interpolates between them (in 1/T, logarithmically: an Arrhenius law between neighbours). Beyond the coldest and warmest, the resistances and rates follow laws fitted through the temperatures' own values (`Ea_R0`, `Ea_I0`, `Ea_Rm`, `Ea_Rd`, `Ea_soc`), and the shape and time constants hold. Studies warn when a run goes beyond the tested temperatures (by more than 2 K) or rates.
+
+Fitted cell files name the model (`model.form: packtherm-circuit-1`) and hold it in full (`model.ecm`). The fitting code treats a model as an interface (parameters, a simulator, what PackTherm runs), so a generic circuit with a chosen number of branches can share everything else.
 
 ## How it fits
 
-1. **Open-circuit voltage and capacity** come from the slow discharge. Its charge to the cut-off is the measured capacity. Its voltage, plus the cell's own drop at that current (the fitted model's steady resistance, rising near empty as the model's does), is the open-circuit curve. The fit runs twice, so the drop comes from the fitted model.
-2. **State of charge** through each test is anchored at a settled rest (20 min or more), where the voltage is the open-circuit voltage, and carried by the charge counted. That includes charge moved while logging paused, and charge across steps between two samples, both from the tester's own counter. A test with no rest that starts at almost no current is anchored at its first voltage, with a warning.
-3. **The fit is through time.** Each pulse (5 s before it to 40 s after) and each rest after a step is replayed through the model and scored on how its voltage changes. That is the same simulation PackTherm runs (a test checks they agree to 1e-9 V), with two details real tests need:
-   - pulses often follow each other within a minute, while the last one's slow recovery is still under way, so each is replayed from the end of the last long rest before it, through the pulses between;
-   - where a step falls between two samples, the slow states move with the interval's mean current (from the counter), and the instant drop uses the current logged at the sample.
-4. **In stages, then together:** the kinetics on pulses at 20–95% state of charge, then the slow branch on the steps, then the rise near empty on all pulses, then everything at once.
+1. **Open-circuit voltage and capacity** come from the slow discharge. Its charge to the cut-off is the measured capacity. Its voltage, plus the cell's own drop at that current (the fitted model's steady resistance at the slow test's temperature, rising near empty as the model's does), is the open-circuit curve.
+2. **State of charge** through each test is anchored at a settled rest (20 min or more), where the voltage is the open-circuit voltage, or given (`start_soc`). It's carried by the charge counted, including charge moved while logging paused and across steps between two samples, both from the tester's own counter.
+3. **Through time.** Each pulse (5 s before it to 40 s after), each rest after a step, and each long test is replayed through the same simulation PackTherm runs (a test checks they agree to 1e-9 V) and scored on its voltage.
+   - Pulses and rests are scored on the change from their first sample; long tests on the voltage itself, down to the knee near empty (40% of the way up from the cut-off: 3.18 V here).
+   - Pulses that follow each other within a minute are replayed from the last long rest before them.
+   - Long tests logged every 0.1 s are thinned to 1 s, with each interval's mean current from the charge counted.
+4. **In stages, at each temperature**, each part of the model on the tests that show it:
+   1. the kinetics (R0, the charge-transfer and middle branches) on pulses at 20–95% state of charge;
+   2. the slow branch on the long tests only. Fitted with the pulses, both slower branches go to the pulses' seconds and tens of seconds, and the minutes a drive cycle's heat builds over are lost: predicted drive cycles ran cold;
+   3. the rise near empty on the pulses and the long tests run to their end;
+   4. the kinetics again, on all the pulses.
+
+   Three rounds: each stage holds the others' values from the round before, and the open-circuit curve and state of charge are updated between rounds.
+5. **Across temperatures**, each temperature's own values become a row of the table, and straight lines through them (log value against 1/T) give the laws beyond.
 
 ## What the file holds
 
 | Key | What |
 |---|---|
-| `status`, `usable_in_studies`, `why_not_usable` | `single-temperature`, `false`, and why |
-| `values` | Every value with its `unit`, its `source` (`fitted`, `data`, `default` or `not fitted`), what it is, its 95% range and any flag |
-| `capacity` | Measured, how, and against the rated capacity if given |
-| `open_circuit_voltage` | The curve, and how it was made |
-| `valid_for` | What the tests covered: the cell temperature in the parts fitted, the state of charge and C-rates of the pulses |
-| `identifiability` | Pairs of values that trade off (correlation beyond ±0.95): the tests pin a combination, not each |
-| `errors` | RMS and worst error on each kind of part fitted (above and below 20% state of charge), and on each `--check` test, with the comparison cell's |
-| `data_warnings` | Everything reading the tests flagged |
-| `provenance` | PackTherm version, date, settings, and each input's role, name, SHA-256, length and conversions; the dataset's citation and licence |
+| `status`, `usable_in_studies`, `why_not_usable` | `single-temperature` or `multi-temperature`; whether studies can use it, and if not, why |
+| `like` | The cell whose size, mass and thermal properties go with these values |
+| `model` | The form, the model in full (`ecm`: every value and the table by temperature), and its 10 s DC resistance at mid charge |
+| `values` | With several temperatures, the laws (`Ea_*`) with their 95% ranges; with one, every value. Each with its `unit`, `source` (`fitted`, `data`, `default` or `not fitted`), what it is, and any flag |
+| `by_temperature` | Each temperature's own values, with 95% ranges and flags |
+| `capacity`, `open_circuit_voltage` | Measured, how, and against the rated capacity if given |
+| `valid_for` | What the tests covered: cell temperature, state of charge and C-rates |
+| `identifiability` | Pairs of values that trade off (correlation beyond ±0.95) |
+| `errors` | RMS and worst error on each kind of test fitted at each temperature, and on each check, in two forms: <br>• voltage, replayed at the check's measured temperature; <br>• with `like` and `chamber_h_W_m2K` given, run as a study runs the cell (`held_out_electrothermal`): voltage and surface temperature from the current alone, beside the comparison cell's |
+| `data_warnings`, `provenance` | Everything reading the tests flagged; PackTherm version, date, settings, each input's SHA-256, the dataset's citation and licence |
 
-**The 95% ranges** count each pulse and each step as one piece of evidence (a cluster-robust estimate). The usual least-squares ranges assume every sample's error is independent. Here what's left is mostly the model's own misfit, the same shape through a whole pulse, so those ranges claim far too much: on noise-free test data, every true value fell outside them. The ranges used show how far the parts of the test disagree. On noise-free data from a known cell, 7 of 8 true values lie inside them; the eighth (`soc_a`) is 3% off, a small steady bias that ranges of this kind cannot show. A value the tests barely touch is flagged.
+**The 95% ranges** count each pulse, rest and long test as one piece of evidence (a cluster-robust estimate).
 
-## Checked against known answers and real data
+- **Why not the usual ranges:** what's left after a fit like this is mostly the model's own misfit, the same shape through a whole pulse. The usual least-squares ranges treat every sample as independent, and claim far too much.
+- **What these show:** how far the parts of the tests disagree. They are not a guarantee: on tests made by a known cell, about half the true values lie inside them. The rest are off by a steady few percent that comes from fitting in stages.
+- **Flags:** a value at the edge of its allowed range, or poorly determined, is flagged. A value at its edge does not set a law.
 
-**Known answers** (`tests/test_fitting.py`): tests made by a cell with known values (an HPPC-style pulse test, a C/20 discharge, steps and rests) are fitted. Every value comes back within 1–5%: `R0` within 0.1%, `tau_d` within 2%. A drive cycle the fit never saw is predicted to 0.2 mV RMS.
+## Checked against known answers
 
-**Real data**, the Panasonic NCR18650PF at 25 °C (Kollmeyer, CC BY 4.0; the files are in `tests/data/panasonic_18650pf/`, and CI runs this fit):
+`tests/test_fitting.py` makes tests with a cell whose values are known, run through PackTherm's own model, and fits them:
 
-| | |
+- **At one temperature** (pulses, steps, a 1C discharge):
+  - every value comes back within 8%, and R0 within 1%;
+  - a drive cycle the fit never saw is predicted to 1.1 mV RMS.
+- **At three temperatures** (25, 5 and −15 °C, values following known Arrhenius laws):
+  - R0 comes back within 3% at each temperature;
+  - the other resistances come back within 12% at 25 and 5 °C;
+  - the instant resistance's law comes back within 10%;
+  - at −15 °C the 2C pulses hit the cut-off and are cut short, so the cold tests say less. There, each value is within its reported range or within 35%.
+
+## Checked on real data: the Panasonic NCR18650PF
+
+The worked example, [docs/examples/fitting/ncr18650pf_tests.yaml](examples/fitting/ncr18650pf_tests.yaml), fits the Panasonic NCR18650PF (Kollmeyer, CC BY 4.0) at 25, 10, 0, −10 and −20 °C from files in this repository:
+
+- each temperature's pulse test and steps (not at −20 °C: that file is incomplete), in `tests/data/panasonic_18650pf/`;
+- each temperature's drive cycle 1, and the 25 °C 1C discharge #1, from `validation/data/panasonic_18650pf/`.
+
+The checks are every other test in the validation set: 43 tests, never fitted to. That's 41 drive cycles, the second 1C discharge and a charge. The fitted cell file and report are beside it ([report](examples/fitting/ncr18650pf_fitted.html)).
+
+Each check is run as a study runs the cell: only the measured current goes in, and voltage and surface temperature come out. The library PF cell, tuned by hand on this dataset over several releases, is run the same way.
+
+| Chamber | Tests | Voltage RMS, library | Voltage RMS, fitted | Within 1 K, library | Within 1 K, fitted | Peak error, library | Peak error, fitted |
+|---|---|---|---|---|---|---|---|
+| 25 °C | 11 | 16.9 mV | 18.0 mV | 91% | 91% | 0.0 K | −0.8 K |
+| 10 °C | 8 | 23.7 mV | 23.9 mV | 100% | 100% | 0.0 K | −0.8 K |
+| 0 °C | 8 | 33.3 mV | **26.5 mV** | 88% | 75% | −0.8 K | −1.6 K |
+| −10 °C | 8 | 52.8 mV | 54.2 mV | 75% | 75% | −1.1 K | −1.2 K |
+| −20 °C | 8 | 69.2 mV | 67.4 mV | 75% | 50% | −0.9 K | −0.1 K |
+| **All** | **43** | **32.7 mV** | **28.2 mV** | **86%** | **79%** | 0.6 K | 1.0 K |
+
+All figures are medians, as `packtherm fit` reports them for the worked example. Voltage is scored down to the knee. Peak error is predicted minus measured peak surface temperature; in the "All" row it's the absolute value.
+
+**Reading it:**
+
+- **Voltage:** from tests alone, the fitted cell predicts voltage as well as the hand-tuned model, and better at 0 °C.
+- **Peaks:** it runs colder at its temperature peak, by about 0.8 K at 25 and 10 °C. Through the first 90% of a drive cycle, its heat is closer than the library's to the heat implied by the measured voltage. The shortfall comes in the last minutes near empty, where the voltage collapses faster than the near-empty rise (an exponential) can follow.
+- **Cold:** at −10 °C and below, the slow branch sits at the edge of its allowed range. The cold long tests don't pin it down, and the file flags it.
+
+**A caveat on how blind this is.** The fitted values never see the 43 checks. But while building v0.6.2, variants of the method were compared on these same tests, so the method itself was not chosen blind. A second dataset (the Samsung 30T, v0.6.3) will check it independently.
+
+**Fitted values at 25 °C:**
+
+| Value | Fitted |
 |---|---|
-| Capacity | 2.995 Ah measured (rated 2.9 Ah, +3.3%) |
-| UDDS drive cycle, not fitted to (first 20 min) | **5.3 mV RMS** (59 mV worst); the library cell: 10.1 mV (66 mV) |
-| Pulses at 20–95% state of charge | 8.9 mV RMS |
-| Rests after steps, 20–95% | 7.6 mV RMS |
-| Below 20% state of charge | 27 mV (pulses), 42 mV (steps) |
-| R0 | 26.3 mΩ (95%: 24.3 to 28.5) |
-| Charge-transfer and slow branches | tau_ct 1.8 s; Rd 21.7 mΩ, tau_d 42 s (34 to 52) |
-
-The fitted cell file and its report are in [docs/examples/fitting/](examples/fitting/) ([report](examples/fitting/ncr18650pf_25C.html)); the command that made them is above, with the files in `tests/data/panasonic_18650pf/`.
-
-The library PF cell was identified from the same dataset by a simpler method (the 10 s overpotential of each pulse), so its 10.1 mV is a fair comparison.
+| R0 | 23.4 mΩ (93 mΩ at −20 °C; law 18.7 kJ/mol) |
+| Charge-transfer time constant | 1.1 s |
+| Middle branch | 18.5 mΩ over 33 s |
+| Slow branch | 26.1 mΩ over 29 min |
+| 10 s DC resistance, mid charge, 1.5C | 40.6 mΩ (the library model: 40.6 mΩ) |
 
 ## Known limits
 
-- **Two branches, three time scales.** The model has two branches besides the instant drop; a real cell responds on more. The worst pulse errors sit in the first tenth of a second after a step (faster than either branch), and slow creep over minutes in long pulses and rests is missed. On the Panasonic cell this shows as wide ranges on `I0` and `gamma` (about 2×), which trade off. A generic model with more branches is planned.
-- **Near empty** the open-circuit voltage is steep, so small errors in the state of charge become larger voltage errors (27–42 mV RMS below 20%).
-- **Hysteresis.** The curve follows the discharge, as the library's does. If the slow test includes a charge, the report gives the gap between them (about 94 mV on the Panasonic cell, beyond their drops).
-- **Charge pulses.** The near-empty rise applies on discharge only, as in PackTherm's runs. Charge pulses are fitted with the same kinetics.
-- **One temperature**, as above: v0.6.2.
+- **The collapse near empty.** The rise near empty is an exponential in the state of charge. The real collapse in the last minutes of a discharge is steeper, so heat there is under-predicted and peaks run cold (above).
+- **Cold slow branch.** At 0 °C and below, the slow branch is at the edge of its range on this dataset's tests; at −20 °C, with no usable steps file, the middle branch is off and the slow branch has taken its place, so the recovery after a pulse is wrong there (the report shows it). Drive cycles at those temperatures are the tests that pin it, and more of them would help.
+- **One shape across currents.** Pulses from 0.5C to 6C share one non-linear charge-transfer shape; the 1C pulses at mid charge come out about 10% too deep at every temperature.
+- **One open-circuit curve**, from the slow discharge at one temperature. It doesn't change with temperature, as in PackTherm's library cells.
+- **Hysteresis is not modelled.** The curve follows the discharge, and the report gives the gap to the charge if the slow test has one.
+- **Charge.** The near-empty rise applies on discharge only, as in PackTherm's runs.
+- **Speed.** A five-temperature fit with drive cycles takes about five minutes.

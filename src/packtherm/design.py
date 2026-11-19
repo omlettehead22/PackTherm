@@ -36,6 +36,7 @@ from .cells import Cell, with_R0
 from .electrothermal import (
     MIN_DELIVERED,
     CurrentProfile,
+    check_fitted_range,
     check_limits,
     delivered_share,
     segments,
@@ -333,7 +334,7 @@ def evaluate_design(
         rec_ok = recovered
     else:
         rec_ok = recovered and recovery_min <= req.recovery_max_min
-    rating = [w for w in check_limits(cell, load, res) if "rating" in w]
+    rating = [w for w in check_limits(cell, load, res) if "rating" in w] + check_fitted_range(cell, load, res)
     short = delivered_share(load, event) < MIN_DELIVERED
     if short:
         rating.insert(0, shortfall_warning(delivered_share(load, event)))

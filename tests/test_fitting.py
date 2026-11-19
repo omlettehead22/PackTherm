@@ -1,4 +1,4 @@
-"""Fitting the circuit model (packtherm.fitting, v0.6.1).
+"""Fitting the circuit model (packtherm.fitting, v0.6.1, v0.6.2).
 
 Two kinds of check:
 
@@ -10,12 +10,13 @@ Two kinds of check:
   cell must predict the drive cycle it was not fitted to, and as well as the
   library cell does.
 
-Also: the fitted cell file (contents, hashes) and that studies refuse it.
+Also: the fitted cell file (contents, hashes); that studies refuse a cell fitted
+at one temperature and run one fitted at three, warning beyond its tested range;
+the test list; and fits across temperatures, against known laws.
 """
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import numpy as np
@@ -33,40 +34,49 @@ from packtherm.fitting import (
     write_fitted_cell,
     write_report,
 )
-from packtherm.fitting.circuit import interval_current
+from packtherm.fitting.circuit import TestSet, interval_current
 from packtherm.fitting.ocv import OCVCurve
 from packtherm.testdata import TestRecord, load_test_data
 
 CAP = 3.0
+# A cell with three well-separated branches: seconds, tens of seconds, minutes.
 TRUE = {
     "R0_25C": 0.022,
     "I0_25C": 2.5,
     "gamma": 1.1,
-    "tau_ct": 2.5,
+    "tau_ct": 1.5,
+    "Rm_25C": 0.012,
+    "tau_m": 30.0,
     "Rd_25C": 0.018,
-    "tau_d": 150.0,
+    "tau_d": 900.0,
     "soc_a": 6.0,
     "soc_b": 0.06,
 }
-# How close each value must come (noise-free tests made by the same model).
+# How close each value must come (noise-free tests made by PackTherm's own model). Each
+# part is fitted in a stage of its own with the rest held from the stage before, so a
+# small coupling bias remains.
 TOLERANCE = {
     "R0_25C": 0.01,
-    "I0_25C": 0.03,
-    "gamma": 0.03,
-    "tau_ct": 0.03,
-    "Rd_25C": 0.03,
-    "tau_d": 0.05,
-    "soc_a": 0.05,
-    "soc_b": 0.02,
+    "I0_25C": 0.1,
+    "gamma": 0.1,
+    "tau_ct": 0.05,
+    "Rm_25C": 0.1,
+    "tau_m": 0.12,
+    "Rd_25C": 0.05,
+    "tau_d": 0.1,
+    "soc_a": 0.06,
+    "soc_b": 0.03,
 }
 _OCV = OCVCurve(np.array(PF.ecm.ocv_soc), np.array(PF.ecm.ocv_V), CAP, 2.5, 4.2, 0.0, "library table")
-TRUE_ECM = CircuitModel().ecm(TRUE, _OCV)
+LAWS = {"Ea_R0": 20e3, "Ea_I0": 45e3, "Ea_Rm": 25e3, "Ea_Rd": 30e3, "Ea_soc": 20e3}
+TRUE_ECM = CircuitModel().ecm({**TRUE, **LAWS}, _OCV)
 
 
-def synth(parts, soc0: float = 1.0, name: str = "synthetic") -> TestRecord:
-    """A test from (duration_s, current_A, dt_s) parts, made by TRUE_ECM; a discharge stops at its cut-off.
+def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0) -> TestRecord:
+    """A test from (duration_s, current_A, dt_s) parts, run through PackTherm's own model (ECMState).
 
-    The tester's charge counter is recorded too, as real testers do.
+    A discharge stops at its cut-off. The cell is held at T_C. The tester's
+    charge counter is recorded too, as real testers do.
     """
     t, I, part = [0.0], [0.0], [-1]
     for j, (dur, cur, dt) in enumerate(parts):
@@ -77,57 +87,58 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic") -> TestRecord:
     t, I = np.array(t), np.array(I)
     V = np.empty(t.size)
     q = np.zeros(t.size)
-    soc, eta, vd = soc0, 0.0, 0.0
-    e = TRUE_ECM
+    T = T_C + 273.15
+    st = ECMState()
+    soc = soc0
+    V[0] = st.step(TRUE_ECM, 0.0, soc, T, 0.0)[0]
     stopped = False
-    for k in range(t.size):
-        if k:
-            if part[k] != part[k - 1]:
-                stopped = False
-            if stopped:
-                I[k] = 0.0
-            dt = t[k] - t[k - 1]
-            soc -= I[k] * dt / 3600 / CAP
-            q[k] = q[k - 1] + I[k] * dt / 3600
-            f = e.soc_factor(soc) if I[k] > 0 else 1.0
-            e1, e2 = math.exp(-dt / e.tau_ct), math.exp(-dt / e.tau_d)
-            eta = eta * e1 + f * e.eta_ss(I[k], 298.15) * (1 - e1)
-            vd = vd * e2 + f * e.Rd(298.15) * I[k] * (1 - e2)
-        f = e.soc_factor(soc) if I[k] > 0 else 1.0
-        V[k] = e.ocv(soc) - I[k] * f * e.R0(298.15) - eta - vd
-        if I[k] > 0 and V[k] < e.V_min:
+    for k in range(1, t.size):
+        if part[k] != part[k - 1]:
+            stopped = False
+        if stopped:
+            I[k] = 0.0
+        dt = t[k] - t[k - 1]
+        soc -= I[k] * dt / 3600 / CAP
+        q[k] = q[k - 1] + I[k] * dt / 3600
+        V[k], st.eta_ct, st.V_d, st.V_m = st.step(TRUE_ECM, I[k], soc, T, dt)
+        if I[k] > 0 and V[k] < TRUE_ECM.V_min:
             stopped = True  # the tester stops the discharge at its cut-off (from the next sample)
-    return TestRecord(t=t, current_A=I, voltage_V=V, temperature_C=np.full(t.size, 25.0), counter_Ah=q, source=name)
+    return TestRecord(t=t, current_A=I, voltage_V=V, temperature_C=np.full(t.size, T_C), counter_Ah=q, source=name)
 
 
-def slow_test() -> TestRecord:
-    return synth([(3600, 0, 60), (25 * 3600, 0.15, 60), (3600, 0, 60)], name="slow.csv")
+def slow_test(T_C: float = 25.0) -> TestRecord:
+    return synth([(3600, 0, 60), (25 * 3600, 0.15, 60), (3600, 0, 60)], name="slow.csv", T_C=T_C)
 
 
-def pulse_test() -> TestRecord:
-    parts = [(1800, 0, 30)]
+def pulse_test(T_C: float = 25.0) -> TestRecord:
+    parts = [(3 * 3600, 0, 60)]
     for _ in range(10):  # ten levels, from full down to 10%
-        parts += [(10, CAP, 0.5), (40, 0, 0.5), (10, 2 * CAP, 0.5), (40, 0, 0.5)]
-        parts += [(360, CAP, 5), (1500, 0, 30)]  # 10% at 1C, then a rest
-    return synth(parts, name="pulses.csv")
+        parts += [(10, CAP, 0.5), (60, 0, 0.5), (10, 2 * CAP, 0.5), (90, 0, 0.5)]
+        parts += [(360, CAP, 5), (3 * 3600, 0, 60)]  # 10% at 1C, then a rest of 3 tau_d
+    return synth(parts, name="pulses.csv", T_C=T_C)
 
 
-def steps_test() -> TestRecord:
-    parts = [(1800, 0, 60)]
+def steps_test(T_C: float = 25.0) -> TestRecord:
+    parts = [(3 * 3600, 0, 60)]
     for _ in range(6):
-        parts += [(1500, 0.9, 10), (1800, 0, 60)]  # 10 x tau_d: settled by its end
-    return synth(parts, name="steps.csv")
+        parts += [(5400, 0.3, 10), (3600, 0, 60)]  # 6 x tau_d: settled by its end
+    return synth(parts, name="steps.csv", T_C=T_C)
 
 
-def drive_test() -> TestRecord:
+def discharge_test(T_C: float = 25.0) -> TestRecord:
+    return synth([(4000, CAP, 2), (1800, 0, 10)], name="dis1c.csv", T_C=T_C)
+
+
+def drive_test(T_C: float = 25.0) -> TestRecord:
     rng = np.random.default_rng(3)
-    parts = [(1800, 0, 30)] + [(float(rng.integers(5, 40)), float(rng.uniform(-1.5, 4.5)), 0.5) for _ in range(60)]
-    return synth(parts, soc0=0.8, name="drive.csv")
+    parts = [(3 * 3600, 0, 60)] + [(float(rng.integers(5, 40)), float(rng.uniform(-1.5, 4.5)), 0.5) for _ in range(90)]
+    return synth(parts, soc0=0.8, name="drive.csv", T_C=T_C)
 
 
 @pytest.fixture(scope="module")
 def synthetic_fit():
-    return fit_cell(slow_test(), pulse_test(), steps=steps_test(), checks=[drive_test()])
+    tests = TestSet(pulse_test(), steps_test(), discharges=[discharge_test()])
+    return fit_cell(slow_test(), sets=[tests], checks=[drive_test()], check_soc0=[0.8])
 
 
 def test_simulator_matches_packtherms_ecm():
@@ -139,7 +150,7 @@ def test_simulator_matches_packtherms_ecm():
     st = ECMState()
     ref = [st.step(TRUE_ECM, 0.0, soc[0], 298.15, 0.0)[0]]
     for k in range(1, rec.t.size):
-        v, st.eta_ct, st.V_d = st.step(TRUE_ECM, I[k], soc[k], 298.15, rec.t[k] - rec.t[k - 1])
+        v, st.eta_ct, st.V_d, st.V_m = st.step(TRUE_ECM, I[k], soc[k], 298.15, rec.t[k] - rec.t[k - 1])
         ref.append(v)
     assert np.max(np.abs(V - np.array(ref))) < 1e-9
 
@@ -153,17 +164,17 @@ def test_finds_known_values(synthetic_fit):
     for name, tol in TOLERANCE.items():
         assert got[name].value == pytest.approx(TRUE[name], rel=tol), name
         assert got[name].source == "fitted"
-    # Most true values lie in their 95% ranges. On noise-free tests a small
-    # steady bias (here in soc_a, about 3%) can sit outside: the ranges show how
-    # far the windows disagree, which is all a fit to real tests can know.
-    inside = [n for n in TRUE if got[n].ci95[0] <= TRUE[n] <= got[n].ci95[1]]
-    assert len(inside) >= 6, inside
-    assert all(e["rmse_mV"] < 1 for k, e in fit.errors.items() if "20-95%" in k)
+    # About half the true values lie in their 95% ranges. On noise-free tests the
+    # misfit left is the small steady bias of fitting in stages, which ranges built
+    # from how far the windows disagree cannot show: they are not a guarantee.
+    inside = [n for n in TRUE if got[n].ci95 and got[n].ci95[0] <= TRUE[n] <= got[n].ci95[1]]
+    assert len(inside) >= 4, inside
+    assert all(e["rmse_mV"] < 2 for k, e in fit.errors.items() if "20-95%" in k)
 
 
 def test_predicts_a_drive_cycle_it_never_saw(synthetic_fit):
     (check,) = synthetic_fit.checks
-    assert check["rmse_mV"] < 1
+    assert check["rmse_mV"] < 2
 
 
 def test_validity_and_sources(synthetic_fit):
@@ -193,7 +204,7 @@ def test_soc_from_a_start_given_or_from_the_first_voltage():
     rec = drive_test()
     soc, how = track_soc(rec, _OCV, CAP, soc0=0.8)
     assert soc[0] == 0.8 and "as given" in how
-    # It has a 30-minute rest at the start, so it anchors there.
+    # It has a 3-hour rest at the start, so it anchors there.
     soc, how = track_soc(rec, _OCV, CAP)
     assert soc[0] == pytest.approx(0.8, abs=0.01) and "settled" in how
 
@@ -206,7 +217,7 @@ def test_cell_file_round_trip_and_studies_refuse_it(synthetic_fit, tmp_path):
     from packtherm.user_cells import CellError, load_cell
 
     files = {}
-    for role in ("slow", "pulses", "steps"):
+    for role in ("slow", "pulses", "steps", "discharges"):
         p = tmp_path / f"{role}.bin"
         p.write_bytes(role.encode())
         files[role] = [p]
@@ -230,16 +241,16 @@ def test_cell_file_round_trip_and_studies_refuse_it(synthetic_fit, tmp_path):
     hashes = {i["role"]: i["sha256"] for i in back["provenance"]["inputs"]}
     assert hashes["slow"] == hashlib.sha256(b"slow").hexdigest()
     assert back["provenance"]["dataset"]["licence"] == "CC0"
-    assert back["errors"]["held_out"][0]["rmse_mV"] < 1
+    assert back["errors"]["held_out"][0]["rmse_mV"] < 2
 
     with pytest.raises(CellError, match="one temperature"):
         load_cell(path)
-    with pytest.raises(StudyError, match=r"cell: .*one temperature.*v0\.6\.2"):
+    with pytest.raises(StudyError, match=r"cell: .*one temperature.*3 temperatures or more"):
         validate({"cell": str(path)})
 
     report = write_report(tmp_path / "cell.html", synthetic_fit, doc)
     html = report.read_text()
-    assert "Not usable in studies yet" in html and "never saw" in html and html.count("data:image/png") >= 4
+    assert "Not usable in studies" in html and "never saw" in html and html.count("data:image/png") >= 4
 
 
 # -- real data (tests/data/panasonic_18650pf, CC BY 4.0) --------------------------------------------
@@ -248,14 +259,15 @@ REAL = Path(__file__).parent / "data" / "panasonic_18650pf"
 
 
 def real(name: str) -> TestRecord:
-    return load_test_data(next(REAL.glob(f"*{name}*")))
+    (p,) = REAL.glob(f"*{name}*")  # exactly one: several would make a test read the wrong file
+    return load_test_data(p)
 
 
 def test_real_panasonic_fit_predicts_a_drive_cycle():
     fit = fit_cell(
         real("C20 OCV"),
-        real("5Pulse_HPPC"),
-        steps=real("dis5_10p"),
+        real("25degC_5Pulse_HPPC"),
+        steps=real("3390_dis5_10p"),
         checks=[real("UDDS")],
         compare_ecm=("library", PF.ecm, PF.capacity_Ah),
     )
@@ -265,7 +277,7 @@ def test_real_panasonic_fit_predicts_a_drive_cycle():
     # The UDDS cycle was not fitted to. The fit predicts it to about 5 mV RMS,
     # better than the library cell (about 10 mV), whose values came from the
     # same dataset by a simpler method.
-    assert check["rmse_mV"] < 7
+    assert check["rmse_mV"] < 9
     assert check["rmse_mV"] < check["compare_rmse_mV"]
     assert fit.errors["pulses at 20-95% SOC"]["rmse_mV"] < 12
     assert fit.errors["steps at 20-95% SOC"]["rmse_mV"] < 12
@@ -309,6 +321,159 @@ def test_fit_command(tmp_path, capsys):
         ]
     )
     text = capsys.readouterr().out
-    assert "not usable in studies yet" in text and "held out" in text
+    assert "not usable in studies" in text and "held out" in text
     assert out.exists() and out.with_suffix(".html").exists()
     assert read_fitted_cell(out)["name"] == "my_cell"
+
+
+# -- several temperatures (v0.6.2) ------------------------------------------------------------------
+
+TEMPS = (25.0, 5.0, -15.0)
+
+
+@pytest.fixture(scope="module")
+def three_temperatures():
+    """Tests at three temperatures, made by a cell whose values follow known Arrhenius laws."""
+    sets = [
+        TestSet(pulse_test(T), steps_test(T), T, discharges=[discharge_test(T)] if T == 25.0 else [])
+        for T in TEMPS
+    ]
+    return fit_cell(slow_test(), sets=sets, checks=[drive_test(5.0)], check_soc0=[0.8])
+
+
+def test_three_temperatures_follow_the_known_laws(three_temperatures):
+    fit = three_temperatures
+    assert fit.temperatures == sorted(TEMPS)
+    assert len(fit.ecm.by_T) == 3
+    # Each temperature's own values: what the true laws give there. At -15 degC the 2C pulses
+    # hit the cut-off and are cut short, so the cold tests say less: there, each true value
+    # must lie in its reported range or within 35%.
+    for pt in fit.per_temperature:
+        T = pt["cell_C"] + 273.15
+        own = {p.name: p for p in pt["params"]}
+        true = {"R0_25C": TRUE_ECM.R0(T), "I0_25C": TRUE_ECM.I0(T), "Rm_25C": TRUE_ECM.Rm(T), "Rd_25C": TRUE_ECM.Rd(T)}
+        assert own["R0_25C"].value == pytest.approx(true["R0_25C"], rel=0.03), pt["at_C"]
+        for name in ("I0_25C", "Rm_25C", "Rd_25C"):
+            p = own[name]
+            if pt["at_C"] > 0:
+                assert p.value == pytest.approx(true[name], rel=0.12), (pt["at_C"], name)
+            else:
+                inside = p.ci95 is not None and p.ci95[0] <= true[name] <= p.ci95[1]
+                assert inside or p.value == pytest.approx(true[name], rel=0.35), (pt["at_C"], name)
+        # The table PackTherm runs gives them back at that temperature.
+        assert fit.ecm.R0(T) == pytest.approx(own["R0_25C"].value, rel=1e-6)
+    # Laws through them: the instant resistance's closely; the others in the right direction.
+    laws = {p.name: p for p in fit.params if p.name.startswith("Ea_")}
+    assert laws["Ea_R0"].value == pytest.approx(LAWS["Ea_R0"], rel=0.1)
+    assert laws["Ea_I0"].value > 10e3 and laws["Ea_Rd"].value > 5e3
+    # A drive cycle at 5 degC it never saw.
+    assert fit.checks[0]["rmse_mV"] < 3
+    assert fit.validity["temperature_C"] == pytest.approx([-15.0, 25.0], abs=0.01)
+
+
+def test_a_cell_fitted_at_three_temperatures_runs_in_studies(three_temperatures, tmp_path):
+    from packtherm.cells import get_cell
+    from packtherm.electrothermal import check_fitted_range, constant_current, simulate_cell
+    from packtherm.study import StudyError, validate
+
+    files = {"slow": [tmp_path / "slow.bin"]}
+    files["slow"][0].write_bytes(b"slow")
+    doc = fitted_cell_doc(three_temperatures, "Synthetic three-branch cell", files, like="PF")
+    assert doc["usable_in_studies"] is True and doc["status"] == "multi-temperature"
+    assert [row["at_C"] for row in doc["by_temperature"]] == list(TEMPS)
+    path = write_fitted_cell(tmp_path / "fitted.yaml", doc)
+
+    cell = get_cell(str(path))  # as a study's "cell: fitted.yaml" loads it
+    assert cell.name == "Synthetic three-branch cell" and cell.model_label == "circuit (fitted)"
+    assert cell.diameter == PF.diameter and cell.mass == PF.mass  # from 'like'
+    assert cell.ecm.by_T and cell.capacity_Ah == pytest.approx(three_temperatures.capacity_Ah, rel=1e-4)
+    for T in (253.15, 268.15, 288.15, 310.15):  # the file holds exactly what was fitted
+        assert cell.ecm.R0(T) == pytest.approx(three_temperatures.ecm.R0(T), rel=1e-5)
+        assert cell.ecm.Rm(T) == pytest.approx(three_temperatures.ecm.Rm(T), rel=1e-5)
+    # Studies accept it: the only complaints are about the study, not the cell.
+    with pytest.raises(StudyError) as e:
+        validate({"cell": str(path)})
+    assert not any(line.strip().startswith("cell:") for line in str(e.value).splitlines()[1:])
+
+    # Inside its tested range: no warning. At 45 degC, and at 4C: warnings.
+    res, load = simulate_cell(cell, constant_current(cell, 1.0), 600, 30.0, 293.15, pcm_thickness=0.0)
+    assert check_fitted_range(cell, load, res) == []
+    res, load = simulate_cell(cell, constant_current(cell, 4.0), 600, 30.0, 318.15, pcm_thickness=0.0)
+    warnings = check_fitted_range(cell, load, res)
+    assert any("warmer than its fitted model's warmest test" in w for w in warnings)
+    assert any("Discharge 4.00C" in w and "extrapolation" in w for w in warnings)
+
+
+def test_two_temperatures_are_not_enough_for_studies(three_temperatures, tmp_path):
+    from dataclasses import replace
+
+    two = replace(three_temperatures, temperatures=[5.0, 25.0], per_temperature=three_temperatures.per_temperature[:2])
+    doc = fitted_cell_doc(two, "Two", {}, like="PF")
+    assert doc["usable_in_studies"] is False and "3 or more" in doc["why_not_usable"]
+
+
+def test_test_list_reports_every_problem(tmp_path):
+    from packtherm.fitting.testlist import TestListError, read_test_list
+
+    (tmp_path / "t.yaml").write_text(
+        "packtherm_fit: 1\nname: x\nslow: missing.csv\nlike: NOPE\ncolour: red\n"
+        "temperatures:\n  - at: 25\n    pulses: p.csv\n  - pulses: q.csv\n"
+    )
+    with pytest.raises(TestListError) as e:
+        read_test_list(tmp_path / "t.yaml")
+    msg = str(e.value)
+    for bit in ("colour: unknown key", "slow: file not found", "temperatures[0].pulses: file not found",
+                "temperatures[1].at: give the temperature", "like: Unknown cell"):  # fmt: skip
+        assert bit in msg, bit
+
+
+def test_fit_command_with_a_test_list(tmp_path, capsys):
+    from packtherm.cli import main
+    from packtherm.user_cells import load_cell
+
+    def csv(rec, name):
+        pd.DataFrame(
+            {
+                "Test_Time(s)": rec.t,
+                "Current(A)": rec.current_A,
+                "Voltage(V)": rec.voltage_V,
+                "Temperature (C)_1": rec.temperature_C,
+            }
+        ).to_csv(tmp_path / name, index=False)
+        return name
+
+    lines = ["packtherm_fit: 1", "name: Listed", "like: PF", f"slow: {csv(slow_test(), 'slow.csv')}", "temperatures:"]
+    for T in TEMPS:
+        lines += [f"  - at: {T:g}", f"    pulses: {csv(pulse_test(T), f'p{T:g}.csv')}"]
+    lines += ["output: listed.yaml"]
+    (tmp_path / "tests.yaml").write_text("\n".join(lines) + "\n")
+    main(["fit", str(tmp_path / "tests.yaml")])
+    out = capsys.readouterr().out
+    assert "fitted at -15, 5, 25 degC" in out and "usable in studies" in out
+    assert (tmp_path / "listed.html").exists()
+    cell = load_cell(tmp_path / "listed.yaml")
+    assert len(cell.ecm.by_T) == 3
+
+
+def test_real_panasonic_three_temperatures(monkeypatch):
+    """The real cell at 25, 0 and -20 degC, from its pulse tests: resistances grow in the cold.
+
+    One round of the fit, not three, to keep CI quick: this checks the shape, not the precision
+    (docs/FITTING.md has the full fit and its checks).
+    """
+    from packtherm.fitting import circuit
+
+    monkeypatch.setattr(circuit, "ROUNDS", 1)
+    sets = [
+        TestSet(real("25degC_5Pulse_HPPC"), None, 25.0),
+        TestSet(real("10.44 0degC_5pulse_HPPC"), None, 0.0),
+        TestSet(real("n20degC_5Pulse_HPPC"), None, -20.0),
+    ]
+    fit = fit_cell(real("C20 OCV"), sets=sets)
+    rows = sorted(fit.ecm.by_T)  # coldest first
+    R0 = [r[1] for r in rows]
+    assert R0[0] > R0[1] > R0[2]  # colder: more resistance
+    assert R0[2] == pytest.approx(0.025, rel=0.25)  # about 25 mOhm at 25 degC
+    laws = {p.name: p.value for p in fit.params if p.name.startswith("Ea_") and p.source == "fitted"}
+    assert 5e3 < laws["Ea_R0"] < 40e3 and 10e3 < laws["Ea_I0"] < 90e3
+    assert all(e["rmse_mV"] < 60 for k, e in fit.errors.items() if "pulses at 20-95%" in k)

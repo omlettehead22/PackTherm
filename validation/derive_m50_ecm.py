@@ -170,7 +170,7 @@ def replay(ecm, d, step=5):
     out[0] = V[0]
     T = d["Tk"]
     for k in range(1, len(t)):
-        Vk, eta_, vd = st.step(ecm, I[k], 1 - Q[k] / CAP, T, t[k] - t[k - 1])
+        Vk, eta_, vd, _ = st.step(ecm, I[k], 1 - Q[k] / CAP, T, t[k] - t[k - 1])
         st.eta_ct, st.V_d = eta_, vd
         out[k] = Vk
     return out, V

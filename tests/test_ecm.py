@@ -160,6 +160,69 @@ def test_cold_temperature_laws():
     # Charging ignores the low-SOC factor.
     from packtherm.ecm import ECMState
 
-    V_chg, _, _ = ECMState().step(e, -1.0, 0.05, Tm10, 1.0)
-    V_flat, _, _ = ECMState().step(replace(e, soc_a=0.0), -1.0, 0.05, Tm10, 1.0)
+    V_chg, *_ = ECMState().step(e, -1.0, 0.05, Tm10, 1.0)
+    V_flat, *_ = ECMState().step(replace(e, soc_a=0.0), -1.0, 0.05, Tm10, 1.0)
     assert V_chg == pytest.approx(V_flat)
+
+
+# -- values by temperature, and the middle branch (v0.6.2) ------------------------------------------
+
+
+def test_a_table_built_from_laws_gives_the_laws_back():
+    # Between the rows: log-interpolation in 1/T is an Arrhenius law between neighbours.
+    # Beyond them: the laws from the end row. So a table of a law is that law, everywhere.
+    from packtherm.cells import PANASONIC_NCR18650PF as PF
+
+    e = PF.ecm
+    rows = tuple(
+        (T, e.R0(T), e.I0(T), e.gamma, e.tau_ct, 0.0, 30.0, e.Rd(T), e.tau_d, e.soc_factor(0, T) - 1, e.soc_b)
+        for T in (253.15, 273.15, 298.15)
+    )
+    t = replace(e, by_T=rows)
+    for T in (238.15, 263.15, 283.15, 318.15):
+        assert t.R0(T) == pytest.approx(e.R0(T), rel=1e-12)
+        assert t.I0(T) == pytest.approx(e.I0(T), rel=1e-12)
+        assert t.Rd(T) == pytest.approx(e.Rd(T), rel=1e-12)
+        assert t.soc_factor(0.05, T) == pytest.approx(e.soc_factor(0.05, T), rel=1e-12)
+
+
+def test_a_table_holds_shape_and_time_constants_beyond_its_rows():
+    from packtherm.cells import PANASONIC_NCR18650PF as PF
+
+    rows = (
+        (263.15, 0.05, 0.5, 2.0, 3.0, 0.02, 40.0, 0.03, 600.0, 20.0, 0.05),
+        (298.15, 0.02, 3.0, 1.0, 1.0, 0.01, 20.0, 0.02, 900.0, 8.0, 0.06),
+    )
+    t = replace(PF.ecm, by_T=rows)
+    assert t.gamma_at(250.0) == 2.0 and t.gamma_at(320.0) == 1.0
+    assert t.tau_ct_at(250.0) == 3.0 and t.tau_d_at(320.0) == 900.0
+    mid = 1 / (0.5 / 263.15 + 0.5 / 298.15)  # halfway in 1/T: the geometric mean
+    assert t.tau_m_at(mid) == pytest.approx((40.0 * 20.0) ** 0.5)
+    with pytest.raises(ValueError, match="two rows"):
+        replace(PF.ecm, by_T=rows[:1])
+
+
+def test_the_middle_branch_is_off_unless_set():
+    from packtherm.cells import PANASONIC_NCR18650PF as PF
+
+    e = PF.ecm
+    assert e.Rm(298.15) == 0.0
+    a = ECMState().step(e, 3.0, 0.5, 298.15, 30.0)
+    b = ECMState().step(replace(e, Rm_25C=0.01, tau_m=30.0), 3.0, 0.5, 298.15, 30.0)
+    f = e.soc_factor(0.5)  # it takes the rise near empty too, like the other branches
+    assert a[3] == 0.0 and b[3] == pytest.approx(f * 0.01 * 3.0 * (1 - math.exp(-1)), rel=1e-9)
+    assert b[0] == pytest.approx(a[0] - b[3], abs=1e-12)  # it adds its drop, nothing else
+
+
+def test_scaling_a_tabulated_cell_scales_every_loss():
+    from packtherm.cells import PANASONIC_NCR18650PF as PF
+
+    rows = (
+        (263.15, 0.05, 0.5, 2.0, 3.0, 0.02, 40.0, 0.03, 600.0, 20.0, 0.05),
+        (298.15, 0.02, 3.0, 1.0, 1.0, 0.01, 20.0, 0.02, 900.0, 8.0, 0.06),
+    )
+    t = replace(PF.ecm, by_T=rows)
+    s = t.scaled(1.5)
+    for T in (255.0, 280.0, 300.0):
+        assert s.R0(T) == pytest.approx(1.5 * t.R0(T)) and s.Rd(T) == pytest.approx(1.5 * t.Rd(T))
+        assert s.Rm(T) == pytest.approx(1.5 * t.Rm(T)) and s.I0(T) == pytest.approx(t.I0(T) / 1.5)

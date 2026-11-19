@@ -243,7 +243,9 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
 
         path = Path(cell) if base_dir is None or Path(cell).is_absolute() else Path(base_dir) / cell
         try:
-            cell = spec["cell"] = read_cell_file(path)
+            from .user_cells import resolve_like
+
+            cell = spec["cell"] = resolve_like(read_cell_file(path), path.parent)
         except FileNotFoundError:
             errors.append(f"cell: cell file not found: {path}")
             cell = None

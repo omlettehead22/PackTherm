@@ -1,0 +1,82 @@
+# The Panasonic NCR18650PF fitted at five temperatures, from the tests in this repository.
+# Run from the repository's root:  packtherm fit docs/examples/fitting/ncr18650pf_tests.yaml
+# Data: P. Kollmeyer, Panasonic 18650PF Li-ion Battery Data, Mendeley Data v1 (2018),
+# doi:10.17632/wykht8y7tg.1, CC BY 4.0. Fitted on each temperature's pulse test, steps (not at -20 degC:
+# that file is incomplete) and drive cycle 1, and the 25 degC 1C discharge #1; every other drive cycle,
+# the second 1C discharge and the charge are the checks, never fitted to.
+packtherm_fit: 1
+name: Panasonic NCR18650PF (fitted)
+like: PF
+rated_capacity_Ah: 2.9
+dataset:
+  citation: P. Kollmeyer, Panasonic 18650PF Li-ion Battery Data, Mendeley Data v1 (2018), doi:10.17632/wykht8y7tg.1
+  licence: CC BY 4.0
+slow: "../../../tests/data/panasonic_18650pf/05-08-17_13.26 C20 OCV Test_C20_25dC.mat"
+temperatures:
+  - at: 25
+    pulses: "../../../tests/data/panasonic_18650pf/03-11-17_08.47 25degC_5Pulse_HPPC_Pan18650PF.mat"
+    steps: "../../../tests/data/panasonic_18650pf/03-11-17_10.10 3390_dis5_10p.mat"
+    discharges: ["../../../validation/data/panasonic_18650pf/25C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/panasonic_18650pf/25C_Cycle_1.csv.gz"]
+  - at: 10
+    pulses: "../../../tests/data/panasonic_18650pf/03-27-17_09.06 10degC_5Pulse_HPPC_Pan18650PF.mat"
+    steps: "../../../tests/data/panasonic_18650pf/03-27-17_10.29 3423_dis5_10p.mat"
+    cycles: ["../../../validation/data/panasonic_18650pf/10C_Cycle_1.csv.gz"]
+  - at: 0
+    pulses: "../../../tests/data/panasonic_18650pf/05-20-17_10.44 0degC_5pulse_HPPC_Pan18650PF.mat"
+    steps: "../../../tests/data/panasonic_18650pf/05-20-17_12.07 3619_dis5_10p.mat"
+    cycles: ["../../../validation/data/panasonic_18650pf/0C_Cycle_1.csv.gz"]
+  - at: -10
+    pulses: "../../../tests/data/panasonic_18650pf/06-07-17_12.29 n10degC_5pulse_HPPC_Pan18650PF.mat"
+    steps: "../../../tests/data/panasonic_18650pf/06-07-17_14.11 3740_dis5_10p.mat"
+    cycles: ["../../../validation/data/panasonic_18650pf/m10C_Cycle_1.csv.gz"]
+  - at: -20
+    pulses: "../../../tests/data/panasonic_18650pf/06-15-17_11.31 n20degC_5Pulse_HPPC_Pan18650PF.mat"
+    cycles: ["../../../validation/data/panasonic_18650pf/m20C_Cycle_1.csv.gz"]
+checks:
+  - {file: "../../../validation/data/panasonic_18650pf/25C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_1C_CCCV_charge.csv.gz", start_soc: 0.0705, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_Cycle_2.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_Cycle_3.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_Cycle_4.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_US06.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_HWFTa.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_HWFTb.csv.gz", start_soc: 0.9992, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_UDDS.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_LA92.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/25C_NN.csv.gz", start_soc: 1, ambient_C: 25}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_HWFET.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_LA92.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_NN.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_UDDS.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_US06.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_Cycle_2.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_Cycle_3.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/10C_Cycle_4.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_Cycle_2.csv.gz", start_soc: 1, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_LA92.csv.gz", start_soc: 0.9985, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_NN.csv.gz", start_soc: 0.9988, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_Cycle_3.csv.gz", start_soc: 1, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_Cycle_4.csv.gz", start_soc: 0.9992, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_US06.csv.gz", start_soc: 0.9992, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_HWFET.csv.gz", start_soc: 0.9992, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/0C_UDDS.csv.gz", start_soc: 0.999, ambient_C: 0}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_HWFET.csv.gz", start_soc: 0.9988, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_LA92.csv.gz", start_soc: 0.9985, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_UDDS.csv.gz", start_soc: 0.9983, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_US06.csv.gz", start_soc: 0.9985, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_Cycle_2.csv.gz", start_soc: 1, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_Cycle_3.csv.gz", start_soc: 1, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_Cycle_4.csv.gz", start_soc: 0.9985, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m10C_NN.csv.gz", start_soc: 0.9982, ambient_C: -10}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_HWFET.csv.gz", start_soc: 0.9978, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_LA92.csv.gz", start_soc: 0.9978, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_NN.csv.gz", start_soc: 0.9981, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_UDDS.csv.gz", start_soc: 0.9981, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_Cycle_2.csv.gz", start_soc: 1, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_Cycle_3.csv.gz", start_soc: 1, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_Cycle_4.csv.gz", start_soc: 0.9982, ambient_C: -20}
+  - {file: "../../../validation/data/panasonic_18650pf/m20C_US06.csv.gz", start_soc: 0.9982, ambient_C: -20}
+compare: PF
+chamber_h_W_m2K: 38.7  # the test chamber's convection, calibrated in packtherm.validation from measured heat
+output: ncr18650pf_fitted.yaml

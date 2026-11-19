@@ -1,14 +1,14 @@
 # Known issues and improvement backlog
 
-Open items as of v0.6.1, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
+Open items as of v0.6.2, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
 
 ## Cell model
 1. **LG M50 circuit is derived, not measured.** It comes from PyBaMM's DFN with the ORegan2022 parameter set and matches that model's heat within 0.94–1.13× ([VALIDATION.md](VALIDATION.md#lg-m50-checked-against-a-physics-model-not-measured)), but no measured M50 temperatures check it. The Warwick M50 core-temperature data (Mendeley bf6fksxpp2) would; it is not reachable from this build. Its cold voltage knee arrives late (cut-off up to 0.75 Ah after the DFN at 0 °C, 1.4C).
-2. **Lumped-resistance cells.** The LG MJ1 and every user-defined cell (v0.5.2) use a lumped DC resistance with assumed temperature and SOC shapes and no voltage model; `packtherm cells` shows which model each cell uses. User-defined cells are NMC, NCA or LFP; NCA has no entropic heat, and LFP's thermal and entropic values are literature data (its entropic fit understates the measured mid-charge peak, and the coefficient's temperature dependence near full and empty is not modelled). Fitting a full circuit from a user's own test data works at one temperature (v0.6.1, `packtherm fit`); fitted cells are usable in studies once the temperature behaviour is fitted (v0.6.2).
+2. **Lumped-resistance cells.** The LG MJ1 and every user-defined cell (v0.5.2) use a lumped DC resistance with assumed temperature and SOC shapes and no voltage model; `packtherm cells` shows which model each cell uses. User-defined cells are NMC, NCA or LFP; NCA has no entropic heat, and LFP's thermal and entropic values are literature data (its entropic fit understates the measured mid-charge peak, and the coefficient's temperature dependence near full and empty is not modelled). A full circuit fitted from a user's own tests at three temperatures or more (v0.6.2, `packtherm fit`) replaces this in studies.
 3. **Cold drive-cycle heat is 7–10 % low** on the validated PF cell: the slow-branch temperature law, fitted at 0.3C, is slightly too gentle at drive-cycle currents (worst peak −3.5 K at −20 °C).
 4. **NCA entropic heat is neglected** (no dU/dT data in the dataset; published NCA profiles disagree on the sign). The PF charge is under-predicted by 1.1–1.4 K.
 5. **Core temperature is not validated**; the dataset has one surface thermocouple.
-6. **Fitted circuits have two branches.** A real cell responds on three or more time scales (the first tenth of a second, tens of seconds, minutes); the fit follows two, so the fastest and slowest are missed and the kinetic values `I0` and `gamma` trade off (about 2× ranges on the Panasonic cell). A generic circuit with a chosen number of RC branches would follow them ([FITTING.md](FITTING.md#known-limits)).
+6. **Fitted cells run about 1 K cold at their temperature peaks** on the Panasonic drive cycles (median, 0 to 25 °C), against about 0 K for the hand-tuned library cell. The shortfall is in the last minutes near empty: the voltage collapses faster than the rise near empty (an exponential in the state of charge) can follow. Below 0 °C the fitted slow branch sits at the edge of its range: the cold long tests do not pin it down. A different shape for the rise near empty, more cold drive cycles, and a generic circuit with a chosen number of branches would each help ([FITTING.md](FITTING.md#known-limits)).
 
 ## Module model
 7. **Roll-end-to-can resistance** (5e-4 m²K/W) dominates bottom-plate cooling and is the least certain value. A teardown or a bottom-cooling test would pin it down.
@@ -66,3 +66,4 @@ Open items as of v0.6.1, ranked within each group by how much they could change 
 | v0.5.7 | Fixes from a full audit |
 | v0.6.0 | Cell test data reading |
 | v0.6.1 | Circuit fitting at one temperature; the charge counter used across steps between samples |
+| v0.6.2 | Fitting across temperatures, a third branch, fitted cells in studies; two branches no longer the limit (item 6 rewritten) |

@@ -37,6 +37,7 @@ h1 {{ font-size: 1.6rem; margin-bottom: .2rem; }} h2 {{ font-size: 1.15rem; marg
   border-bottom: 1px solid {GRID}; padding-bottom: .3rem; }}
 .sub {{ color: {TEXT_2}; margin-top: 0; }}
 .banner {{ border: 1px solid #e9b949; background: #fff8e6; padding: .7rem 1rem; border-radius: 6px; }}
+.banner.ok {{ border-color: #8fbf8f; background: #f1f8f1; }}
 table {{ border-collapse: collapse; width: 100%; font-size: 13.5px; margin: .6rem 0; }}
 th, td {{ text-align: left; padding: .35rem .5rem; border-bottom: 1px solid {GRID}; vertical-align: top; }}
 th {{ color: {TEXT_2}; font-weight: 600; }} td.n {{ font-variant-numeric: tabular-nums; white-space: nowrap; }}
@@ -50,7 +51,7 @@ img {{ max-width: 100%; }} ul {{ padding-left: 1.2rem; }} code {{ font-size: 12.
 
 def _png(fig) -> str:
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=110, facecolor=SURFACE)
+    fig.savefig(buf, format="png", dpi=90, facecolor=SURFACE)
     import matplotlib.pyplot as plt
 
     plt.close(fig)
@@ -75,7 +76,12 @@ def _plots(fit) -> dict[str, str]:
     out = {}
     pd = fit.plot_data
 
-    for c in pd.get("checks", []):
+    seen_T: set = set()
+    for c, row in zip(pd.get("checks", []), fit.checks):
+        T_key = round(row.get("cell_C", 0.0) / 10)  # one chart per 10 K, and five at most, is enough to judge
+        if T_key in seen_T or len(seen_T) >= 5:
+            continue
+        seen_T.add(T_key)
         fig, ax = plt.subplots(2, 1, sharex=True, figsize=(9, 4.6), height_ratios=(3, 1.3), facecolor=SURFACE)
         x = (c["t"] - c["t"][0]) / 60
         ax[0].plot(x, c["V"], lw=1.0, color=TEXT, label="measured")
@@ -136,7 +142,95 @@ def _plots(fit) -> dict[str, str]:
         fig.suptitle(title, fontsize=9.5, x=0.01, ha="left", color=TEXT_2)
         fig.tight_layout()
         out[key] = _png(fig)
+
+    by_T = pd.get("pulses_by_T") or {}
+    if by_T:  # one pulse near mid charge at each temperature, at about 1C
+        labels = list(by_T)
+        cols = min(3, len(labels))
+        rows = -(-len(labels) // cols)
+        fig, axs = plt.subplots(rows, cols, figsize=(9, 2.6 * rows), facecolor=SURFACE, squeeze=False)
+        for a, lab in zip(axs.flat, labels):
+            items = by_T[lab]
+            w, Vm = min(items, key=lambda it: abs(it[0].soc0 - 0.5) + 0.2 * abs(it[0].c_rate - 1.0))
+            x = w.t - w.t[0]
+            a.plot(x, 1e3 * (w.V - w.V[0]), lw=1.0, color=TEXT, label="measured")
+            a.plot(x, 1e3 * (Vm - Vm[0]), lw=1.0, color=FIT, label="this fit")
+            a.set_title(f"{lab}: {w.soc0:.0%} SOC, {w.c_rate:.2g}C", fontsize=8.5, loc="left", color=TEXT_2)
+            a.set_xlabel("Time (s)", fontsize=8)
+            _axes(a)
+        for a in axs.flat[len(labels) :]:
+            a.axis("off")
+        axs[0, 0].legend(frameon=False, fontsize=7.5)
+        axs[0, 0].set_ylabel("Voltage change (mV)", fontsize=8.5)
+        fig.tight_layout()
+        out["pulses_by_T"] = _png(fig)
+
+    if fit.per_temperature:  # each value against temperature: the temperatures' own fits, and the laws beyond
+        show = [
+            ("R0_25C", "R0 (mOhm)", 1e3),
+            ("I0_25C", "I0 (A)", 1.0),
+            ("Rm_25C", "Rm (mOhm)", 1e3),
+            ("Rd_25C", "Rd (mOhm)", 1e3),
+            ("tau_d", "tau_d (s)", 1.0),
+            ("soc_a", "soc_a", 1.0),
+        ]
+        fig, axs = plt.subplots(2, 3, figsize=(9, 5.0), facecolor=SURFACE)
+        Ts = [pt["cell_C"] for pt in fit.per_temperature]
+        grid = np.linspace(min(Ts) - 8, max(Ts) + 8, 60)
+        for a, (name, label, k) in zip(axs.flat, show):
+            ys, lo, hi = [], [], []
+            for pt in fit.per_temperature:
+                p = next(q for q in pt["params"] if q.name == name)
+                ys.append(k * p.value)
+                lo.append(k * (p.value - p.ci95[0]) if p.ci95 else 0.0)
+                hi.append(k * (p.ci95[1] - p.value) if p.ci95 else 0.0)
+            a.errorbar(Ts, ys, yerr=[lo, hi], fmt="o", ms=5, color=TEXT, ecolor=TEXT_2, lw=1, capsize=2,
+                       label="each temperature's own fit")  # fmt: skip
+            from ..fitting.circuit import _law_value
+
+            a.plot(grid, [k * _law_value(fit.ecm, name, g + 273.15) for g in grid], lw=1.4, color=FIT,
+                   label="as PackTherm runs it")  # fmt: skip
+            a.set_yscale("log")
+            a.set_title(label, fontsize=8.5, loc="left", color=TEXT_2)
+            a.set_xlabel("Cell temperature (°C)", fontsize=8)
+            _axes(a)
+        axs[0, 0].legend(frameon=False, fontsize=7)
+        fig.tight_layout()
+        out["by_T"] = _png(fig)
     return out
+
+
+def _thermal_plot(rows: list[dict]) -> str:
+    """Surface temperature, measured against predicted, for one held-out test per chamber temperature."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    pick: dict = {}
+    for r in rows:
+        pick.setdefault(round(r["ambient_C"]), r)
+    pick = dict(sorted(pick.items(), reverse=True))
+    cols = min(3, len(pick))
+    nrows = -(-len(pick) // cols)
+    fig, axs = plt.subplots(nrows, cols, figsize=(9, 2.7 * nrows), facecolor=SURFACE, squeeze=False)
+    for a, r in zip(axs.flat, pick.values()):
+        s = r["_series"]
+        x = s["t"] / 60
+        a.plot(x, s["T_meas"], lw=1.2, color=TEXT, label="measured")
+        a.plot(x, s["T_model"], lw=1.2, color=FIT, label="this fit")
+        if "_compare_series" in r:
+            c = r["_compare_series"]
+            a.plot(c["t"] / 60, c["T_model"], lw=1.0, color=OTHER, label=r["compare"])
+        a.set_title(f"{r['file']}", fontsize=8, loc="left", color=TEXT_2)
+        a.set_xlabel("Time (min)", fontsize=8)
+        _axes(a)
+    for a in axs.flat[len(pick) :]:
+        a.axis("off")
+    axs[0, 0].set_ylabel("Surface temperature (°C)", fontsize=8.5)
+    axs[0, 0].legend(frameon=False, fontsize=7)
+    fig.tight_layout()
+    return _png(fig)
 
 
 def _e(x) -> str:
@@ -147,8 +241,17 @@ def _num(x: float) -> str:
     return f"{x:.4g}"
 
 
-def report_html(fit, doc: dict) -> str:
+def report_html(fit, doc: dict, thermal: list[dict] | None = None) -> str:
     plots = _plots(fit)
+    if doc["usable_in_studies"]:
+        like = doc.get("like", "")
+        banner = (
+            f"<p class='banner ok'><b>Usable in studies</b>, with the size, mass and thermal properties of "
+            f"<code>{_e(like)}</code>. Studies warn when a run goes beyond the temperatures and rates tested "
+            "(below).</p>"
+        )
+    else:
+        banner = f"<p class='banner'><b>Not usable in studies.</b> {_e(doc.get('why_not_usable', ''))}</p>"
     v = doc["valid_for"]
     parts = [
         "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>",
@@ -159,7 +262,7 @@ def report_html(fit, doc: dict) -> str:
             f"<p class='sub'>PackTherm {_e(doc['provenance']['packtherm'])} fit, "
             f"{_e(doc['provenance']['fitted_at'])}. Model: {_e(doc['model']['form'])}.</p>"
         ),
-        f"<p class='banner'><b>Not usable in studies yet.</b> {_e(doc['why_not_usable'])}</p>",
+        banner,
     ]
 
     # 2. Held-out tests.
@@ -179,6 +282,50 @@ def report_html(fit, doc: dict) -> str:
         parts += plots.get("checks", [])
     else:
         parts.append("<p>No held-out test was given (<code>--check</code>): the fit is judged only on what it saw.</p>")
+    if fit.checks:
+        parts.append(
+            "<p class='sub'>Above: voltage, replayed with each test's measured cell temperature. Below, when the "
+            "test list gives a cell (<code>like</code>) and the chamber's convection: voltage and surface "
+            "temperature predicted from the measured current alone, as a study runs the cell.</p>"
+        )
+    if thermal:
+        from .thermal import summary
+
+        sm = summary(thermal)
+        parts.append("<h2>Voltage and temperature from the current alone</h2><div class='kpi'>")
+        parts.append(
+            f"<div>This fit<b>{100 * sm['within_1K']:.0f}% within 1 K</b>median {sm['median_T_rmse_K']:.2f} K RMS; "
+            f"{sm['median_V_rmse_mV']:.1f} mV</div>"
+        )
+        if "compare" in sm:
+            parts.append(
+                f"<div>{_e(sm['compare'])}<b>{100 * sm['compare_within_1K']:.0f}% within 1 K</b>median "
+                f"{sm['compare_median_T_rmse_K']:.2f} K RMS; {sm['compare_median_V_rmse_mV']:.1f} mV</div>"
+            )
+        parts.append("</div>")
+        head = "<tr><th>Test</th><th>Chamber</th><th>Voltage RMS</th><th>Temperature RMS</th><th>Peak error</th>"
+        cmp = "compare" in thermal[0]
+        if cmp:
+            head += "<th>Library: voltage</th><th>temperature</th><th>peak</th>"
+        parts.append(f"<table>{head}</tr>")
+        for r in thermal:
+            row = (
+                f"<tr><td>{_e(r['file'])}</td><td class='n'>{r['ambient_C']:g} °C</td>"
+                f"<td class='n'>{r['V_rmse_mV']:.1f} mV</td><td class='n'>{r['T_rmse_K']:.2f} K</td>"
+                f"<td class='n'>{r['peak_error_K']:+.2f} K</td>"
+            )
+            if cmp:
+                row += (
+                    f"<td class='n'>{r['compare_V_rmse_mV']:.1f} mV</td><td class='n'>{r['compare_T_rmse_K']:.2f} K</td>"
+                    f"<td class='n'>{r['compare_peak_error_K']:+.2f} K</td>"
+                )
+            parts.append(row + "</tr>")
+        parts.append(
+            "</table><p class='sub'>Voltage is scored down to the knee near empty (40% of the way up from the "
+            "cut-off), where the last minutes' collapse would dominate. Peak error: predicted minus measured "
+            "peak surface temperature.</p>"
+        )
+        parts.append(_thermal_plot(thermal))
 
     # 3. Values.
     parts.append(
@@ -203,6 +350,33 @@ def report_html(fit, doc: dict) -> str:
         )
         parts.append(f"<p class='flag'>These trade off against each other (the tests pin a combination): {pairs}.</p>")
     parts.append(f"<p class='sub'>{_e(ident['about_the_ranges'])}.</p>")
+    if doc.get("by_temperature"):
+        names = ["R0_25C", "I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m", "Rd_25C", "tau_d", "soc_a", "soc_b"]
+        parts.append(
+            "<h2>Values by temperature</h2><p class='sub'>Each temperature fitted on its own. PackTherm "
+            "interpolates between them (in 1/T), and beyond the coldest and warmest follows the laws above. "
+            "<span class='flag'>Flagged</span>: at the edge of its allowed range, or poorly determined.</p><table><tr>"
+            "<th>Chamber</th><th>Cell</th>"
+            + "".join(f"<th><code>{n.replace('_25C', '')}</code></th>" for n in names)
+            + "</tr>"
+        )
+        for row in doc["by_temperature"]:
+            cells = []
+            for n in names:
+                e = row["values"].get(n)
+                if e is None:
+                    cells.append("<td></td>")
+                    continue
+                cls = " flag" if e.get("note") else ""
+                cells.append(f"<td class='n{cls}' title='{_e(e.get('note', ''))}'>{_num(e['value'])}</td>")
+            parts.append(
+                f"<tr><td class='n'>{row['at_C']:g} °C</td><td class='n'>{row['cell_C']:g} °C</td>"
+                + "".join(cells)
+                + "</tr>"
+            )
+        parts.append("</table>")
+        if "by_T" in plots:
+            parts.append(plots["by_T"])
 
     # 4. Validity and errors.
     parts.append("<h2>Where it is valid</h2><table>")
@@ -225,11 +399,10 @@ def report_html(fit, doc: dict) -> str:
             f"<td class='n'>{e['max_mV']:.0f} mV</td><td class='n'>{e['parts']}</td></tr>"
         )
     parts.append(
-        "</table><p class='sub'>The model has two branches, so two time scales besides the instant drop. A cell "
-        "responds on more: the worst errors sit in the first tenth of a second after a step (faster than either "
-        "branch), and slow creep over minutes in long pulses and rests is missed. A model with more branches "
-        "(planned) can follow both. Below 20% state of charge the open-circuit voltage is steep, so small errors in "
-        "the state of charge show up as larger voltage errors.</p>"
+        "</table><p class='sub'>The model has three branches besides the instant drop: seconds (charge transfer), "
+        "tens of seconds and minutes. The worst errors sit in the first tenth of a second after a step and in the "
+        "collapse near empty. Below 20% state of charge the open-circuit voltage is steep, so small errors in the "
+        "state of charge show up as larger voltage errors. Long tests are scored down to the knee.</p>"
     )
 
     # 5. Charts.
@@ -237,6 +410,8 @@ def report_html(fit, doc: dict) -> str:
     parts.append(f"<p class='sub'>{_e(fit.ocv.method)}.</p>{plots['ocv']}")
     if "pulses" in plots:
         parts.append(f"<h2>Pulses, measured against the model</h2>{plots['pulses']}")
+    if "pulses_by_T" in plots:
+        parts.append(f"<h2>A pulse at each temperature, measured against the model</h2>{plots['pulses_by_T']}")
     if "steps" in plots:
         parts.append(f"<h2>Steps and rests, measured against the model</h2>{plots['steps']}")
 
@@ -265,7 +440,7 @@ def report_html(fit, doc: dict) -> str:
     return "\n".join(parts)
 
 
-def write_report(path: str | Path, fit, doc: dict) -> Path:
+def write_report(path: str | Path, fit, doc: dict, thermal: list[dict] | None = None) -> Path:
     path = Path(path)
-    path.write_text(report_html(fit, doc), encoding="utf-8")
+    path.write_text(report_html(fit, doc, thermal), encoding="utf-8")
     return path

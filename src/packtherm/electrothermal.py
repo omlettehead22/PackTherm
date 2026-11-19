@@ -288,6 +288,54 @@ def shortfall_warning(share: float) -> str:
     )
 
 
+RANGE_MARGIN_K = 2.0  # a fitted cell's tested temperatures, give or take this, count as tested
+
+
+def check_fitted_range(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30.0) -> list[str]:
+    """For a fitted cell: where a run goes beyond what its tests covered (empty list = within them).
+
+    Inside the tested temperatures the model interpolates between fitted
+    values; beyond them it follows the fitted laws, which the tests did not
+    check there. Higher C-rates than tested are extrapolation too.
+    """
+    from .params import KELVIN
+
+    v = cell.validity
+    if not v:
+        return []
+    a = load.arrays()
+    current = a["current_A"]
+    if current.size == 0:
+        return []
+    out = []
+    T = np.asarray(res.T_max) - KELVIN
+    T_lo = float(T.min())
+    rng = v.get("temperature_C")
+    if rng:
+        if T_lo < rng[0] - RANGE_MARGIN_K:
+            out.append(
+                f"The cell starts at {T_lo:.0f} degC, colder than its fitted model's coldest test ({rng[0]:.0f} degC): "
+                "the result rests on its fitted temperature laws, not on tests."
+            )
+        if float(T.max()) > rng[1] + RANGE_MARGIN_K:
+            out.append(
+                f"The cell reaches {float(T.max()):.0f} degC, warmer than its fitted model's warmest test "
+                f"({rng[1]:.0f} degC): the result rests on its fitted temperature laws, not on tests."
+            )
+    dt = float(np.median(np.diff(a["t"]))) if current.size > 1 else 1.0
+    n = max(1, min(current.size, round(window_s / dt)))
+    rolling = np.convolve(current, np.ones(n) / n, mode="valid")
+    for label, c, key in (
+        ("Discharge", max(rolling.max(), 0.0) / cell.capacity_Ah, "discharge_C"),
+        ("Charge", max(-rolling.min(), 0.0) / cell.capacity_Ah, "charge_C"),
+    ):
+        tested = v.get(key)
+        if c > 0.05 and (tested is None or c > 1.1 * tested[1]):
+            what = "was not tested" if tested is None else f"was tested up to {tested[1]:.2g}C"
+            out.append(f"{label} {c:.2f}C: the fitted model's {label.lower()} {what}; this is extrapolation.")
+    return out
+
+
 def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30.0) -> list[str]:
     """Datasheet-limit warnings for a finished run (empty list = within limits).
 

@@ -145,7 +145,9 @@ print(run.result.summary())  # run.to_json() is the results document
 
 **Cell test data.** `packtherm data <file>` reads a cell test (CSV, or MATLAB `.mat` as the Kollmeyer datasets ship) and converts it to seconds, amps with + = discharge, volts and °C. It finds the columns of the common tester exports, checks the units, works out the current's sign from the voltage, and flags gaps, repeats and missing rows. It then labels the parts of the test: rests, pulses, constant-current steps, CC-CV charges and drive cycles. See [docs/TEST_DATA.md](docs/TEST_DATA.md).
 
-**Fitting a cell model.** `packtherm fit` fits PackTherm's circuit model to a slow discharge, a pulse test and, optionally, steps with rests, all at one temperature. It writes a fitted cell file and an HTML report: each value with its source and 95% range, where the model is valid, its errors on what it was fitted to and on tests it never saw, the data warnings, and each input's SHA-256. On the Panasonic NCR18650PF at 25 °C, the fit predicts a UDDS drive cycle it was not fitted to within 5.3 mV RMS, against 10.1 mV for the library cell. Fitted at one temperature, the file is not yet usable in studies (v0.6.2 fits the temperature behaviour); see [docs/FITTING.md](docs/FITTING.md).
+**Fitting a cell model.** `packtherm fit tests.yaml` fits PackTherm's circuit model to a cell's tests at several temperatures: pulse tests, steps, discharges and drive cycles, listed by temperature. It writes a fitted cell file and an HTML report: the values by temperature, each with its source and 95% range, where the model is valid, its errors on what it was fitted to and on tests it never saw, the data warnings, and each input's SHA-256. Fitted at three temperatures or more, with a cell named for size and thermal properties, the file goes straight into a study (`cell: my_cell.yaml`), and the study warns when a run goes beyond what the tests covered.
+
+On the Panasonic NCR18650PF at five temperatures (−20 to 25 °C), 43 tests the fit never saw were predicted from their current alone, as a study runs the cell. The fitted cell predicts voltage at least as well as the hand-tuned library cell (28.2 vs 32.7 mV median), and 79% of tests come within 1 K, against 86%; its temperature peaks run about 1 K cold. See [docs/FITTING.md](docs/FITTING.md).
 
 **Study files.** A study (cell, duty, ambient, limits, design space, options, normal or fast) can be written as one YAML or JSON file; `packtherm design` flags build the same document. Every key is described in [docs/STUDY_FILES.md](docs/STUDY_FILES.md). Each example study in [`docs/examples/`](docs/examples/) has its file and its results JSON, and every number this README quotes from them is checked in CI (`tests/test_docs.py`). CI also re-runs the examples in fast mode and checks they still match their committed results (`tests/test_examples_rerun.py`).
 
@@ -183,8 +185,9 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.5.6** | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
 | **v0.5.7** | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
 | **v0.6.0** | Cell test data: CSV and `.mat` reading, column, unit and sign detection, checks, and the test's parts labelled (`packtherm data`) |
-| **v0.6.1** (current) | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
-| v0.6.2–v0.6.3 (next) | Fitting across temperatures, so fitted cells can be used in studies; then more held-out tests and the Samsung 30T |
+| **v0.6.1** | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
+| **v0.6.2** (current) | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
+| v0.6.3 (next) | The Samsung 30T, an independent check of the method; then the generic circuit, web fitting and the 3D view |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
@@ -194,7 +197,8 @@ Results from earlier versions, as they stood at the time, are in [docs/HISTORY.m
 ```
 src/packtherm/        the package: cells, user_cells, ecm, electrothermal, model (1D), model2d, module, hardware,
                       module_design, study (study files), design, ev, materials, report, validation, testdata, cli
-src/packtherm/fitting/  fitting a cell model to test data: OCV, state of charge, the circuit fit, cell file, report
+src/packtherm/fitting/  fitting a cell model to test data: OCV, state of charge, the circuit fit, test list,
+                      cell file, electro-thermal checks, report
 src/packtherm/api/    the HTTP API (FastAPI): settings and limits, jobs, endpoints; serves the web app
 src/packtherm/browser.py  the in-browser engine's side in Python (the study in steps, for Web Workers)
 web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/, or

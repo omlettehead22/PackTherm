@@ -65,7 +65,7 @@ def main() -> pd.DataFrame:
             for k in range(1, t.size):
                 dt = t[k] - t[k - 1]
                 soc -= I[k] * dt / 3600 / CAP
-                V, eta, vd = st.step(ecm, I[k], soc, Tk[k - 1], dt)
+                V, eta, vd, _ = st.step(ecm, I[k], soc, Tk[k - 1], dt)
                 st.eta_ct, st.V_d = eta, vd
                 H_ecm.append(I[k] * (ecm.ocv(soc) - V))
             H_lump = [

@@ -128,7 +128,7 @@ def cold_laws(root: str) -> dict:
         st, out = ECMState(), np.empty_like(t)
         out[0] = d["Voltage"][0]
         for k in range(1, t.size):
-            V, eta, vd = st.step(ecm, I[k], 1 + Ah[k] / CAPACITY, Tk[k], t[k] - t[k - 1])
+            V, eta, vd, _ = st.step(ecm, I[k], 1 + Ah[k] / CAPACITY, Tk[k], t[k] - t[k - 1])
             st.eta_ct, st.V_d = eta, vd
             out[k] = V
         return out

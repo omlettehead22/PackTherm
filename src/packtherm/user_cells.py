@@ -128,7 +128,13 @@ def validate_cell(doc: Any, where: str = "cell.") -> tuple[dict, list[str]]:
     if "packtherm_fitted_cell" in doc:
         from .fitting.cellfile import refusal
 
-        raise CellError("Fitted cell file, not usable in studies yet:\n  " + refusal(doc, where))
+        why = refusal(doc, where)
+        if why:
+            raise CellError("Fitted cell file, not usable in studies:\n  " + why)
+        like = doc.get("like")
+        if not isinstance(like, str) or not like:
+            raise CellError(f"Fitted cell file:\n  {where}like: name the cell for size, mass and thermal properties")
+        return doc, []
     spec = _check_section(doc, CELL_KEYS, where, errors)
     for k in REQUIRED:
         if k not in doc:
@@ -216,8 +222,28 @@ def _zero(_soc: float) -> float:
     return 0.0
 
 
-def cell_from_spec(spec: dict) -> Cell:
-    """Build a Cell from a validated definition (see ``validate_cell``)."""
+def resolve_like(doc: dict, base: str | Path) -> dict:
+    """A fitted cell file read from disk: its ``like`` cell file, if relative, is relative to it."""
+    like = doc.get("like")
+    if (
+        "packtherm_fitted_cell" in doc
+        and isinstance(like, str)
+        and like.lower().endswith((".yaml", ".yml", ".json"))
+        and not Path(like).is_absolute()
+    ):
+        doc = {**doc, "like": str(Path(base) / like)}
+    return doc
+
+
+def cell_from_spec(spec: dict, base: str | Path | None = None) -> Cell:
+    """Build a Cell from a validated definition (see ``validate_cell``): a datasheet one or a fitted cell file."""
+    if "packtherm_fitted_cell" in spec:
+        from .fitting.cellfile import cell_from_doc
+
+        try:
+            return cell_from_doc(spec, base)
+        except KeyError as e:
+            raise CellError(f"Fitted cell file:\n  cell.like: {e.args[0]}") from None
     chem = spec["chemistry"]
     if chem == "LFP":
         cp_jr, k_jr, k_ax, dudt = LFP_CP, LFP_K_RADIAL, LFP_K_AXIAL, lfp_graphite_dUdT
@@ -277,7 +303,7 @@ def read_cell_file(path: str | Path) -> dict:
 def load_cell(path: str | Path) -> Cell:
     """A user-defined cell from a file (warnings are ignored; ``validate_cell`` returns them)."""
     spec, _ = validate_cell(read_cell_file(path))
-    return cell_from_spec(spec)
+    return cell_from_spec(spec, Path(path).parent)
 
 
 def from_datasheet(**values) -> Cell:
