@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.6.3
+
+The Samsung INR21700-30T, the fourth v0.6 mini update: a second cell fitted with `packtherm fit` and added to the library, and what it showed about the method.
+
+- **New: the Samsung 30T in the library** (`30T`). It is a 3 Ah high-power 21700, fitted at 40, 25, 10, 0, −10 and −20 °C from the McMaster tests (Kollmeyer and Skells, Mendeley Data v2, 2023, CC BY 4.0). The fitted cell file ships with PackTherm. `30T-LUMPED` carries its size, the mass derived from its stated 166 Wh/kg, and its limits, with the fitted 10 s DC resistance (14.3 mΩ at 25 °C) as a lumped resistance. The cathode isn't stated by the source, so its thermal properties and zero entropic heat are assumptions.
+- **Results.** On 82 tests it never saw, from current alone: 27.7 mV median voltage error and 62% within 1 K. From 40 to 0 °C the error is 13–28 mV, and every test at 25 and 40 °C is within 1 K. The cold is weaker: 51 and 79 mV at −10 and −20 °C, where values sit at their limits. See [docs/FITTING.md](docs/FITTING.md#checked-on-a-second-cell-the-samsung-30t).
+- **Fixed: the middle branch's time constant was left loose by the pulses.** The 30T's 25 °C pulses fit as well with it at 30 s as at 290 s, and at 290 s its 1C discharge ran 50–60 mV low. Where there are long tests, the fit now runs both ways: once with the time constant from the pulses, once from the long tests. It keeps the one that fits the discharges and drive cycles better, provided the pulses still fit within 10%. Only fitted tests decide. Each temperature's choice is in the file (`by_temperature[].tau_m_from`). A fit takes up to twice as long.
+- **The Panasonic refitted** with it: 24.4 mV median on its 43 checks (was 28.2) and 81% within 1 K (was 79%). −10 °C improved from 54 to 34 mV, and −20 °C worsened from 67 to 92 mV.
+- **New: the test rig, calibrated.** A test list can calibrate the rig for the thermal checks on tests that are fitted to (`chamber_calibration`), with the heat from their measured voltage. One test sets the chamber's convection. A drive cycle as well sets the heat capacity the cell's fixture adds. Both are the rig's, used for the checks only, and recorded in the file's provenance.
+- **Open question: the fixture, or the cell's conduction.** On the 30T the fixture explains the drive cycles' peaks about as well as a radial conductivity of 0.12 W/(m K) instead of the assumed 1.2, and one case thermocouple can't tell them apart (BACKLOG item 5).
+- **The 30T's data, prepared with care** (`validation/prepare_samsung_30t.py`):
+  - the ambient is the cell temperature after the settled rest before each test, since the chambers ran off their setpoints;
+  - the tests whose files begin mid-discharge start from the charge the tester counted;
+  - a block logged twice is kept once, and a chamber's ramp after a test is cut.
+- **Faster import:** `packtherm.fitting` loads its parts when first used, so the cell library can read a fitted cell file without loading the fit.
+- **How blind this is.** The 30T was the promised independent check of the method. The middle-branch fault showed in its fitted tests, and the fix decides on fitted tests. But the alternatives, and the rig's form, were compared on both cells' checks before choosing. The LG HG2 (v0.6.4) will be fitted with the method as it stands.
+- **Data:** the 30T's pulse tests at six temperatures and its 25 °C C/20 discharge, unchanged, in `tests/data/samsung_30t/` (4.1 MB). Its 94 discharges and drive cycles, processed, in `validation/data/samsung_30t/` (2.2 MB). Both CC BY 4.0, credited in their READMEs.
+- **Tests:** the library 30T against its documented fit, its resistance growing in the cold, the rig calibrated on the 30T's fitted tests, and test lists with calibration tests.
+- **Docs:** FITTING.md (the two ways, the rig, the 30T's results and how independent they are), README, HISTORY, BACKLOG (items 5 and 6), TEST_DATA.
+
 ## 0.6.2
 
 Fitting across temperatures, the third v0.6 mini update. Fitted cells can now be used in studies.

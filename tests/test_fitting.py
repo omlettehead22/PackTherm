@@ -381,6 +381,8 @@ def test_a_cell_fitted_at_three_temperatures_runs_in_studies(three_temperatures,
     doc = fitted_cell_doc(three_temperatures, "Synthetic three-branch cell", files, like="PF")
     assert doc["usable_in_studies"] is True and doc["status"] == "multi-temperature"
     assert [row["at_C"] for row in doc["by_temperature"]] == list(TEMPS)
+    # Which way each temperature's middle-branch time constant was set (v0.6.3).
+    assert {row["tau_m_from"] for row in doc["by_temperature"]} <= {"pulses", "long tests"}
     path = write_fitted_cell(tmp_path / "fitted.yaml", doc)
 
     cell = get_cell(str(path))  # as a study's "cell: fitted.yaml" loads it
@@ -477,3 +479,49 @@ def test_real_panasonic_three_temperatures(monkeypatch):
     laws = {p.name: p.value for p in fit.params if p.name.startswith("Ea_") and p.source == "fitted"}
     assert 5e3 < laws["Ea_R0"] < 40e3 and 10e3 < laws["Ea_I0"] < 90e3
     assert all(e["rmse_mV"] < 60 for k, e in fit.errors.items() if "pulses at 20-95%" in k)
+
+
+def test_chamber_calibration_in_a_test_list(tmp_path):
+    from packtherm.fitting.testlist import TestListError, read_test_list
+
+    for name in ("slow.csv", "p.csv", "check.csv"):
+        (tmp_path / name).write_text("t_s,current_A,voltage_V\n0,0,4.1\n")
+    base = "packtherm_fit: 1\nname: x\nlike: PF\nslow: slow.csv\ntemperatures:\n  - at: 25\n    pulses: p.csv\n"
+    (tmp_path / "ok.yaml").write_text(base + "chamber_calibration: {file: p.csv, ambient_C: 24.5}\n")
+    (cal,) = read_test_list(tmp_path / "ok.yaml").chamber_calibration
+    assert cal["ambient_C"] == 24.5 and cal["start_soc"] == 1.0
+    (tmp_path / "two.yaml").write_text(base + "chamber_calibration: [p.csv, {file: slow.csv, start_soc: 0.5}]\n")
+    assert [c["start_soc"] for c in read_test_list(tmp_path / "two.yaml").chamber_calibration] == [1.0, 0.5]
+    (tmp_path / "bad.yaml").write_text(
+        base + "chamber_h_W_m2K: 30\nchecks: [{file: check.csv}]\n"
+        "chamber_calibration: {file: check.csv, colour: red}\n"
+    )
+    with pytest.raises(TestListError) as e:
+        read_test_list(tmp_path / "bad.yaml")
+    msg = str(e.value)
+    for bit in ("not both", "chamber_calibration.colour: unknown key", "one of the checks"):
+        assert bit in msg, bit
+
+
+def test_rig_calibrated_from_measured_heat():
+    """The McMaster rig, from the 30T's 25 degC tests fitted to: h from the 1C discharge, the fixture from Mixed1."""
+    import json
+
+    from packtherm.cells import CELLS
+    from packtherm.fitting.thermal import ThermalCheck, calibrate_rig
+    from packtherm.testdata import load_test_data
+
+    data = Path(__file__).resolve().parents[1] / "validation" / "data" / "samsung_30t"
+    manifest = {m["name"]: m for m in json.loads((data / "manifest.json").read_text())}
+
+    def check(name):
+        m = manifest[name]
+        assert m["role"] == "fit"
+        return ThermalCheck(load_test_data(data / m["file"]), m["soc0"], m["ambient_C"])
+
+    one = calibrate_rig([check("25C_1C_discharge_1")], CELLS["30T"])
+    assert 20.0 < one["h_W_m2K"] < 120.0 and one["fixture_J_K"] == 0.0 and not one["note"]
+    both = calibrate_rig([check("25C_1C_discharge_1"), check("25C_Mixed1")], CELLS["30T"])
+    assert 20.0 < both["h_W_m2K"] < 120.0 and not both["note"]
+    assert 0.0 < both["fixture_J_K"] < 2.0 * both["cell_J_K"]
+    assert both["T_rmse_K"] < 0.6

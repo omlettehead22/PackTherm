@@ -1,0 +1,40 @@
+"""The cell library's fitted cells: what ships with PackTherm matches the fit that made it."""
+
+from __future__ import annotations
+
+from itertools import pairwise
+from pathlib import Path
+
+import pytest
+import yaml
+
+from packtherm.cells import CELLS, get_cell
+from packtherm.fitting.cellfile import dc_resistance
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_samsung_30t_is_its_fitted_cell_file():
+    cell, lumped = CELLS["30T"], CELLS["30T-LUMPED"]
+    shipped = yaml.safe_load((ROOT / "src" / "packtherm" / "data" / "samsung_30t_fitted.yaml").read_text())
+    example = yaml.safe_load((ROOT / "docs" / "examples" / "fitting" / "samsung_30t_fitted.yaml").read_text())
+    # The library's copy is the documented fit's, value for value.
+    assert shipped["model"] == example["model"] and shipped["open_circuit_voltage"] == example["open_circuit_voltage"]
+    assert shipped["usable_in_studies"] is True and shipped["like"] == "30T-LUMPED"
+    assert get_cell("30t") is cell and cell.model_label == "circuit (fitted)" and not cell.user_defined
+    # Six temperatures, -20 to 40 degC, and the tested range carried for the studies' warnings.
+    assert len(cell.ecm.by_T) == 6
+    lo, hi = cell.validity["temperature_C"]
+    assert lo < -19.0 and hi > 39.0
+    # Size, mass and thermal properties are the lumped cell's; its resistance is the fit's.
+    for k in ("diameter", "height", "mass", "cp", "k_radial", "form_factor", "max_discharge_C"):
+        assert getattr(cell, k) == getattr(lumped, k), k
+    r0 = dc_resistance(cell.ecm, capacity_Ah=cell.capacity_Ah)
+    assert cell.R0_25C == pytest.approx(r0)
+    assert lumped.R0_25C == pytest.approx(r0, rel=0.02)
+
+
+def test_samsung_30t_resistance_grows_in_the_cold():
+    ecm = CELLS["30T"].ecm
+    R = [dc_resistance(ecm, T=273.15 + T, capacity_Ah=3.0) for T in (40, 25, 10, 0, -10, -20)]
+    assert all(b > a for a, b in pairwise(R))

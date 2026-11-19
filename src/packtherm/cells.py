@@ -26,6 +26,15 @@ Sources
               10 A max continuous discharge, 3.4 A (1C of the 3.4 Ah minimum)
               max charge, charge 0-45 degC, discharge -20-60 degC,
               approx. 18.3 x 65.1 mm.
+[Kollmeyer2018] P. Kollmeyer, "Panasonic 18650PF Li-ion Battery Data", Mendeley
+              Data v1 (2018), doi:10.17632/wykht8y7tg.1, CC BY 4.0.
+[Kollmeyer2023] P. Kollmeyer and M. Skells, "Samsung INR21700 30T 3Ah Li-ion
+              Battery Data", Mendeley Data v2 (2023), doi:10.17632/9xyvy2njj3.2,
+              CC BY 4.0. Tests at McMaster University at -20 to 40 degC.
+[30T-TI]      "Technical Information and Experimental Test Results for Samsung
+              IN21700-30T" (McMaster, April 2020, in [Kollmeyer2023]): Li-ion,
+              3.6 V, 3.0 Ah, 166 Wh/kg, charge 1.5 A (4 A fast) to 4.2 V,
+              discharge to 2.5 V, 35 A max continuous.
 """
 
 from __future__ import annotations
@@ -467,6 +476,59 @@ PANASONIC_NCR18650PF = Cell(
 )
 
 CELLS["PF"] = PANASONIC_NCR18650PF
+
+
+# ---------------------------------------------------------------------------
+# Samsung INR21700 30T: geometry and limits; its circuit is fitted (v0.6.3)
+# ---------------------------------------------------------------------------
+
+# The lumped-resistance 30T: the base a fitted circuit is laid on (its "like" cell),
+# and the comparison for it. Its R0_25C is the fitted circuit's 10 s DC resistance.
+SAMSUNG_30T_LUMPED = Cell(
+    name="Samsung INR21700 30T (lumped DCIR)",
+    form_factor="21700",
+    chemistry="Li-ion (cathode not stated by the source)",
+    capacity_Ah=3.0,
+    V_nominal=3.6,
+    # Maximum size with tube from the dataset's drawing; the thermocouple sits on the tube.
+    diameter=21.22e-3,
+    height=70.30e-3,
+    # Derived: 3.6 V x 3.0 Ah at 166 Wh/kg [30T-TI] is 65 g; no mass is stated.
+    mass=0.065,
+    # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (30T below); it rises
+    # 2.5x by 0 degC, close to the default Arrhenius law's 20 kJ/mol (21-25 kJ/mol between 40 and 0 degC).
+    R0_25C=0.0143,
+    R0_range=(0.0129, 0.0157),
+    # ASSUMPTION: NMC811-family jelly-roll properties (the source names no cathode).
+    cp=_CP_JR,
+    k_radial=_K_JR,
+    # ASSUMPTION: entropic heat neglected, as for the NCR18650PF.
+    dUdT=_zero_dUdT,
+    max_charge_C=4.0 / 3.0,  # 4 A fast charge
+    max_discharge_C=35.0 / 3.0,  # 35 A continuous
+    sources=("Kollmeyer2023", "30T-TI"),
+)
+
+CELLS["30T-LUMPED"] = SAMSUNG_30T_LUMPED
+
+
+def _packaged_fitted_cell(file: str, name: str, sources: tuple[str, ...]) -> Cell:
+    """A library cell from a fitted cell file shipped with PackTherm (made by ``packtherm fit``)."""
+    from importlib import resources
+
+    import yaml
+
+    from .fitting.cellfile import cell_from_doc
+
+    doc = yaml.safe_load(resources.files("packtherm").joinpath(f"data/{file}").read_text())
+    cell = cell_from_doc(doc)
+    return replace(cell, name=name, model_label="circuit (fitted)", user_defined=False, sources=sources)
+
+
+# v0.6.3: the 30T's circuit fitted by `packtherm fit` at -20 to 40 degC, from the tests in
+# [Kollmeyer2023] (docs/examples/fitting/samsung_30t_tests.yaml; the report beside it).
+SAMSUNG_30T = _packaged_fitted_cell("samsung_30t_fitted.yaml", "Samsung INR21700 30T", ("Kollmeyer2023", "30T-TI"))
+CELLS["30T"] = SAMSUNG_30T
 
 
 def library_summary() -> dict[str, dict]:

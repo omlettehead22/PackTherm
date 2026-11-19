@@ -11,21 +11,21 @@ model:
     branch (Rm, tau_m), a slow branch (Rd, tau_d) and a rise near empty (soc_a, soc_b): packtherm.ecm.ECM; values
     by temperature, interpolated between the fitted temperatures and carried beyond them by the fitted laws'
   ecm:
-    R0_25C: 0.0240354
-    Ea_R0: 18701.0
-    I0_25C: 4.25737
-    Ea_I0: 50849.8
-    gamma: 1.98036
-    tau_ct: 1.11024
-    Rm_25C: 0.0189831
-    tau_m: 33.654
-    Ea_Rm: 25796.8
-    Rd_25C: 0.0278272
-    tau_d: 1877.96
-    Ea_Rd: 29600.7
-    soc_a: 8.74985
-    soc_b: 0.0604455
-    Ea_soc: 32257.4
+    R0_25C: 0.0239841
+    Ea_R0: 18964.4
+    I0_25C: 4.41594
+    Ea_I0: 53648.8
+    gamma: 2.04899
+    tau_ct: 1.1107
+    Rm_25C: 0.0190938
+    tau_m: 34.0487
+    Ea_Rm: 35931.2
+    Rd_25C: 0.0279038
+    tau_d: 1881.4
+    Ea_Rd: 29482.7
+    soc_a: 8.74
+    soc_b: 0.0605672
+    Ea_soc: 29139.8
     V_max: 4.2
     V_min: 2.49948
     cv_cutoff_A: 0.05
@@ -44,103 +44,102 @@ model:
       - soc_b
       rows:
       - - 253.424
-        - 0.0930914
-        - 0.172289
-        - 2.93004
-        - 0.620312
+        - 0.0930022
+        - 0.171577
+        - 2.94619
+        - 0.619625
         - 1.0e-05
         - 5.0
-        - 0.36815
+        - 0.361903
         - 120.0
         - 50.0
-        - 0.0535254
+        - 0.0531013
       - - 263.452
-        - 0.0651181
-        - 0.31936
-        - 2.08558
-        - 0.808076
-        - 0.0623084
-        - 44.4548
-        - 0.0778411
-        - 10000.0
-        - 45.6709
-        - 0.0559177
+        - 0.0675699
+        - 0.315316
+        - 2.05157
+        - 1.07835
+        - 0.12
+        - 121.1
+        - 0.0891761
+        - 9999.64
+        - 38.5166
+        - 0.059242
       - - 273.712
-        - 0.0555538
-        - 0.349701
-        - 0.915384
-        - 3.34195
-        - 0.0786422
-        - 138.255
-        - 0.054665
+        - 0.0555529
+        - 0.350485
+        - 0.915899
+        - 3.34368
+        - 0.0785724
+        - 138.128
+        - 0.0549703
         - 10000.0
         - 50.0
-        - 0.0535588
+        - 0.0535804
       - - 283.918
-        - 0.0374181
-        - 5.10048
-        - 2.18026
-        - 1.91118
-        - 0.0300014
-        - 42.6487
-        - 0.0869455
-        - 8530.12
+        - 0.03702
+        - 8.57181
+        - 3.55362
+        - 2.09581
+        - 0.0341104
+        - 55.2119
+        - 0.100789
+        - 10000.0
         - 50.0
-        - 0.0466796
+        - 0.0474899
       - - 298.994
-        - 0.0234439
-        - 4.21429
-        - 1.96967
-        - 1.07681
-        - 0.0185003
-        - 33.2083
-        - 0.0260987
-        - 1724.61
-        - 7.93216
-        - 0.0604455
-  dc_resistance_mOhm: 40.6
+        - 0.0234052
+        - 4.25412
+        - 1.98645
+        - 1.0717
+        - 0.0184802
+        - 33.1347
+        - 0.0259578
+        - 1712.55
+        - 7.92274
+        - 0.0605672
+  dc_resistance_mOhm: 40.53
 values:
   Ea_R0:
-    value: 18701.0
+    value: 18964.0
     unit: J/mol
     source: fitted
     what: how the instant resistance grows in the cold (through the temperatures' own values; used beyond the coldest
       and warmest)
     range_95:
-    - 14180.0
-    - 23220.0
+    - 14740.0
+    - 23190.0
   Ea_I0:
-    value: 50850.0
+    value: 53649.0
     unit: J/mol
     source: fitted
     what: how the charge-transfer branch's exchange current falls in the cold (through the temperatures' own values;
       used beyond the coldest and warmest)
     range_95:
-    - 5841.0
-    - 95860.0
-    note: 'the temperatures'' own values sit up to 2.7x off this law: the table follows them'
+    - -4159.0
+    - 111500.0
+    note: 'the temperatures'' own values sit up to 4x off this law: the table follows them'
   Ea_Rm:
-    value: 25797.0
+    value: 35931.0
     unit: J/mol
     source: fitted
     what: how the middle branch's resistance grows in the cold (through the temperatures' own values; used beyond
       the coldest and warmest)
     range_95:
-    - -13260.0
-    - 64850.0
-    note: 'the temperatures'' own values sit up to 1.5x off this law: the table follows them'
+    - 20900.0
+    - 50960.0
   Ea_Rd:
-    value: 29601.0
+    value: 29483.0
     unit: J/mol
     source: fitted
     what: how the slow branch's resistance grows in the cold (through the temperatures' own values; used beyond
       the coldest and warmest)
     range_95:
-    - -2544.0
-    - 61750.0
-    note: 'the temperatures'' own values sit up to 1.7x off this law: the table follows them'
+    - -2871.0
+    - 61840.0
+    note: 'the temperatures'' own values sit up to 1.9x off this law: the table follows them'
   Ea_soc:
-    value: 32257.0
+    value: 29140.0
     unit: J/mol
     source: fitted
     what: how the rise near empty grows in the cold (through the temperatures' own values; used beyond the coldest
@@ -165,185 +164,188 @@ by_temperature:
 - at_C: 25.0
   cell_C: 25.8
   pulses: 67
+  tau_m_from: pulses
   values:
     R0_25C:
-      value: 0.023444
+      value: 0.023405
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.01996
-      - 0.02754
+      - 0.01991
+      - 0.02751
     I0_25C:
-      value: 4.2143
+      value: 4.2541
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       range_95:
-      - 1.272
-      - 13.96
+      - 1.284
+      - 14.09
       note: poorly determined by these tests
     gamma:
-      value: 1.9697
+      value: 1.9865
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       range_95:
-      - 0.6306
-      - 6.152
+      - 0.6346
+      - 6.218
       note: poorly determined by these tests
     tau_ct:
-      value: 1.0768
+      value: 1.0717
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 0.6818
-      - 1.701
+      - 0.681
+      - 1.687
     Rm_25C:
-      value: 0.0185
+      value: 0.01848
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.01625
-      - 0.02106
+      - 0.01624
+      - 0.02104
     tau_m:
-      value: 33.208
+      value: 33.135
       unit: s
       source: fitted
       what: time constant of the middle branch (tens of seconds)
       range_95:
       - 26.73
-      - 41.26
+      - 41.08
     soc_a:
-      value: 7.9322
+      value: 7.9227
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
       - 4.613
-      - 11.25
+      - 11.23
     soc_b:
-      value: 0.060446
+      value: 0.060567
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.0521
-      - 0.07013
+      - 0.05222
+      - 0.07025
     Rd_25C:
-      value: 0.026099
+      value: 0.025958
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.01402
-      - 0.04859
+      - 0.01396
+      - 0.04826
     tau_d:
-      value: 1724.6
+      value: 1712.5
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 584.7
-      - 5087.0
+      - 577.9
+      - 5075.0
       note: poorly determined by these tests
 - at_C: 10.0
   cell_C: 10.8
   pulses: 59
+  tau_m_from: long tests
   values:
     R0_25C:
-      value: 0.037418
+      value: 0.03702
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.03429
-      - 0.04083
+      - 0.03355
+      - 0.04085
     I0_25C:
-      value: 5.1005
+      value: 8.5718
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       range_95:
-      - 0.4556
-      - 57.1
+      - 0.244
+      - 301.2
       note: poorly determined by these tests
     gamma:
-      value: 2.1803
+      value: 3.5536
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       range_95:
-      - 0.2915
-      - 16.31
+      - 0.1468
+      - 86.02
       note: poorly determined by these tests
     tau_ct:
-      value: 1.9112
+      value: 2.0958
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 0.9383
-      - 3.893
+      - 1.388
+      - 3.165
     Rm_25C:
-      value: 0.030001
+      value: 0.03411
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.02674
-      - 0.03367
-    tau_m:
-      value: 42.649
-      unit: s
-      source: fitted
-      what: time constant of the middle branch (tens of seconds)
-      range_95:
-      - 32.28
-      - 56.35
+      - 0.03212
+      - 0.03622
     soc_a:
       value: 50.0
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -35.76
-      - 135.8
+      - -32.22
+      - 132.2
       note: 'at the edge of its allowed range: not determined by these tests'
     soc_b:
-      value: 0.04668
+      value: 0.04749
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.03011
-      - 0.07237
+      - 0.03103
+      - 0.07269
     Rd_25C:
-      value: 0.086946
+      value: 0.10079
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.000903
-      - 8.372
+      - 0.0002393
+      - 42.44
       note: poorly determined by these tests
     tau_d:
-      value: 8530.1
+      value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 38.9
-      - 1871000.0
-      note: poorly determined by these tests
+      - 9.071
+      - 11020000.0
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_m:
+      value: 55.212
+      unit: s
+      source: fitted
+      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 52.15
+      - 58.46
 - at_C: 0.0
   cell_C: 0.6
   pulses: 54
+  tau_m_from: pulses
   values:
     R0_25C:
-      value: 0.055554
+      value: 0.055553
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
@@ -351,47 +353,47 @@ by_temperature:
       - 0.05159
       - 0.05982
     I0_25C:
-      value: 0.3497
+      value: 0.35048
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       range_95:
-      - 0.0673
-      - 1.817
+      - 0.06745
+      - 1.821
       note: poorly determined by these tests
     gamma:
-      value: 0.91538
+      value: 0.9159
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       range_95:
-      - 0.3937
-      - 2.129
+      - 0.3936
+      - 2.131
     tau_ct:
-      value: 3.3419
+      value: 3.3437
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
       - 1.424
-      - 7.844
+      - 7.851
     Rm_25C:
-      value: 0.078642
+      value: 0.078572
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
       - 0.01139
-      - 0.5429
+      - 0.5419
       note: poorly determined by these tests
     tau_m:
-      value: 138.25
+      value: 138.13
       unit: s
       source: fitted
       what: time constant of the middle branch (tens of seconds)
       range_95:
-      - 10.75
-      - 1779.0
+      - 10.74
+      - 1776.0
       note: poorly determined by these tests
     soc_a:
       value: 50.0
@@ -399,19 +401,19 @@ by_temperature:
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -47.59
-      - 147.6
+      - -47.69
+      - 147.7
       note: 'at the edge of its allowed range: not determined by these tests'
     soc_b:
-      value: 0.053559
+      value: 0.05358
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
       - 0.03295
-      - 0.08706
+      - 0.08714
     Rd_25C:
-      value: 0.054665
+      value: 0.05497
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
@@ -425,131 +427,128 @@ by_temperature:
 - at_C: -10.0
   cell_C: -9.7
   pulses: 47
+  tau_m_from: long tests
   values:
     R0_25C:
-      value: 0.065118
+      value: 0.06757
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.059
-      - 0.07187
+      - 0.06222
+      - 0.07338
     I0_25C:
-      value: 0.31936
+      value: 0.31532
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       range_95:
-      - 0.129
-      - 0.7906
+      - 0.123
+      - 0.8086
     gamma:
-      value: 2.0856
+      value: 2.0516
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       range_95:
-      - 1.374
-      - 3.165
+      - 1.346
+      - 3.128
     tau_ct:
-      value: 0.80808
+      value: 1.0784
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 0.4907
-      - 1.331
+      - 0.7097
+      - 1.639
     Rm_25C:
-      value: 0.062308
+      value: 0.12
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.05681
-      - 0.06834
-    tau_m:
-      value: 44.455
-      unit: s
-      source: fitted
-      what: time constant of the middle branch (tens of seconds)
-      range_95:
-      - 37.04
-      - 53.36
+      - 0.1107
+      - 0.1301
     soc_a:
-      value: 45.671
+      value: 38.517
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - 24.43
-      - 66.91
+      - 22.91
+      - 54.12
     soc_b:
-      value: 0.055918
+      value: 0.059242
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.04812
-      - 0.06497
+      - 0.05154
+      - 0.0681
     Rd_25C:
-      value: 0.077841
+      value: 0.089176
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       note: 'not determined by these tests: no usable range'
     tau_d:
-      value: 10000.0
+      value: 9999.6
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       note: 'at the edge of its allowed range: not determined by these tests'
+    tau_m:
+      value: 121.1
+      unit: s
+      source: fitted
+      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 44.62
+      - 328.7
+      note: poorly determined by these tests
 - at_C: -20.0
   cell_C: -19.7
   pulses: 35
+  tau_m_from: long tests
   values:
     R0_25C:
-      value: 0.093091
+      value: 0.093002
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.08484
-      - 0.1021
+      - 0.08506
+      - 0.1017
     I0_25C:
-      value: 0.17229
+      value: 0.17158
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       range_95:
-      - 0.03468
-      - 0.8558
+      - 0.04182
+      - 0.7039
       note: poorly determined by these tests
     gamma:
-      value: 2.93
+      value: 2.9462
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       range_95:
-      - 1.459
-      - 5.883
+      - 1.756
+      - 4.942
     tau_ct:
-      value: 0.62031
+      value: 0.61963
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 0.382
-      - 1.007
+      - 0.4396
+      - 0.8733
     Rm_25C:
       value: 1.0e-05
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
-      note: 'at the edge of its allowed range: not determined by these tests'
-    tau_m:
-      value: 5.0
-      unit: s
-      source: fitted
-      what: time constant of the middle branch (tens of seconds)
       note: 'at the edge of its allowed range: not determined by these tests'
     soc_a:
       value: 50.0
@@ -557,26 +556,26 @@ by_temperature:
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -355.3
-      - 455.3
+      - -358.1
+      - 458.1
       note: 'at the edge of its allowed range: not determined by these tests'
     soc_b:
-      value: 0.053525
+      value: 0.053101
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.01101
-      - 0.2603
+      - 0.01093
+      - 0.258
       note: poorly determined by these tests
     Rd_25C:
-      value: 0.36815
+      value: 0.3619
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.00414
-      - 32.74
+      - 0.007387
+      - 17.73
       note: poorly determined by these tests
     tau_d:
       value: 120.0
@@ -584,12 +583,18 @@ by_temperature:
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.1107
-      - 130100.0
+      - 0.2603
+      - 55330.0
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_m:
+      value: 5.0
+      unit: s
+      source: fitted
+      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
       note: 'at the edge of its allowed range: not determined by these tests'
 capacity:
   measured_Ah: 2.995
-  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (11.6 mV: 0.145 A x 80.1 mOhm, the fitted model''s
+  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (11.6 mV: 0.145 A x 79.8 mOhm, the fitted model''s
     steady resistance, rising near empty as the model''s does)'
   rated_Ah: 2.9
   measured_vs_rated: +3.3%
@@ -697,17 +702,17 @@ open_circuit_voltage:
   - 0.99
   - 1.0
   V:
-  - 2.6031
-  - 3.0296
-  - 3.1541
-  - 3.2322
-  - 3.2821
-  - 3.3079
-  - 3.3233
-  - 3.334
-  - 3.343
+  - 2.6027
+  - 3.0293
+  - 3.1539
+  - 3.2321
+  - 3.282
+  - 3.3078
+  - 3.3232
+  - 3.3339
+  - 3.3429
   - 3.3514
-  - 3.3601
+  - 3.36
   - 3.3703
   - 3.3827
   - 3.3964
@@ -716,8 +721,8 @@ open_circuit_voltage:
   - 3.4342
   - 3.4457
   - 3.456
-  - 3.4659
-  - 3.476
+  - 3.4658
+  - 3.4759
   - 3.4858
   - 3.4959
   - 3.5055
@@ -732,7 +737,7 @@ open_circuit_voltage:
   - 3.5686
   - 3.5743
   - 3.5799
-  - 3.5853
+  - 3.5852
   - 3.5909
   - 3.5966
   - 3.602
@@ -742,45 +747,45 @@ open_circuit_voltage:
   - 3.6242
   - 3.6302
   - 3.6362
-  - 3.6423
-  - 3.649
+  - 3.6422
+  - 3.6489
   - 3.6556
   - 3.6623
-  - 3.6692
-  - 3.677
+  - 3.6691
+  - 3.6769
   - 3.6849
-  - 3.6936
+  - 3.6935
   - 3.7024
   - 3.7126
   - 3.7234
-  - 3.7355
+  - 3.7354
   - 3.7476
   - 3.7596
   - 3.7706
-  - 3.7812
-  - 3.7911
+  - 3.7811
+  - 3.791
   - 3.801
   - 3.8102
   - 3.8195
-  - 3.8288
-  - 3.8374
-  - 3.846
+  - 3.8287
+  - 3.8373
+  - 3.8459
   - 3.8546
   - 3.8632
   - 3.8712
-  - 3.8792
+  - 3.8791
   - 3.8871
-  - 3.8958
+  - 3.8957
   - 3.9037
   - 3.9117
   - 3.9203
-  - 3.929
-  - 3.9378
+  - 3.9289
+  - 3.9377
   - 3.9475
   - 3.9574
   - 3.9673
-  - 3.9779
-  - 3.9891
+  - 3.9778
+  - 3.989
   - 4.0
   - 4.0115
   - 4.0229
@@ -791,14 +796,14 @@ open_circuit_voltage:
   - 4.0741
   - 4.082
   - 4.09
-  - 4.0974
-  - 4.1054
+  - 4.0973
+  - 4.1053
   - 4.1146
-  - 4.1252
+  - 4.1251
   - 4.1384
   - 4.155
   - 4.1819
-  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (11.6 mV: 0.145 A x 80.1 mOhm, the fitted model''s
+  how: 'slow discharge at 0.145 A over 20.7 h, plus its own drop (11.6 mV: 0.145 A x 79.8 mOhm, the fitted model''s
     steady resistance, rising near empty as the model''s does)'
 valid_for:
   temperature_C:
@@ -831,115 +836,115 @@ identifiability:
 errors:
   fitted_on:
     pulses at 20-95% SOC, 25 degC:
-      rmse_mV: 9.1
-      max_mV: 99.54
+      rmse_mV: 9.11
+      max_mV: 100.02
       samples: 22083
       parts: 50
     pulses below 20% SOC, 25 degC:
-      rmse_mV: 28.56
-      max_mV: 333.22
+      rmse_mV: 28.53
+      max_mV: 333.0
       samples: 5230
       parts: 12
     steps at 20-95% SOC, 25 degC:
-      rmse_mV: 8.19
-      max_mV: 23.91
+      rmse_mV: 8.13
+      max_mV: 23.81
       samples: 132
       parts: 19
     steps below 20% SOC, 25 degC:
-      rmse_mV: 41.24
-      max_mV: 88.43
+      rmse_mV: 41.45
+      max_mV: 88.93
       samples: 31
       parts: 5
     discharges, 25 degC:
-      rmse_mV: 18.78
-      max_mV: 53.8
+      rmse_mV: 20.77
+      max_mV: 53.96
       samples: 3069
       parts: 1
     drive cycles fitted on, 25 degC:
-      rmse_mV: 13.92
-      max_mV: 51.18
+      rmse_mV: 14.07
+      max_mV: 52.08
       samples: 9005
       parts: 1
     pulses at 20-95% SOC, 10 degC:
-      rmse_mV: 15.25
-      max_mV: 211.97
+      rmse_mV: 15.86
+      max_mV: 224.13
       samples: 22162
       parts: 49
     pulses below 20% SOC, 10 degC:
-      rmse_mV: 60.19
-      max_mV: 446.94
+      rmse_mV: 61.24
+      max_mV: 458.54
       samples: 1859
       parts: 5
     steps at 20-95% SOC, 10 degC:
-      rmse_mV: 8.96
-      max_mV: 16.82
+      rmse_mV: 9.35
+      max_mV: 25.01
       samples: 71
       parts: 10
     steps below 20% SOC, 10 degC:
-      rmse_mV: 289.82
-      max_mV: 418.23
+      rmse_mV: 276.14
+      max_mV: 399.08
       samples: 12
       parts: 2
     drive cycles fitted on, 10 degC:
-      rmse_mV: 21.06
-      max_mV: 81.99
+      rmse_mV: 19.09
+      max_mV: 82.18
       samples: 4594
       parts: 1
     pulses at 20-95% SOC, 0 degC:
-      rmse_mV: 23.94
-      max_mV: 374.3
+      rmse_mV: 23.96
+      max_mV: 374.5
       samples: 21327
       parts: 47
     pulses below 20% SOC, 0 degC:
-      rmse_mV: 74.7
-      max_mV: 398.57
+      rmse_mV: 74.69
+      max_mV: 398.7
       samples: 678
       parts: 2
     steps at 20-95% SOC, 0 degC:
-      rmse_mV: 46.53
-      max_mV: 81.92
+      rmse_mV: 47.57
+      max_mV: 85.56
       samples: 68
       parts: 10
     steps below 20% SOC, 0 degC:
-      rmse_mV: 195.96
-      max_mV: 198.84
+      rmse_mV: 185.14
+      max_mV: 190.2
       samples: 6
       parts: 1
     drive cycles fitted on, 0 degC:
-      rmse_mV: 31.25
-      max_mV: 143.59
+      rmse_mV: 30.39
+      max_mV: 143.64
       samples: 2311
       parts: 1
     pulses at 20-95% SOC, -10 degC:
-      rmse_mV: 30.49
-      max_mV: 347.44
+      rmse_mV: 30.95
+      max_mV: 317.9
       samples: 19110
       parts: 42
     steps at 20-95% SOC, -10 degC:
-      rmse_mV: 43.83
-      max_mV: 148.45
+      rmse_mV: 70.93
+      max_mV: 122.56
       samples: 124
       parts: 18
     drive cycles fitted on, -10 degC:
-      rmse_mV: 78.86
-      max_mV: 163.15
+      rmse_mV: 45.01
+      max_mV: 177.71
       samples: 1470
       parts: 1
     pulses at 20-95% SOC, -20 degC:
-      rmse_mV: 56.27
-      max_mV: 257.03
+      rmse_mV: 55.57
+      max_mV: 258.8
       samples: 12474
       parts: 31
     drive cycles fitted on, -20 degC:
-      rmse_mV: 92.15
-      max_mV: 202.4
+      rmse_mV: 91.53
+      max_mV: 200.1
       samples: 142
       parts: 1
   held_out:
   - file: 25C_1C_discharge_2.csv.gz
-    rmse_mV: 28.2
-    max_mV: 105.04
-    rmse_whole_mV: 69.4
+    rmse_mV: 29.35
+    max_mV: 104.95
+    rmse_whole_mV: 70.83
     cell_C: 28.4
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -947,9 +952,9 @@ errors:
     compare_rmse_mV: 12.56
     compare_max_mV: 49.35
   - file: 25C_1C_CCCV_charge.csv.gz
-    rmse_mV: 37.16
-    max_mV: 121.97
-    rmse_whole_mV: 37.16
+    rmse_mV: 37.23
+    max_mV: 121.9
+    rmse_whole_mV: 37.23
     cell_C: 27.5
     soc_start: 0.07
     anchored: 7.0% at the start, as given
@@ -957,9 +962,9 @@ errors:
     compare_rmse_mV: 42.63
     compare_max_mV: 118.53
   - file: 25C_Cycle_2.csv.gz
-    rmse_mV: 18.85
-    max_mV: 92.75
-    rmse_whole_mV: 27.84
+    rmse_mV: 19.13
+    max_mV: 93.63
+    rmse_whole_mV: 28.15
     cell_C: 26.7
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -967,9 +972,9 @@ errors:
     compare_rmse_mV: 17.64
     compare_max_mV: 118.53
   - file: 25C_Cycle_3.csv.gz
-    rmse_mV: 16.9
-    max_mV: 60.54
-    rmse_whole_mV: 17.82
+    rmse_mV: 17.14
+    max_mV: 58.63
+    rmse_whole_mV: 18.07
     cell_C: 26.5
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -977,9 +982,9 @@ errors:
     compare_rmse_mV: 15.78
     compare_max_mV: 129.85
   - file: 25C_Cycle_4.csv.gz
-    rmse_mV: 20.28
-    max_mV: 135.79
-    rmse_whole_mV: 60.04
+    rmse_mV: 20.57
+    max_mV: 136.11
+    rmse_whole_mV: 60.23
     cell_C: 26.7
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -987,9 +992,9 @@ errors:
     compare_rmse_mV: 18.34
     compare_max_mV: 94.36
   - file: 25C_US06.csv.gz
-    rmse_mV: 23.23
-    max_mV: 83.51
-    rmse_whole_mV: 30.18
+    rmse_mV: 24.83
+    max_mV: 88.0
+    rmse_whole_mV: 31.92
     cell_C: 29.4
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -997,9 +1002,9 @@ errors:
     compare_rmse_mV: 19.72
     compare_max_mV: 84.1
   - file: 25C_HWFTa.csv.gz
-    rmse_mV: 21.47
-    max_mV: 95.79
-    rmse_whole_mV: 43.24
+    rmse_mV: 21.81
+    max_mV: 97.17
+    rmse_whole_mV: 43.63
     cell_C: 26.5
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1007,9 +1012,9 @@ errors:
     compare_rmse_mV: 15.25
     compare_max_mV: 71.93
   - file: 25C_HWFTb.csv.gz
-    rmse_mV: 23.59
-    max_mV: 99.28
-    rmse_whole_mV: 46.96
+    rmse_mV: 23.95
+    max_mV: 100.6
+    rmse_whole_mV: 47.36
     cell_C: 26.5
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1017,9 +1022,9 @@ errors:
     compare_rmse_mV: 17.03
     compare_max_mV: 64.53
   - file: 25C_UDDS.csv.gz
-    rmse_mV: 18.22
-    max_mV: 101.42
-    rmse_whole_mV: 19.12
+    rmse_mV: 18.28
+    max_mV: 101.68
+    rmse_whole_mV: 19.18
     cell_C: 26.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1027,9 +1032,9 @@ errors:
     compare_rmse_mV: 14.94
     compare_max_mV: 98.61
   - file: 25C_LA92.csv.gz
-    rmse_mV: 19.85
-    max_mV: 85.73
-    rmse_whole_mV: 20.86
+    rmse_mV: 20.0
+    max_mV: 86.64
+    rmse_whole_mV: 21.02
     cell_C: 26.5
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1037,9 +1042,9 @@ errors:
     compare_rmse_mV: 17.14
     compare_max_mV: 82.17
   - file: 25C_NN.csv.gz
-    rmse_mV: 21.06
-    max_mV: 78.27
-    rmse_whole_mV: 22.81
+    rmse_mV: 21.38
+    max_mV: 78.8
+    rmse_whole_mV: 23.15
     cell_C: 27.3
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1047,9 +1052,9 @@ errors:
     compare_rmse_mV: 19.7
     compare_max_mV: 96.44
   - file: 10C_HWFET.csv.gz
-    rmse_mV: 29.9
-    max_mV: 110.96
-    rmse_whole_mV: 58.78
+    rmse_mV: 25.34
+    max_mV: 96.53
+    rmse_whole_mV: 53.91
     cell_C: 12.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1057,9 +1062,9 @@ errors:
     compare_rmse_mV: 17.61
     compare_max_mV: 85.38
   - file: 10C_LA92.csv.gz
-    rmse_mV: 26.55
-    max_mV: 115.43
-    rmse_whole_mV: 27.28
+    rmse_mV: 23.67
+    max_mV: 117.88
+    rmse_whole_mV: 24.32
     cell_C: 12.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1067,9 +1072,9 @@ errors:
     compare_rmse_mV: 28.72
     compare_max_mV: 144.24
   - file: 10C_NN.csv.gz
-    rmse_mV: 22.48
-    max_mV: 140.03
-    rmse_whole_mV: 23.34
+    rmse_mV: 19.59
+    max_mV: 145.17
+    rmse_whole_mV: 20.38
     cell_C: 13.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1077,9 +1082,9 @@ errors:
     compare_rmse_mV: 29.98
     compare_max_mV: 192.98
   - file: 10C_UDDS.csv.gz
-    rmse_mV: 18.61
-    max_mV: 130.04
-    rmse_whole_mV: 22.41
+    rmse_mV: 15.99
+    max_mV: 120.22
+    rmse_whole_mV: 19.47
     cell_C: 11.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1087,9 +1092,9 @@ errors:
     compare_rmse_mV: 21.38
     compare_max_mV: 142.09
   - file: 10C_US06.csv.gz
-    rmse_mV: 28.42
-    max_mV: 150.09
-    rmse_whole_mV: 30.06
+    rmse_mV: 25.05
+    max_mV: 156.2
+    rmse_whole_mV: 26.68
     cell_C: 15.9
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1097,9 +1102,9 @@ errors:
     compare_rmse_mV: 29.86
     compare_max_mV: 193.11
   - file: 10C_Cycle_2.csv.gz
-    rmse_mV: 28.78
-    max_mV: 100.6
-    rmse_whole_mV: 28.82
+    rmse_mV: 25.93
+    max_mV: 103.01
+    rmse_whole_mV: 25.95
     cell_C: 12.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1107,9 +1112,9 @@ errors:
     compare_rmse_mV: 30.82
     compare_max_mV: 170.24
   - file: 10C_Cycle_3.csv.gz
-    rmse_mV: 22.72
-    max_mV: 110.74
-    rmse_whole_mV: 39.35
+    rmse_mV: 19.5
+    max_mV: 94.24
+    rmse_whole_mV: 35.36
     cell_C: 12.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1117,9 +1122,9 @@ errors:
     compare_rmse_mV: 25.25
     compare_max_mV: 159.83
   - file: 10C_Cycle_4.csv.gz
-    rmse_mV: 22.14
-    max_mV: 110.1
-    rmse_whole_mV: 28.4
+    rmse_mV: 19.0
+    max_mV: 114.1
+    rmse_whole_mV: 25.13
     cell_C: 12.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1127,9 +1132,9 @@ errors:
     compare_rmse_mV: 24.55
     compare_max_mV: 182.87
   - file: 0C_Cycle_2.csv.gz
-    rmse_mV: 29.0
+    rmse_mV: 27.18
     max_mV: 180.4
-    rmse_whole_mV: 191.38
+    rmse_whole_mV: 187.99
     cell_C: 2.7
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1137,9 +1142,9 @@ errors:
     compare_rmse_mV: 35.19
     compare_max_mV: 247.42
   - file: 0C_LA92.csv.gz
-    rmse_mV: 32.2
-    max_mV: 152.61
-    rmse_whole_mV: 41.87
+    rmse_mV: 30.14
+    max_mV: 152.66
+    rmse_whole_mV: 39.23
     cell_C: 2.4
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1147,9 +1152,9 @@ errors:
     compare_rmse_mV: 38.59
     compare_max_mV: 220.21
   - file: 0C_NN.csv.gz
-    rmse_mV: 41.41
-    max_mV: 233.42
-    rmse_whole_mV: 57.48
+    rmse_mV: 37.11
+    max_mV: 233.45
+    rmse_whole_mV: 52.7
     cell_C: 4.5
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1157,9 +1162,9 @@ errors:
     compare_rmse_mV: 43.29
     compare_max_mV: 333.71
   - file: 0C_Cycle_3.csv.gz
-    rmse_mV: 33.46
-    max_mV: 146.42
-    rmse_whole_mV: 54.89
+    rmse_mV: 30.25
+    max_mV: 131.95
+    rmse_whole_mV: 50.55
     cell_C: 3.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1167,9 +1172,9 @@ errors:
     compare_rmse_mV: 38.81
     compare_max_mV: 207.66
   - file: 0C_Cycle_4.csv.gz
-    rmse_mV: 29.9
-    max_mV: 145.11
-    rmse_whole_mV: 39.15
+    rmse_mV: 28.79
+    max_mV: 144.56
+    rmse_whole_mV: 37.28
     cell_C: 2.7
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1177,9 +1182,9 @@ errors:
     compare_rmse_mV: 36.84
     compare_max_mV: 211.92
   - file: 0C_US06.csv.gz
-    rmse_mV: 44.4
-    max_mV: 204.67
-    rmse_whole_mV: 90.11
+    rmse_mV: 37.92
+    max_mV: 204.7
+    rmse_whole_mV: 83.6
     cell_C: 7.0
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1187,9 +1192,9 @@ errors:
     compare_rmse_mV: 44.1
     compare_max_mV: 334.03
   - file: 0C_HWFET.csv.gz
-    rmse_mV: 30.73
-    max_mV: 138.4
-    rmse_whole_mV: 49.46
+    rmse_mV: 28.28
+    max_mV: 138.43
+    rmse_whole_mV: 46.06
     cell_C: 3.1
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1197,9 +1202,9 @@ errors:
     compare_rmse_mV: 33.76
     compare_max_mV: 180.31
   - file: 0C_UDDS.csv.gz
-    rmse_mV: 27.87
-    max_mV: 142.17
-    rmse_whole_mV: 30.75
+    rmse_mV: 27.04
+    max_mV: 141.68
+    rmse_whole_mV: 29.77
     cell_C: 1.6
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1207,9 +1212,9 @@ errors:
     compare_rmse_mV: 37.47
     compare_max_mV: 225.24
   - file: m10C_HWFET.csv.gz
-    rmse_mV: 60.48
-    max_mV: 162.29
-    rmse_whole_mV: 74.78
+    rmse_mV: 33.17
+    max_mV: 163.53
+    rmse_whole_mV: 45.96
     cell_C: -6.1
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1217,9 +1222,9 @@ errors:
     compare_rmse_mV: 50.22
     compare_max_mV: 283.51
   - file: m10C_LA92.csv.gz
-    rmse_mV: 68.15
-    max_mV: 171.43
-    rmse_whole_mV: 76.28
+    rmse_mV: 37.17
+    max_mV: 165.85
+    rmse_whole_mV: 47.48
     cell_C: -6.3
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1227,9 +1232,9 @@ errors:
     compare_rmse_mV: 63.84
     compare_max_mV: 327.11
   - file: m10C_UDDS.csv.gz
-    rmse_mV: 65.82
-    max_mV: 158.04
-    rmse_whole_mV: 66.46
+    rmse_mV: 37.89
+    max_mV: 162.62
+    rmse_whole_mV: 38.28
     cell_C: -8.6
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1237,9 +1242,9 @@ errors:
     compare_rmse_mV: 59.68
     compare_max_mV: 325.64
   - file: m10C_US06.csv.gz
-    rmse_mV: 45.42
-    max_mV: 209.86
-    rmse_whole_mV: 90.42
+    rmse_mV: 47.03
+    max_mV: 213.1
+    rmse_whole_mV: 87.61
     cell_C: -0.1
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1247,9 +1252,9 @@ errors:
     compare_rmse_mV: 61.63
     compare_max_mV: 447.36
   - file: m10C_Cycle_2.csv.gz
-    rmse_mV: 59.74
-    max_mV: 217.69
-    rmse_whole_mV: 66.92
+    rmse_mV: 36.5
+    max_mV: 234.93
+    rmse_whole_mV: 42.75
     cell_C: -6.1
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1257,9 +1262,9 @@ errors:
     compare_rmse_mV: 58.83
     compare_max_mV: 413.58
   - file: m10C_Cycle_3.csv.gz
-    rmse_mV: 57.38
-    max_mV: 162.19
-    rmse_whole_mV: 69.34
+    rmse_mV: 37.8
+    max_mV: 176.03
+    rmse_whole_mV: 50.02
     cell_C: -6.3
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1267,9 +1272,9 @@ errors:
     compare_rmse_mV: 62.41
     compare_max_mV: 340.41
   - file: m10C_Cycle_4.csv.gz
-    rmse_mV: 62.0
-    max_mV: 169.4
-    rmse_whole_mV: 68.47
+    rmse_mV: 41.31
+    max_mV: 163.65
+    rmse_whole_mV: 47.87
     cell_C: -5.9
     soc_start: 1.0
     anchored: 99.9% at the start, as given
@@ -1277,9 +1282,9 @@ errors:
     compare_rmse_mV: 59.4
     compare_max_mV: 326.88
   - file: m10C_NN.csv.gz
-    rmse_mV: 52.21
-    max_mV: 221.37
-    rmse_whole_mV: 66.55
+    rmse_mV: 35.44
+    max_mV: 224.17
+    rmse_whole_mV: 52.51
     cell_C: -3.6
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1287,9 +1292,9 @@ errors:
     compare_rmse_mV: 61.82
     compare_max_mV: 517.48
   - file: m20C_HWFET.csv.gz
-    rmse_mV: 93.67
-    max_mV: 187.21
-    rmse_whole_mV: 91.49
+    rmse_mV: 103.24
+    max_mV: 196.14
+    rmse_whole_mV: 96.11
     cell_C: -14.6
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1297,9 +1302,9 @@ errors:
     compare_rmse_mV: 68.74
     compare_max_mV: 397.36
   - file: m20C_LA92.csv.gz
-    rmse_mV: 53.86
-    max_mV: 216.02
-    rmse_whole_mV: 71.79
+    rmse_mV: 57.26
+    max_mV: 196.25
+    rmse_whole_mV: 71.34
     cell_C: -14.8
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1307,9 +1312,9 @@ errors:
     compare_rmse_mV: 83.65
     compare_max_mV: 464.93
   - file: m20C_NN.csv.gz
-    rmse_mV: 94.42
-    max_mV: 284.93
-    rmse_whole_mV: 100.03
+    rmse_mV: 131.05
+    max_mV: 311.29
+    rmse_whole_mV: 131.45
     cell_C: -11.3
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1317,9 +1322,9 @@ errors:
     compare_rmse_mV: 72.45
     compare_max_mV: 523.17
   - file: m20C_UDDS.csv.gz
-    rmse_mV: 47.99
-    max_mV: 201.61
-    rmse_whole_mV: 51.21
+    rmse_mV: 50.05
+    max_mV: 199.97
+    rmse_whole_mV: 52.84
     cell_C: -17.5
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1327,9 +1332,9 @@ errors:
     compare_rmse_mV: 84.07
     compare_max_mV: 419.76
   - file: m20C_Cycle_2.csv.gz
-    rmse_mV: 89.36
-    max_mV: 275.0
-    rmse_whole_mV: 91.23
+    rmse_mV: 117.0
+    max_mV: 341.99
+    rmse_whole_mV: 119.59
     cell_C: -15.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1337,9 +1342,9 @@ errors:
     compare_rmse_mV: 82.25
     compare_max_mV: 636.85
   - file: m20C_Cycle_3.csv.gz
-    rmse_mV: 143.75
-    max_mV: 408.09
-    rmse_whole_mV: 143.04
+    rmse_mV: 184.69
+    max_mV: 514.49
+    rmse_whole_mV: 180.24
     cell_C: -14.6
     soc_start: 1.0
     anchored: 100.0% at the start, as given
@@ -1347,9 +1352,9 @@ errors:
     compare_rmse_mV: 87.1
     compare_max_mV: 437.58
   - file: m20C_Cycle_4.csv.gz
-    rmse_mV: 96.25
-    max_mV: 327.48
-    rmse_whole_mV: 99.84
+    rmse_mV: 128.47
+    max_mV: 422.49
+    rmse_whole_mV: 130.57
     cell_C: -15.0
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1357,9 +1362,9 @@ errors:
     compare_rmse_mV: 82.39
     compare_max_mV: 476.4
   - file: m20C_US06.csv.gz
-    rmse_mV: 181.05
-    max_mV: 303.87
-    rmse_whole_mV: 172.02
+    rmse_mV: 260.66
+    max_mV: 398.93
+    rmse_whole_mV: 246.22
     cell_C: -6.5
     soc_start: 1.0
     anchored: 99.8% at the start, as given
@@ -1369,9 +1374,9 @@ errors:
   held_out_electrothermal:
   - file: 25C_1C_discharge_2.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 21.698568694629405
-    T_rmse_K: 0.7078068971607258
-    peak_error_K: -1.801326076844468
+    V_rmse_mV: 23.41211266181004
+    T_rmse_K: 0.7146461239000264
+    peak_error_K: -1.8528851342813866
     rise_meas_K: 7.54925188374596
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 10.771333514724297
@@ -1379,9 +1384,9 @@ errors:
     compare_peak_error_K: -0.007185173753605056
   - file: 25C_1C_CCCV_charge.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 18.49869380146997
-    T_rmse_K: 1.0007093343968567
-    peak_error_K: -1.2242012514239597
+    V_rmse_mV: 18.234707102492663
+    T_rmse_K: 1.0177940039278437
+    peak_error_K: -1.270163626428097
     rise_meas_K: 5.010000000000002
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 36.372552305985415
@@ -1389,9 +1394,9 @@ errors:
     compare_peak_error_K: -1.442427903237114
   - file: 25C_Cycle_2.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 14.113208616284576
-    T_rmse_K: 0.5323079498706907
-    peak_error_K: 0.00892875296804263
+    V_rmse_mV: 14.3257159891079
+    T_rmse_K: 0.5350942318095294
+    peak_error_K: -0.02609134687631709
     rise_meas_K: 4.41
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 18.99420002214271
@@ -1399,9 +1404,9 @@ errors:
     compare_peak_error_K: 0.27559777439924105
   - file: 25C_Cycle_3.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 13.480882187328914
-    T_rmse_K: 0.502836524556018
-    peak_error_K: -0.26603976425844067
+    V_rmse_mV: 13.592862935660634
+    T_rmse_K: 0.5057988199184503
+    peak_error_K: -0.27393518369757786
     rise_meas_K: 4.4097349961028875
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 14.989091610596274
@@ -1409,9 +1414,9 @@ errors:
     compare_peak_error_K: 1.32897780944705
   - file: 25C_Cycle_4.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 17.907800750331493
-    T_rmse_K: 0.6537682820555405
-    peak_error_K: -0.2217855536792328
+    V_rmse_mV: 18.122387568999105
+    T_rmse_K: 0.6566497159461117
+    peak_error_K: -0.24995728181067278
     rise_meas_K: 4.18
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 17.84003262897962
@@ -1419,9 +1424,9 @@ errors:
     compare_peak_error_K: 0.011396935083560322
   - file: 25C_US06.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 21.080556465937835
-    T_rmse_K: 0.8287194328170593
-    peak_error_K: -1.4472846024815098
+    V_rmse_mV: 22.4280163302533
+    T_rmse_K: 0.8574995794172197
+    peak_error_K: -1.4912298113214533
     rise_meas_K: 7.766831395348866
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 20.78527039685916
@@ -1429,9 +1434,9 @@ errors:
     compare_peak_error_K: 0.5916403686000322
   - file: 25C_HWFTa.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 17.894373289877432
-    T_rmse_K: 0.5388373260858195
-    peak_error_K: -1.7369035037607503
+    V_rmse_mV: 18.159759027256694
+    T_rmse_K: 0.5418228650893937
+    peak_error_K: -1.745649540903237
     rise_meas_K: 4.812385706778805
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 15.259050045368115
@@ -1439,9 +1444,9 @@ errors:
     compare_peak_error_K: -0.6763924183798693
   - file: 25C_HWFTb.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 20.006551049416718
-    T_rmse_K: 0.5646473533298257
-    peak_error_K: -1.7689499445359118
+    V_rmse_mV: 20.27974798148053
+    T_rmse_K: 0.5676524524045365
+    peak_error_K: -1.777355085829761
     rise_meas_K: 4.82
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 16.924032670454906
@@ -1449,9 +1454,9 @@ errors:
     compare_peak_error_K: -0.7083876992626372
   - file: 25C_UDDS.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 17.963394577335336
-    T_rmse_K: 0.5745691296888609
-    peak_error_K: -0.7734199923567431
+    V_rmse_mV: 17.949248183829873
+    T_rmse_K: 0.5749627300658269
+    peak_error_K: -0.7733705487941975
     rise_meas_K: 2.1000000000000014
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 15.571550557626072
@@ -1459,9 +1464,9 @@ errors:
     compare_peak_error_K: -0.30619134230850165
   - file: 25C_LA92.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 16.796479217498035
-    T_rmse_K: 0.4526278616862568
-    peak_error_K: -0.6833205877415516
+    V_rmse_mV: 16.891175640997456
+    T_rmse_K: 0.4541799904943297
+    peak_error_K: -0.68684123754662
     rise_meas_K: 2.9400000000000013
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 16.805400481266762
@@ -1469,9 +1474,9 @@ errors:
     compare_peak_error_K: -0.08114635570308693
   - file: 25C_NN.csv.gz
     ambient_C: 25.0
-    V_rmse_mV: 21.044970088564416
-    T_rmse_K: 0.5106191948255661
-    peak_error_K: -0.7640175932572753
+    V_rmse_mV: 21.31385827317055
+    T_rmse_K: 0.5158395612067831
+    peak_error_K: -0.7772189939427641
     rise_meas_K: 4.809999999999999
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 20.780193038922953
@@ -1479,9 +1484,9 @@ errors:
     compare_peak_error_K: 0.581800249189488
   - file: 10C_HWFET.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 28.242966720409402
-    T_rmse_K: 0.7826132483492461
-    peak_error_K: -2.366868224511048
+    V_rmse_mV: 23.739425686204402
+    T_rmse_K: 0.7385651963008786
+    peak_error_K: -2.2100229439643577
     rise_meas_K: 6.620000000000001
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 16.133817081830202
@@ -1489,9 +1494,9 @@ errors:
     compare_peak_error_K: -1.5647435180506442
   - file: 10C_LA92.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 25.15082657714493
-    T_rmse_K: 0.893009410785514
-    peak_error_K: -1.0312890552122376
+    V_rmse_mV: 22.121705500315052
+    T_rmse_K: 0.8961196555523466
+    peak_error_K: -0.9869877469356361
     rise_meas_K: 3.9800000000000004
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 25.02359886399119
@@ -1499,9 +1504,9 @@ errors:
     compare_peak_error_K: -0.582840576441054
   - file: 10C_NN.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 22.61338943213759
-    T_rmse_K: 0.6845912429163136
-    peak_error_K: -0.7774200584191817
+    V_rmse_mV: 19.679777873413435
+    T_rmse_K: 0.6897558039610584
+    peak_error_K: -0.7265923788607438
     rise_meas_K: 6.107448747152432
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 26.62387323811582
@@ -1509,9 +1514,9 @@ errors:
     compare_peak_error_K: 0.2983928417822881
   - file: 10C_UDDS.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 17.9068901947314
-    T_rmse_K: 0.6494730642186493
-    peak_error_K: -0.85106606843663
+    V_rmse_mV: 15.423157416910447
+    T_rmse_K: 0.6439190808641307
+    peak_error_K: -0.787881847653118
     rise_meas_K: 2.9299999999999997
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 19.993058931943768
@@ -1519,9 +1524,9 @@ errors:
     compare_peak_error_K: -0.37791695275551973
   - file: 10C_US06.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 27.450792228619203
-    T_rmse_K: 0.779015287423496
-    peak_error_K: -0.754273853976553
+    V_rmse_mV: 24.291532698248727
+    T_rmse_K: 0.7492593011695662
+    peak_error_K: -0.6956365508704145
     rise_meas_K: 8.961948669201501
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 26.451874897270354
@@ -1529,9 +1534,9 @@ errors:
     compare_peak_error_K: 0.21943049566595008
   - file: 10C_Cycle_2.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 29.417865567143842
-    T_rmse_K: 0.6169340864150993
-    peak_error_K: -0.4315939649649465
+    V_rmse_mV: 26.402772333257268
+    T_rmse_K: 0.6141233701653958
+    peak_error_K: -0.3455813790411355
     rise_meas_K: 7.030000000000001
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 29.26472746627785
@@ -1539,9 +1544,9 @@ errors:
     compare_peak_error_K: -0.2358284842810292
   - file: 10C_Cycle_3.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 17.948649069665088
-    T_rmse_K: 0.6373472063375045
-    peak_error_K: 0.48950903309378013
+    V_rmse_mV: 16.1240433429945
+    T_rmse_K: 0.624962729603391
+    peak_error_K: 0.5544128612040122
     rise_meas_K: 5.9399999999999995
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 22.209118338329603
@@ -1549,9 +1554,9 @@ errors:
     compare_peak_error_K: 0.3955643787187437
   - file: 10C_Cycle_4.csv.gz
     ambient_C: 10.0
-    V_rmse_mV: 18.56827369880443
-    T_rmse_K: 0.6299534477251728
-    peak_error_K: 0.1127992566511935
+    V_rmse_mV: 16.702044027702495
+    T_rmse_K: 0.6220909443911433
+    peak_error_K: 0.16552930877762861
     rise_meas_K: 6.399999999999999
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 22.416821143650484
@@ -1559,9 +1564,9 @@ errors:
     compare_peak_error_K: 0.4973263560340584
   - file: 0C_Cycle_2.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 24.2801935020692
-    T_rmse_K: 0.8891270608382768
-    peak_error_K: -2.044583831363079
+    V_rmse_mV: 23.36595018956111
+    T_rmse_K: 0.8629217748999856
+    peak_error_K: -1.8942865630006143
     rise_meas_K: 9.226413924654262
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 29.128741722346046
@@ -1569,9 +1574,9 @@ errors:
     compare_peak_error_K: -0.7874749622682291
   - file: 0C_LA92.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 28.39652762123711
-    T_rmse_K: 0.56468194724206
-    peak_error_K: -1.192908089195428
+    V_rmse_mV: 27.05931585893236
+    T_rmse_K: 0.544676480203701
+    peak_error_K: -1.128736520299797
     rise_meas_K: 5.61
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 35.39193757676191
@@ -1579,9 +1584,9 @@ errors:
     compare_peak_error_K: -0.7467864175028334
   - file: 0C_NN.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 35.7871002251365
-    T_rmse_K: 0.9825431300108698
-    peak_error_K: -1.9293887388506157
+    V_rmse_mV: 32.5479202343482
+    T_rmse_K: 0.9321086085316801
+    peak_error_K: -1.7811792664325132
     rise_meas_K: 9.2
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 35.82112807188715
@@ -1589,9 +1594,9 @@ errors:
     compare_peak_error_K: -0.8858875750132817
   - file: 0C_Cycle_3.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 28.156737925840915
-    T_rmse_K: 1.2305179172104146
-    peak_error_K: -3.2669736309328954
+    V_rmse_mV: 26.738391440758235
+    T_rmse_K: 1.178296697699035
+    peak_error_K: -3.0729628120746924
     rise_meas_K: 12.61
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 33.9354211903572
@@ -1599,9 +1604,9 @@ errors:
     compare_peak_error_K: -1.252252838579679
   - file: 0C_Cycle_4.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 24.857559490981604
-    T_rmse_K: 0.6631803322231858
-    peak_error_K: -0.7562553429600003
+    V_rmse_mV: 24.37458910937369
+    T_rmse_K: 0.649623496418419
+    peak_error_K: -0.643815660848813
     rise_meas_K: 7.31
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 31.46948125540587
@@ -1609,9 +1614,9 @@ errors:
     compare_peak_error_K: -0.34847798017045495
   - file: 0C_US06.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 37.93887668912023
-    T_rmse_K: 1.6600680442702287
-    peak_error_K: -4.095343753356149
+    V_rmse_mV: 33.4220741373597
+    T_rmse_K: 1.5744176307030888
+    peak_error_K: -3.8745075206542925
     rise_meas_K: 13.971209150326745
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 37.752029163251564
@@ -1619,9 +1624,9 @@ errors:
     compare_peak_error_K: -2.050032847627863
   - file: 0C_HWFET.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 24.16368779032868
-    T_rmse_K: 0.69955400421486
-    peak_error_K: -1.3058959363758795
+    V_rmse_mV: 23.087956712042935
+    T_rmse_K: 0.6657528463302436
+    peak_error_K: -1.229202295297302
     rise_meas_K: 5.581064042695079
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 30.6164644898545
@@ -1629,9 +1634,9 @@ errors:
     compare_peak_error_K: -0.9104011711192648
   - file: 0C_UDDS.csv.gz
     ambient_C: 0.0
-    V_rmse_mV: 23.181642948352568
-    T_rmse_K: 0.5865300232491657
-    peak_error_K: -0.9476904711881184
+    V_rmse_mV: 22.862113611189898
+    T_rmse_K: 0.5823619889563847
+    peak_error_K: -0.9275268790006317
     rise_meas_K: 3.485741373951023
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 32.731220207885585
@@ -1639,9 +1644,9 @@ errors:
     compare_peak_error_K: -0.6045705483078132
   - file: m10C_HWFET.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 53.83093367797242
-    T_rmse_K: 0.8269270133545639
-    peak_error_K: -1.8604013548760259
+    V_rmse_mV: 26.047446074386816
+    T_rmse_K: 0.6206131222484597
+    peak_error_K: -1.2970236140205111
     rise_meas_K: 7.54
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 46.70449823251798
@@ -1649,9 +1654,9 @@ errors:
     compare_peak_error_K: -1.3132306924589239
   - file: m10C_LA92.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 62.993997049075546
-    T_rmse_K: 0.818890144758195
-    peak_error_K: -1.277549751041513
+    V_rmse_mV: 34.441868779046345
+    T_rmse_K: 0.6438729343085302
+    peak_error_K: -0.9708878183834395
     rise_meas_K: 7.54
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 56.393934998968604
@@ -1659,9 +1664,9 @@ errors:
     compare_peak_error_K: -0.8960044005877785
   - file: m10C_UDDS.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 60.17223432813005
-    T_rmse_K: 0.25730985937082773
-    peak_error_K: -0.35491132851001606
+    V_rmse_mV: 34.29310695729595
+    T_rmse_K: 0.2249531988884555
+    peak_error_K: -0.11114189010101239
     rise_meas_K: 3.6900000000000004
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 54.070601032606184
@@ -1669,9 +1674,9 @@ errors:
     compare_peak_error_K: -0.23086914067136188
   - file: m10C_US06.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 39.84177685020924
-    T_rmse_K: 1.7002151190196966
-    peak_error_K: -3.6752927019047226
+    V_rmse_mV: 41.45928129348799
+    T_rmse_K: 1.663902614648456
+    peak_error_K: -3.53804368520015
     rise_meas_K: 16.89
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 53.125325769937696
@@ -1679,9 +1684,9 @@ errors:
     compare_peak_error_K: -3.0659038191235615
   - file: m10C_Cycle_2.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 54.62997465098204
-    T_rmse_K: 0.7081763123772696
-    peak_error_K: 0.45229326030184663
+    V_rmse_mV: 33.33730939879685
+    T_rmse_K: 0.5777518218540606
+    peak_error_K: 0.7766569929378624
     rise_meas_K: 10.34
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 50.42959355104503
@@ -1689,9 +1694,9 @@ errors:
     compare_peak_error_K: -0.17195642440512077
   - file: m10C_Cycle_3.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 53.62070904444522
-    T_rmse_K: 0.8708028598603968
-    peak_error_K: -2.0030644557157165
+    V_rmse_mV: 34.86726498026795
+    T_rmse_K: 0.7662178944244711
+    peak_error_K: -1.5701489456825333
     rise_meas_K: 12.86
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 54.856756768455696
@@ -1699,9 +1704,9 @@ errors:
     compare_peak_error_K: -1.3147998648072279
   - file: m10C_Cycle_4.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 57.18721121830882
-    T_rmse_K: 0.8022865641077652
-    peak_error_K: 0.6234404252000035
+    V_rmse_mV: 36.003947452357465
+    T_rmse_K: 0.7147795685335026
+    peak_error_K: 0.9992576126522453
     rise_meas_K: 9.92
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 52.40797007525154
@@ -1709,9 +1714,9 @@ errors:
     compare_peak_error_K: -0.06830958111235759
   - file: m10C_NN.csv.gz
     ambient_C: -10.0
-    V_rmse_mV: 49.964266526501845
-    T_rmse_K: 1.1033365763143055
-    peak_error_K: -1.143550776758027
+    V_rmse_mV: 33.851699149277444
+    T_rmse_K: 0.9784353030890101
+    peak_error_K: -0.9134647333346857
     rise_meas_K: 10.54
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 49.08423917470011
@@ -1719,9 +1724,9 @@ errors:
     compare_peak_error_K: -1.2987024940552283
   - file: m20C_HWFET.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 47.28274559300828
-    T_rmse_K: 1.110962730421354
-    peak_error_K: -1.381641505094315
+    V_rmse_mV: 51.826455669607995
+    T_rmse_K: 1.111308944061664
+    peak_error_K: -0.9096806814540699
     rise_meas_K: 10.06900189214759
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 56.870116395697075
@@ -1729,9 +1734,9 @@ errors:
     compare_peak_error_K: -0.9465134881881525
   - file: m20C_LA92.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 55.48028035924365
-    T_rmse_K: 0.7302612085144793
-    peak_error_K: -0.5054320024675913
+    V_rmse_mV: 54.87398162709714
+    T_rmse_K: 0.6957543500493981
+    peak_error_K: -0.3532416243479357
     rise_meas_K: 9.6
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 71.01141955896942
@@ -1739,9 +1744,9 @@ errors:
     compare_peak_error_K: -0.8296322328235757
   - file: m20C_NN.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 67.92263484155352
-    T_rmse_K: 1.0312169339074184
-    peak_error_K: -0.003328401053852126
+    V_rmse_mV: 106.92389953979985
+    T_rmse_K: 0.8745109306057987
+    peak_error_K: 0.39968306648939933
     rise_meas_K: 12.3
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 52.06669709493666
@@ -1749,9 +1754,9 @@ errors:
     compare_peak_error_K: -1.295186127326633
   - file: m20C_UDDS.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 38.55124819410226
-    T_rmse_K: 0.39389637059234867
-    peak_error_K: -0.2938601479342946
+    V_rmse_mV: 39.38979026985574
+    T_rmse_K: 0.40399849820568684
+    peak_error_K: -0.2469277638509606
     rise_meas_K: 5.67
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 74.68264773268461
@@ -1759,9 +1764,9 @@ errors:
     compare_peak_error_K: -0.2097671479325367
   - file: m20C_Cycle_2.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 68.91063950130558
-    T_rmse_K: 0.7094111229211594
-    peak_error_K: 0.8653446771384461
+    V_rmse_mV: 95.85675664394414
+    T_rmse_K: 0.8473289996173153
+    peak_error_K: 1.7927194897293157
     rise_meas_K: 15.71
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 67.45326038554511
@@ -1769,9 +1774,9 @@ errors:
     compare_peak_error_K: -1.0075580727999727
   - file: m20C_Cycle_3.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 112.13326418655375
-    T_rmse_K: 1.3427233412227955
-    peak_error_K: 3.424346230990966
+    V_rmse_mV: 135.24522447818322
+    T_rmse_K: 1.5528244062972987
+    peak_error_K: 4.070449350541241
     rise_meas_K: 13.45
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 76.58700516200285
@@ -1779,9 +1784,9 @@ errors:
     compare_peak_error_K: 0.21214943001278908
   - file: m20C_Cycle_4.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 66.90778194537441
-    T_rmse_K: 0.8677397481920687
-    peak_error_K: 1.4769539232113722
+    V_rmse_mV: 87.26221174779076
+    T_rmse_K: 1.0078976723469428
+    peak_error_K: 2.2903591192646537
     rise_meas_K: 14.59
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 72.71718473493071
@@ -1789,9 +1794,9 @@ errors:
     compare_peak_error_K: -0.3371806804963988
   - file: m20C_US06.csv.gz
     ambient_C: -20.0
-    V_rmse_mV: 126.74158976370656
-    T_rmse_K: 1.7852236842847118
-    peak_error_K: -1.2923810350254188
+    V_rmse_mV: 168.9996160914719
+    T_rmse_K: 2.1419889250405713
+    peak_error_K: -0.6503353576554832
     rise_meas_K: 19.88
     compare: library Panasonic NCR18650PF
     compare_V_rmse_mV: 61.36941697085049
@@ -1816,6 +1821,8 @@ state_of_charge_anchors:
 data_warnings:
 - 'the slow charge and discharge differ by about 87 mV beyond their drops (hysteresis): the curve follows the discharge,
   as the library''s does'
+- the middle branch's time constant (tau_m) set by the long tests at 11, -10, -20 degC, where they fit better that
+  way and the pulses still fit (elsewhere by the pulses)
 - '05-08-17_13.26 C20 OCV Test_C20_25dC.mat: 2 rows with a repeated time were dropped'
 - '05-08-17_13.26 C20 OCV Test_C20_25dC.mat: 1 gap in the record (longest 13 h 36 min at 40 h 47 min): no current
   is logged across them'
@@ -1871,7 +1878,7 @@ data_warnings:
   of those gaps, current the record does not log: it is counted, as unlogged parts'
 provenance:
   packtherm: 0.6.2
-  fitted_at: '2026-11-17T21:44:53+00:00'
+  fitted_at: '2026-11-19T20:46:38+00:00'
   settings:
     pulse window: 5 s before each pulse to 40 s after
     kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all
@@ -1880,6 +1887,7 @@ provenance:
       model
     uncertainty: '95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show how
       far the tests disagree, not a guarantee; a value the tests barely touch is flagged'
+    test rig: 38.7 W/(m2 K), as given
   inputs:
   - role: slow
     file: 05-08-17_13.26 C20 OCV Test_C20_25dC.mat
