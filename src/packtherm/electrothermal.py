@@ -174,14 +174,14 @@ class ElectroThermalLoad:
         soc_mid = self.soc - 0.5 * current * dt / cap_As
         current, V = self.ecm_state.apply(ecm, current, soc_mid, T_cell, dt)
         soc_mid = self.soc - 0.5 * current * dt / cap_As
-        q_irr = current * (ecm.ocv(soc_mid) - V)
+        q_irr = current * (ecm.ocv(soc_mid, T_cell) - V)
         q_rev = -current * T_cell * self.cell.dUdT(soc_mid) if self.entropic else 0.0
         self.soc = self.soc - current * dt / cap_As
         if lo > 0.0:
             self.soc = max(self.soc, lo)
         if hi < 1.0:
             self.soc = min(self.soc, hi)
-        R_app = (ecm.ocv(soc_mid) - V) / current if current else np.nan
+        R_app = (ecm.ocv(soc_mid, T_cell) - V) / current if current else np.nan
         for k, v in zip(self.log, (t, current, self.soc, R_app, q_irr, q_rev, V, abs(current), self._requested)):
             self.log[k].append(v)
         return q_irr + q_rev
@@ -194,7 +194,7 @@ class ElectroThermalLoad:
 class MeasuredHeatLoad:
     """Heat from a measured test record, for validating the thermal model alone.
 
-    Q = I (OCV(SOC) - V_measured) + reversible heat, with I > 0 on discharge.
+    Q = I (OCV(SOC, T) - V_measured) + reversible heat, with I > 0 on discharge.
     This removes any electrical-model error, so a temperature mismatch is the
     thermal model's.
     """
@@ -202,7 +202,7 @@ class MeasuredHeatLoad:
     t: np.ndarray
     current_A: np.ndarray  # + discharge
     voltage_V: np.ndarray
-    ocv: Callable[[float], float]
+    ocv: Callable  # (soc, T_K) -> V, as ECM.ocv; or (soc) -> V, one curve for every temperature
     capacity_Ah: float
     soc0: float = 1.0
     dUdT: Callable[[float], float] | None = None
@@ -212,7 +212,14 @@ class MeasuredHeatLoad:
         t = np.asarray(self.t, float)
         charge = np.concatenate([[0.0], np.cumsum(0.5 * (self.current_A[1:] + self.current_A[:-1]) * np.diff(t))])
         self._soc = self.soc0 - charge / (3600.0 * self.capacity_Ah)
-        self._ocv = np.vectorize(self.ocv)
+        import inspect
+
+        try:
+            two = len(inspect.signature(self.ocv).parameters) >= 2
+        except (TypeError, ValueError):
+            two = False
+        f = self.ocv if two else (lambda soc, T, g=self.ocv: g(soc))
+        self._ocv = np.vectorize(f, excluded={1})
 
     def power(self, t: float, dt: float, T_cell: float) -> float:
         tt = np.linspace(t, t + dt, self.substeps + 1)
@@ -220,7 +227,7 @@ class MeasuredHeatLoad:
         current = np.interp(tt, self.t, self.current_A)
         V = np.interp(tt, self.t, self.voltage_V)
         soc = np.interp(tt, self.t, self._soc)
-        q = current * (self._ocv(soc) - V)
+        q = current * (self._ocv(soc, T_cell) - V)
         if self.dUdT is not None:
             q = q - current * T_cell * np.array([self.dUdT(x) for x in soc])
         return float(q.mean())

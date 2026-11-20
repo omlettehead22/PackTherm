@@ -13,7 +13,7 @@ Sources (both licensed CC BY 4.0, tested at McMaster University by Dr. Phillip K
 The two datasets come from the same rig and follow the same plan. The raw
 datasets (hundreds of MB) are not stored here. This script copies each
 temperature's pulse test and the 25 degC C/20 test unchanged to
-tests/data/<cell>/, and writes the discharges and drive cycles, resampled to
+tests/data/<cell>/ (and the C/20 test at every temperature, from v0.6.5), and writes the discharges and drive cycles, resampled to
 1 s bin means, as gzipped CSVs with a manifest to validation/data/<cell>/.
 
 Selection, at each of 40, 25, 10, 0, -10 and -20 degC
@@ -325,8 +325,8 @@ def main(which: str, root: str) -> None:
             before[p] = prev
         hppc = next(p for p in files if "_HPPC_" in p.name)
         shutil.copy2(hppc, RAW / hppc.name)
-        if setpoint == 25:
-            shutil.copy2(c20, RAW / c20.name)
+        for slow in (p for p in files if "_C20DisCh_" in p.name):  # each temperature's, from v0.6.5
+            shutil.copy2(slow, RAW / slow.name)
         caps = [p for p in files if re.search(r"_Cap_1C(_|\.mat$)", p.name)]
         udds = next((p for p in files if "_UDDS_" in p.name), None)
         first = max((p for p in caps if udds is None or started(p) <= started(udds)), key=started, default=None)
@@ -389,8 +389,8 @@ def main(which: str, root: str) -> None:
     (RAW / "README.md").write_text(
         f"# {ds.title} test files\n\n"
         + licence
-        + "Unchanged copies of the pulse (HPPC) test at each of 40, 25, 10, 0, -10 and -20 degC, and the C/20 "
-        f"discharge and charge at 25 degC: what `packtherm fit` fits the cell on, with the drive cycles and "
+        + "Unchanged copies of the pulse (HPPC) test and the C/20 discharge (with its charge) at each of 40, 25, "
+        f"10, 0, -10 and -20 degC: what `packtherm fit` fits the cell on, with the drive cycles and "
         f"discharges in `validation/data/{ds.slug}/`. Copied by `validation/prepare_mcmaster.py {which}`.\n"
     )
     print(f"{len(manifest)} tests written to {OUT}")

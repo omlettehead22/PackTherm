@@ -83,7 +83,9 @@ class CircuitModel(CellModel):
         Param("gamma", "-", 0.1, 30.0, 2.0, "shape of the charge-transfer branch (multiplies 2RT/F)"),
         Param("tau_ct", "s", 0.1, 10.0, 2.0, "time constant of the charge-transfer branch (seconds)"),
         Param("Rm_25C", "Ohm", 1e-5, 0.5, 0.01, "resistance of the middle branch"),
-        Param("tau_m", "s", 5.0, 300.0, 30.0, "time constant of the middle branch (tens of seconds)"),
+        # Up to the slow branch's floor (v0.6.5; was 300 s): above it the two overlap, and on the LG HG2 at 10
+        # and 0 degC the middle branch took the slow branch's place (235-300 s, with no slow branch left).
+        Param("tau_m", "s", 5.0, 120.0, 30.0, "time constant of the middle branch (tens of seconds)"),
         Param("Rd_25C", "Ohm", 1e-4, 0.5, 0.02, "resistance of the slow (diffusion) branch"),
         Param("tau_d", "s", 120.0, 10000.0, 600.0, "time constant of the slow branch (minutes)"),
         Param("soc_a", "-", 0.0, 50.0, 1.0, "size of the rise near empty"),
@@ -127,6 +129,7 @@ class CircuitModel(CellModel):
             Ea_Rm=values.get("Ea_Rm", DEFAULT_TEMPERATURE_LAWS["Ea_Rm"]),
             sources=("fitted by packtherm.fitting",),
             by_T=tuple(by_T),
+            ocv_by_T=tuple(ocv.by_T),
         )
 
     def simulate(self, ecm: ECM, t, current, soc, T_K, current_now=None, steady_start=False) -> np.ndarray:
@@ -164,7 +167,7 @@ class CircuitModel(CellModel):
                 vm = vm * e3 + f * Rm(Tk) * Im * (1.0 - e3)
             In = float(now[k])
             fn = ecm.soc_factor(float(soc[k]), Tk) if In > 0 else 1.0
-            out[k] = ecm.ocv(float(soc[k])) - In * fn * R0(Tk) - eta - vm - vd
+            out[k] = ecm.ocv(float(soc[k]), Tk) - In * fn * R0(Tk) - eta - vm - vd
         return out
 
 
@@ -342,6 +345,7 @@ class FitResult:
     settings: dict = field(default_factory=dict)
     plot_data: dict = field(default_factory=dict)
     temperatures: list = field(default_factory=list)  # the sets' temperatures, with several
+    ocv_curves: list = field(default_factory=list)  # the other slow tests' curves (v0.6.5), on ocv's state of charge
     per_temperature: list = field(default_factory=list)  # each temperature's own fit, against the laws
 
 
@@ -427,6 +431,9 @@ class TestSet:
     # Drive cycles (or any dynamic test) to fit on, each starting rested at a known state of charge.
     cycles: list[TestRecord] = field(default_factory=list)
     discharge_soc0: float = 1.0  # where the discharges and cycles start (full, straight after a charge)
+    # A slow discharge at this temperature (v0.6.5), starting full: its open-circuit curve, on the
+    # reference capacity's state of charge (the top-level slow test's), for when capacity moves with T.
+    slow: TestRecord | None = None
 
     def label(self) -> str:
         return f"{self.at_C:g} degC" if self.at_C is not None else ""
@@ -592,6 +599,31 @@ def _rms(r: np.ndarray) -> float:
     return float(np.sqrt(np.mean(r**2))) if r.size else 0.0
 
 
+def _steady_R(ecm: ECM, T: float, I: float, have_steps: bool) -> float:
+    """The model's steady resistance at a slow test's current: its drop, added back to give the curve."""
+    return ecm.R0(T) + ecm.eta_ss(I, T) / I + ecm.Rm(T) + (ecm.Rd(T) if have_steps else 0.0)
+
+
+def _curves_by_T(ocv: OCVCurve, sets: list[TestSet], ecm0: ECM | None, have_steps: bool) -> list[OCVCurve]:
+    """Each set's slow test as an open-circuit curve on the reference's state of charge; set on ocv.by_T."""
+    out = []
+    for t in sets:
+        c = ocv_from_slow_test(t.slow, reference_Ah=ocv.capacity_Ah)
+        if c.T_K is None:
+            raise ValueError(f"{t.slow.source}: no cell temperature, so its curve can't be placed by temperature")
+        if ecm0 is not None:
+            T = c.T_K
+            c = ocv_from_slow_test(
+                t.slow,
+                _steady_R(ecm0, T, c.current_A, have_steps),
+                factor=lambda soc, e=ecm0, T=T: e.soc_factor(soc, T),
+                reference_Ah=ocv.capacity_Ah,
+            )
+        out.append(c)
+    ocv.by_T = (ocv.as_row(), *(c.as_row() for c in out)) if out else ()
+    return out
+
+
 def _median_T_C(wins: list[Window]) -> float:
     return float(np.median(np.concatenate([w.trace.T_K[w.k0 : w.k1] for w in wins]))) - 273.15
 
@@ -715,6 +747,10 @@ def fit_cell(
     ocv = ocv_from_slow_test(slow)
     cap = ocv.capacity_Ah
     notes += ocv.notes
+    others = [t for t in sets if t.slow is not None and t.slow is not slow and t.slow.source != slow.source]
+    if others and ocv.T_K is None:
+        raise ValueError(f"{slow.source}: no cell temperature, so its curve can't be placed among those by temperature")
+    curves = _curves_by_T(ocv, others, None, False)
     records = [slow, *(r for t in sets for r in (t.pulses, t.steps, *t.discharges, *t.cycles) if r is not None)]
     if V_max is None:
         V_max = round(float(max(np.max(r.voltage_V) for r in records)), 2)
@@ -764,6 +800,7 @@ def fit_cell(
             + (ecm0.Rd(T_slow) if have_steps else 0.0)
         )
         ocv = ocv_from_slow_test(slow, R_ss, factor=lambda soc, e=ecm0, T=T_slow: e.soc_factor(soc, T))
+        curves = _curves_by_T(ocv, others, ecm0, have_steps)
 
     ecm = model.ecm(values, ocv, V_max, by_T=rows)
     correlated: list[tuple[str, str, float]] = []
@@ -821,6 +858,10 @@ def fit_cell(
                     "pulses": len(f.wins),
                     "params": own_params,
                     "tau_m_from": f.stages.get("middle", "pulses"),
+                    "slow_capacity_Ah": next(
+                        (c.capacity_Ah for c, t in zip(curves, others) if t is f.test),
+                        cap if f.test.slow is not None else None,
+                    ),
                     "law": {n: _law_value(_laws_only(model, values, ocv, V_max), n, f.T_C + 273.15) for n in ARRHENIUS},
                 }
             )
@@ -858,6 +899,7 @@ def fit_cell(
     }
     temps = sorted({f.test.at_C for f in fits if f.test.at_C is not None})
     return FitResult(
+        ocv_curves=curves,
         model=model,
         ocv=ocv,
         ecm=ecm,
@@ -869,7 +911,7 @@ def fit_cell(
         correlated=correlated,
         notes=notes,
         records={
-            "slow": [slow],
+            "slow": [slow, *(t.slow for t in others)],
             "pulses": [t.pulses for t in sets],
             "steps": [t.steps for t in sets if t.steps is not None],
             "checks": list(checks or []),

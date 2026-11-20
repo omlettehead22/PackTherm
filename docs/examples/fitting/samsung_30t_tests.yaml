@@ -2,7 +2,8 @@
 # Run from the repository's root:  packtherm fit docs/examples/fitting/samsung_30t_tests.yaml
 # Data: P. Kollmeyer and M. Skells, Samsung INR21700 30T 3Ah Li-ion Battery Data, Mendeley Data v2 (2023),
 # doi:10.17632/9xyvy2njj3.2, CC BY 4.0. Fitted on each temperature's pulse test (its pulses, and the
-# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and the 25 degC C/20 discharge;
+# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and slow discharge (C/20: the
+# open-circuit voltage at each temperature, v0.6.5; the 25 degC one sets the capacity);
 # every other test is a check, never fitted to. The rig is calibrated on the 25 degC 1C discharge #1 and
 # Mixed1 (both fitted to), with the heat from their measured voltage. Each test's ambient is the cell
 # temperature after the settled rest before it, and its start the charge the tester counted before logging
@@ -26,26 +27,31 @@ temperatures:
     steps: "../../../tests/data/samsung_30t/03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat"
     discharges: ["../../../validation/data/samsung_30t/40C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/samsung_30t/40C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/samsung_30t/02-24-19_17.19 697_C20DisCh_40degC_IN21700_30T.mat"
   - at: 10
     pulses: "../../../tests/data/samsung_30t/03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat"
     steps: "../../../tests/data/samsung_30t/03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat"
     discharges: ["../../../validation/data/samsung_30t/10C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/samsung_30t/10C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/samsung_30t/03-24-19_06.06 746_C20DisCh_10degC_IN21700_30T.mat"
   - at: 0
     pulses: "../../../tests/data/samsung_30t/05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat"
     steps: "../../../tests/data/samsung_30t/05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat"
     discharges: ["../../../validation/data/samsung_30t/0C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/samsung_30t/0C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/samsung_30t/05-31-19_14.26 819_C20DisCh_0degC_IN21700_30T.mat"
   - at: -10
     pulses: "../../../tests/data/samsung_30t/06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat"
     steps: "../../../tests/data/samsung_30t/06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat"
     discharges: ["../../../validation/data/samsung_30t/m10C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/samsung_30t/m10C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/samsung_30t/06-16-19_00.42 847_C20DisCh_-10degC_IN21700_30T.mat"
   - at: -20
     pulses: "../../../tests/data/samsung_30t/06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat"
     steps: "../../../tests/data/samsung_30t/06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat"
     discharges: ["../../../validation/data/samsung_30t/m20C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/samsung_30t/m20C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/samsung_30t/07-02-19_14.28 866_C20DisCh_-20degC_IN21700_30T.mat"
 chamber_calibration:  # the rig: h from the 1C discharge, the fixture's heat capacity from the drive cycle
   - {file: "../../../validation/data/samsung_30t/25C_1C_discharge_1.csv.gz", start_soc: 1, ambient_C: 24.03}
   - {file: "../../../validation/data/samsung_30t/25C_Mixed1.csv.gz", start_soc: 1, ambient_C: 24.29}

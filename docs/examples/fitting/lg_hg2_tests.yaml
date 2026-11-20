@@ -3,7 +3,8 @@
 # Run from the repository's root:  packtherm fit docs/examples/fitting/lg_hg2_tests.yaml
 # Data: P. Kollmeyer, M. Naguib and M. Skells, LG 18650HG2 Li-ion Battery Data, Mendeley Data v2 (2020),
 # doi:10.17632/b5mj79w5w9.2, CC BY 4.0. Fitted on each temperature's pulse test (its pulses, and the
-# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and the 25 degC C/20 discharge;
+# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and slow discharge (C/20: the
+# open-circuit voltage at each temperature, v0.6.5; the 25 degC one sets the capacity);
 # every other test is a check, never fitted to. The rig is calibrated on the 25 degC 1C discharge #1 and
 # Mixed1 (both fitted to), with the heat from their measured voltage. Each test's ambient and start are in
 # validation/data/lg_hg2/manifest.json; six aborted or empty runs are left out (excluded.json there).
@@ -26,26 +27,31 @@ temperatures:
     steps: "../../../tests/data/lg_hg2/11-02-18_18.30 555_HPPC_40degC_LGHG2.mat"
     discharges: ["../../../validation/data/lg_hg2/40C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/lg_hg2/40C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/lg_hg2/11-03-18_18.25 555_C20DisCh_40degC_LGHG2.mat"
   - at: 10
     pulses: "../../../tests/data/lg_hg2/11-16-18_20.44 575_HPPC_10degC_LGHG2.mat"
     steps: "../../../tests/data/lg_hg2/11-16-18_20.44 575_HPPC_10degC_LGHG2.mat"
     discharges: ["../../../validation/data/lg_hg2/10C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/lg_hg2/10C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/lg_hg2/11-17-18_20.39 575_C20DisCh_10degC_LGHG2.mat"
   - at: 0
     pulses: "../../../tests/data/lg_hg2/11-26-18_22.46 585_HPPC_0degC_LGHG2.mat"
     steps: "../../../tests/data/lg_hg2/11-26-18_22.46 585_HPPC_0degC_LGHG2.mat"
     discharges: ["../../../validation/data/lg_hg2/0C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/lg_hg2/0C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/lg_hg2/11-27-18_20.41 585_C20DisCh_0degC_LGHG2.mat"
   - at: -10
     pulses: "../../../tests/data/lg_hg2/12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat"
     steps: "../../../tests/data/lg_hg2/12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat"
     discharges: ["../../../validation/data/lg_hg2/m10C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/lg_hg2/m10C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/lg_hg2/12-05-18_20.13 593_C20DisCh_n10degC_LGHG2.mat"
   - at: -20
     pulses: "../../../tests/data/lg_hg2/12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat"
     steps: "../../../tests/data/lg_hg2/12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat"
     discharges: ["../../../validation/data/lg_hg2/m20C_1C_discharge_1.csv.gz"]
     cycles: ["../../../validation/data/lg_hg2/m20C_Mixed1.csv.gz"]
+    slow: "../../../tests/data/lg_hg2/12-22-18_09.52 607_C20DisCh_n20degC_LGHG2.mat"
 chamber_calibration:  # the rig: h from the 1C discharge, the fixture's heat capacity from the drive cycle
   - {file: "../../../validation/data/lg_hg2/25C_1C_discharge_1.csv.gz", start_soc: 1, ambient_C: 23.87}
   - {file: "../../../validation/data/lg_hg2/25C_Mixed1.csv.gz", start_soc: 1, ambient_C: 23.93}
