@@ -103,14 +103,20 @@ def _plots(fit) -> dict[str, str]:
 
     ocv = pd["ocv"]
     fig, ax = plt.subplots(figsize=(9, 3.4), facecolor=SURFACE)
-    ax.plot(100 * ocv.soc, ocv.V, lw=1.6, color=FIT, label="open-circuit voltage (fitted)")
+    others = sorted(getattr(fit, "ocv_curves", None) or [], key=lambda c: c.T_K)
+    ref_T = f" at {ocv.T_K - 273.15:.0f} °C" if others and ocv.T_K is not None else ""
+    ax.plot(100 * ocv.soc, ocv.V, lw=1.6, color=FIT, label=f"open-circuit voltage (fitted){ref_T}")
+    # The other temperatures' curves (v0.6.5): one hue, darker colder, on the same state of charge.
+    for i, c in enumerate(others):
+        shade = plt.get_cmap("Blues")(0.9 - 0.5 * i / max(len(others) - 1, 1))
+        ax.plot(100 * c.soc, c.V, lw=1.0, color=shade, label=f"{c.T_K - 273.15:.0f} °C ({c.capacity_Ah:.2f} Ah)")
     if ocv.discharge is not None:
         ax.plot(100 * ocv.discharge[0], ocv.discharge[1], lw=0.9, color=TEXT, label="slow discharge, measured")
     if ocv.charge is not None:
         ax.plot(100 * ocv.charge[0], ocv.charge[1], lw=0.9, color=TEXT_2, ls="--", label="slow charge, measured")
     ax.set_xlabel("State of charge (%)", fontsize=9)
     ax.set_ylabel("Voltage (V)", fontsize=9)
-    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.legend(frameon=False, fontsize=8, loc="lower right", ncol=2 if others else 1)
     _axes(ax)
     fig.tight_layout()
     out["ocv"] = _png(fig)
@@ -407,7 +413,15 @@ def report_html(fit, doc: dict, thermal: list[dict] | None = None) -> str:
 
     # 5. Charts.
     parts.append("<h2>Open-circuit voltage</h2>")
-    parts.append(f"<p class='sub'>{_e(fit.ocv.method)}.</p>{plots['ocv']}")
+    by_T = getattr(fit, "ocv_curves", None) or []
+    extra = (
+        f" At the other temperatures, from their own slow discharges, on the same state of charge "
+        f"(the charge left, as a share of {fit.capacity_Ah:.3f} Ah): a cell that delivers less there reaches "
+        "its cut-off at a higher state of charge. Between them the voltage is interpolated in temperature."
+        if by_T
+        else ""
+    )
+    parts.append(f"<p class='sub'>{_e(fit.ocv.method)}.{_e(extra)}</p>{plots['ocv']}")
     if "pulses" in plots:
         parts.append(f"<h2>Pulses, measured against the model</h2>{plots['pulses']}")
     if "pulses_by_T" in plots:

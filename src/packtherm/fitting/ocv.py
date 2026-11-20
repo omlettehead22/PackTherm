@@ -32,22 +32,49 @@ class OCVCurve:
     charge: tuple[np.ndarray, np.ndarray] | None = None
     discharge_span: tuple[int, int] | None = None  # the slow discharge's samples in its record
     R_used_ohm: float = 0.0
+    # Curves by temperature (v0.6.5): (T_K, soc, V), on this curve's state of charge; this one among them.
+    by_T: tuple = ()
+    T_K: float | None = None  # the slow discharge's median cell temperature
 
     def at(self, soc) -> np.ndarray:
         return np.interp(soc, self.soc, self.V)
 
-    def soc_at(self, V: float) -> float:
-        """The state of charge whose open-circuit voltage is V (the curve rises with SOC)."""
-        return float(np.interp(V, self.V, self.soc))
+    def soc_at(self, V: float, T_K: float | None = None) -> float:
+        """The state of charge whose open-circuit voltage is V (at T_K, with curves by temperature)."""
+        if not self.by_T or T_K is None:
+            return float(np.interp(V, self.V, self.soc))
+        from ..ecm import curve_value
+
+        curves = sorted(self.by_T, key=lambda c: c[0])
+        lo = min(min(c[1]) for c in curves)
+        grid = np.linspace(lo, 1.0, 401)
+        Ts = [c[0] for c in curves]
+
+        def v_at(soc):
+            if T_K <= Ts[0]:
+                return curve_value(curves[0][1], curves[0][2], soc)
+            if T_K >= Ts[-1]:
+                return curve_value(curves[-1][1], curves[-1][2], soc)
+            k = int(np.searchsorted(Ts, T_K)) - 1
+            u = (T_K - Ts[k]) / (Ts[k + 1] - Ts[k])
+            a = curve_value(curves[k][1], curves[k][2], soc)
+            return a + (curve_value(curves[k + 1][1], curves[k + 1][2], soc) - a) * u
+
+        v = np.maximum.accumulate(np.array([v_at(x) for x in grid]))
+        return float(np.interp(V, v, grid))
+
+    def as_row(self) -> tuple[float, tuple[float, ...], tuple[float, ...]]:
+        return (float(self.T_K if self.T_K is not None else 298.15), tuple(map(float, self.soc)), tuple(map(float, self.V)))
 
 
 
-def _grid(soc: np.ndarray, V: np.ndarray) -> np.ndarray:
-    """Voltage on a 0.01 SOC grid; the curve is made to rise with SOC (noise at a step can dip it)."""
+def _grid(soc: np.ndarray, V: np.ndarray, grid: np.ndarray | None = None) -> np.ndarray:
+    """Voltage on a SOC grid (0.01 steps from 0 to 1); made to rise with SOC (noise at a step can dip it)."""
     order = np.argsort(soc)
     s, v = soc[order], V[order]
     v = np.maximum.accumulate(v)  # monotonic: an OCV curve rises with charge
-    grid = np.linspace(0.0, 1.0, 101)
+    if grid is None:
+        grid = np.linspace(0.0, 1.0, 101)
     return np.interp(grid, s, v)
 
 
@@ -65,13 +92,18 @@ def _slow_parts(rec: TestRecord, discharge: bool) -> list[Segment]:
     return out
 
 
-def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None) -> OCVCurve:
+def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None, reference_Ah: float | None = None) -> OCVCurve:
     """The curve and capacity from the slowest full discharge in ``rec`` (and its charge, if it has one).
 
     The discharge must start full (after a charge and a rest) and run to the
     cut-off: its charge is then the capacity. factor(soc), if given, scales the
     drop with the state of charge (the model's rise near empty). R_ohm is the resistance whose
     drop is added back; the fit sets it from the model's steady resistance.
+
+    reference_Ah: for a slow test at another temperature (v0.6.5), the state of
+    charge is the charge left as a share of this capacity (the reference
+    curve's), not of the test's own: the curve then ends where the test
+    stopped, at a state of charge above 0 if it delivered less.
     """
     parts = _slow_parts(rec, discharge=True)
     if not parts:
@@ -85,7 +117,10 @@ def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None) -> OCVC
     q = q - q[0]
     cap = float(q[-1])
     V = rec.voltage_V[d.start : d.stop]
-    soc = 1.0 - q / cap
+    ref = cap if reference_Ah is None else float(reference_Ah)
+    soc = 1.0 - q / ref
+    lo = 0.0 if reference_Ah is None else float(round(soc[-1], 4))
+    grid = np.linspace(lo, 1.0, 101)
     notes = []
     before = rec.voltage_V[max(d.start - 1, 0)]
     if before < 4.0 and before < np.max(rec.voltage_V) - 0.1:
@@ -93,9 +128,10 @@ def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None) -> OCVC
             f"the slow discharge starts at {before:.3f} V, not obviously full: the capacity "
             f"({cap:.3f} Ah) and the curve assume it is"
         )
+    T = rec.temperature_C[d.start : d.stop] if rec.temperature_C is not None else None
     curve = OCVCurve(
-        soc=np.linspace(0.0, 1.0, 101),
-        V=_grid(soc, V + d.current_A * R_ohm * (np.vectorize(factor)(soc) if factor else 1.0)),
+        soc=grid,
+        V=_grid(soc, V + d.current_A * R_ohm * (np.vectorize(factor)(soc) if factor else 1.0), grid),
         capacity_Ah=cap,
         V_min=float(V[-1]),
         V_top=float(before),
@@ -112,13 +148,14 @@ def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None) -> OCVC
         discharge=(soc, V),
         discharge_span=(d.start, d.stop),
         R_used_ohm=R_ohm,
+        T_K=float(np.nanmedian(T)) + 273.15 if T is not None and np.isfinite(T).any() else None,
     )
     ch = _slow_parts(rec, discharge=False)
     if ch:
         c = max(ch, key=lambda s: -s.charge_Ah)
         qc = rec.charge_Ah()[c.start : c.stop]
         # The charge starts where the discharge ended (empty) if it follows it.
-        soc_c = (qc[0] - qc) / cap
+        soc_c = (qc[0] - qc) / ref + soc[-1]
         curve.charge = (soc_c, rec.voltage_V[c.start : c.stop])
     return curve
 

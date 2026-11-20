@@ -16,6 +16,8 @@ temperatures:               # one entry per test temperature (three or more for 
     discharges: [dis1c.mat] # optional: full discharges at a working rate
     cycles: [cycle1.csv.gz] # optional: drive cycles to fit on
     start_soc: 1.0          # where the discharges and cycles start (default 1: full)
+    slow: c20_0C.mat        # optional: a slow full discharge here too, starting full: the open-circuit
+                            # voltage at this temperature, for a cell whose capacity moves with it
 checks:                     # optional: tests the fit never sees, predicted afterwards
   - file: udds_25.csv.gz
     start_soc: 1.0
@@ -42,7 +44,7 @@ TOP_KEYS = {
     "packtherm_fit", "name", "like", "rated_capacity_Ah", "dataset", "slow", "temperatures", "checks",
     "compare", "chamber_h_W_m2K", "chamber_calibration", "output", "report",
 }  # fmt: skip
-SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc"}
+SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc", "slow"}
 CHECK_KEYS = {"file", "start_soc", "ambient_C"}
 
 
@@ -75,6 +77,8 @@ class TestList:
             for role in ("pulses", "steps"):
                 if s.get(role):
                     out.setdefault(role, []).append(s[role])
+            if s.get("slow") and s["slow"] != self.slow:
+                out["slow"].append(s["slow"])
             for role in ("discharges", "cycles"):
                 out.setdefault(role, []).extend(s.get(role, []))
         if self.checks:
@@ -156,6 +160,7 @@ def read_test_list(path: str | Path) -> TestList:
                 "discharges": files(s.get("discharges"), f"{w}.discharges"),
                 "cycles": files(s.get("cycles"), f"{w}.cycles"),
                 "start_soc": number(s.get("start_soc", 1.0), f"{w}.start_soc", 0, 1),
+                "slow": file(s["slow"], f"{w}.slow") if s.get("slow") else None,
             }
         )
     ats = [s["at"] for s in sets if s["at"] is not None]
@@ -266,6 +271,7 @@ def run_test_list(tl: TestList, progress=print):
             discharges=[read(p) for p in s["discharges"]],
             cycles=[read(p) for p in s["cycles"]],
             discharge_soc0=s["start_soc"],
+            slow=read(s["slow"]) if s.get("slow") and s["slow"] != tl.slow else None,
         )
         for s in tl.sets
     ]

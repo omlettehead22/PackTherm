@@ -74,6 +74,29 @@ def _values(params) -> dict[str, dict]:
     return values
 
 
+def _ocv_doc(fit) -> dict:
+    out = {
+        "soc": [_r(x, 4) for x in fit.ocv.soc],
+        "V": [_r(x, 5) for x in fit.ocv.V],
+        "how": fit.ocv.method,
+    }
+    curves = getattr(fit, "ocv_curves", None) or []
+    if curves:
+        # v0.6.5: the curve above is the reference; these, at other temperatures, are on its state of charge.
+        out["cell_C"] = _r(fit.ocv.T_K - 273.15, 2)
+        out["by_temperature"] = [
+            {
+                "cell_C": _r(c.T_K - 273.15, 2),
+                "capacity_Ah": _r(c.capacity_Ah, 4),
+                "soc": [_r(x, 4) for x in c.soc],
+                "V": [_r(x, 5) for x in c.V],
+                "how": c.method,
+            }
+            for c in sorted(curves, key=lambda c: c.T_K)
+        ]
+    return out
+
+
 def ecm_doc(ecm) -> dict:
     """What PackTherm runs, in full: every value of the circuit model and its table by temperature."""
     from ..ecm import BY_T_COLUMNS
@@ -98,12 +121,22 @@ def ecm_from_doc(doc: dict):
         if list(cols) != list(BY_T_COLUMNS):
             raise FittedCellError(f"model.ecm.by_temperature: columns {cols} are not {list(BY_T_COLUMNS)}")
         rows = tuple(tuple(float(x) for x in r) for r in m["by_temperature"]["rows"])
+    soc, V = tuple(float(x) for x in ocv["soc"]), tuple(float(x) for x in ocv["V"])
+    curves = ()
+    if ocv.get("by_temperature"):
+        if ocv.get("cell_C") is None:
+            raise FittedCellError("open_circuit_voltage.cell_C: the reference curve's temperature is needed with curves by temperature")
+        curves = ((float(ocv["cell_C"]) + 273.15, soc, V),) + tuple(
+            (float(c["cell_C"]) + 273.15, tuple(float(x) for x in c["soc"]), tuple(float(x) for x in c["V"]))
+            for c in ocv["by_temperature"]
+        )
     return ECM(
-        ocv_soc=tuple(float(x) for x in ocv["soc"]),
-        ocv_V=tuple(float(x) for x in ocv["V"]),
+        ocv_soc=soc,
+        ocv_V=V,
         **{k: (None if m.get(k) is None else float(m[k])) for k in ECM_FIELDS},
         sources=("fitted by packtherm.fitting",),
         by_T=rows,
+        ocv_by_T=curves,
     )
 
 
@@ -113,7 +146,7 @@ def dc_resistance(ecm, T: float = 298.15, soc: float = 0.5, c_rate: float = 1.5,
 
     I = c_rate * capacity_Ah
     V = ECMState().step(ecm, I, soc, T, 10.0)[0]
-    return (ecm.ocv(soc) - V) / I
+    return (ecm.ocv(soc, T) - V) / I
 
 
 def fitted_cell_doc(
@@ -203,11 +236,7 @@ def fitted_cell_doc(
             },
             "values": values,
             "capacity": cap,
-            "open_circuit_voltage": {
-                "soc": [_r(x, 4) for x in fit.ocv.soc],
-                "V": [_r(x, 5) for x in fit.ocv.V],
-                "how": fit.ocv.method,
-            },
+            "open_circuit_voltage": _ocv_doc(fit),
             "valid_for": fit.validity,
             "identifiability": {
                 "correlated_pairs": [
@@ -247,6 +276,7 @@ def fitted_cell_doc(
                 "cell_C": pt["cell_C"],
                 "pulses": pt["pulses"],
                 "tau_m_from": pt.get("tau_m_from", "pulses"),
+                **({"slow_capacity_Ah": _r(pt["slow_capacity_Ah"], 4)} if pt.get("slow_capacity_Ah") else {}),
                 "values": _values(pt["params"]),
             }
             for pt in fit.per_temperature

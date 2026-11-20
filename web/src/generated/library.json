@@ -50,7 +50,7 @@
   "format": "21700",
   "capacity_Ah": 3.0326,
   "V_nominal": 3.6,
-  "DCIR_25C_mOhm": 14.277533189175186,
+  "DCIR_25C_mOhm": 14.267777900596615,
   "mass_g": 65.0
  },
  "HG2-LUMPED": {
@@ -68,7 +68,7 @@
   "format": "18650",
   "capacity_Ah": 2.7788,
   "V_nominal": 3.6,
-  "DCIR_25C_mOhm": 28.276014971101095,
+  "DCIR_25C_mOhm": 28.47121153849018,
   "mass_g": 45.0
  }
 }

@@ -4,7 +4,8 @@ Anchored at a settled rest, where the voltage is the open-circuit voltage and
 so gives the state of charge, then carried through the test by the charge
 counted (``TestRecord.charge_Ah``, which includes what moved while logging
 paused). This works for any tester: it does not rely on how a tester's own
-charge counter is zeroed.
+charge counter is zeroed. With open-circuit curves by temperature, the curve at
+the cell's temperature there reads it.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ def track_soc(rec: TestRecord, ocv: OCVCurve, capacity_Ah: float, soc0: float | 
     rests = [s for s in rec.segments() if s.kind == "rest" and s.stop - s.start >= 2]
     if not rests and abs(float(rec.current_A[0])) < 0.05 * capacity_Ah:
         # Starts at (almost) no current but never rests: the first voltage is the best there is.
-        soc_0 = ocv.soc_at(float(rec.voltage_V[0]))
+        soc_0 = ocv.soc_at(float(rec.voltage_V[0]), _T_K(rec, 0))
         how = (
             f"{soc_0:.1%} from the first voltage: the test has no rest, so this is not a settled "
             "open-circuit voltage and may be off by a few percent"
@@ -48,7 +49,14 @@ def track_soc(rec: TestRecord, ocv: OCVCurve, capacity_Ah: float, soc0: float | 
     else:
         raise ValueError(f"{rec.source}: no rest to anchor the state of charge (a settled rest of 20 min is best)")
     k = anchor.stop - 1
-    soc_k = ocv.soc_at(float(rec.voltage_V[k]))
+    soc_k = ocv.soc_at(float(rec.voltage_V[k]), _T_K(rec, k))
     soc = soc_k - (q - q[k]) / capacity_Ah
     how = f"{soc_k:.1%} from the voltage at the end of the {how}"
     return soc, how
+
+
+def _T_K(rec: TestRecord, k: int) -> float | None:
+    T = rec.temperature_C
+    if T is None or not np.isfinite(T[k]):
+        return None
+    return float(T[k]) + 273.15

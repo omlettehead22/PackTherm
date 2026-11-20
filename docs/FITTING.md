@@ -61,20 +61,22 @@ At one temperature, flags do the same without a list: `packtherm fit --slow c20.
 
 The model is the one PackTherm's electro-thermal runs use (`packtherm.ecm.ECM`):
 
-- the open-circuit voltage, from a table over the state of charge;
+- the open-circuit voltage, from a table over the state of charge, and with slow tests at several temperatures, one table at each (v0.6.5);
 - an instant (ohmic) resistance `R0`;
 - a charge-transfer branch: a Butler–Volmer-shaped overpotential `gamma · 2RT/F · asinh(I / 2I0)`, reached with time constant `tau_ct` (seconds);
-- a middle branch: resistance `Rm`, time constant `tau_m` (tens of seconds). New in v0.6.2; off in the library cells;
+- a middle branch: resistance `Rm`, time constant `tau_m` (5 to 120 s, below the slow branch's range since v0.6.5). New in v0.6.2; off in the library cells;
 - a slow branch: resistance `Rd`, time constant `tau_d` (minutes);
 - a rise of all of them near empty, `1 + soc_a · exp(−SOC / soc_b)`, on discharge.
 
 **Values by temperature.** A cell fitted at several temperatures holds every value at each one. PackTherm interpolates between them (in 1/T, logarithmically: an Arrhenius law between neighbours). Beyond the coldest and warmest, the resistances and rates follow laws fitted through the temperatures' own values (`Ea_R0`, `Ea_I0`, `Ea_Rm`, `Ea_Rd`, `Ea_soc`), and the shape and time constants hold. Studies warn when a run goes beyond the tested temperatures (by more than 2 K) or rates.
 
+**The open-circuit voltage by temperature (v0.6.5).** A cell can deliver less charge in the cold, or the heat: the LG HG2 gives 2.78 Ah at C/20 at 25 °C, 2.69 Ah at 40 °C and 2.49 Ah at −20 °C. Give a slow discharge at each temperature (`temperatures[].slow`), each starting full. Each becomes an open-circuit curve, all against the same state of charge: the charge left, as a share of the reference capacity (the top-level `slow` test's). A curve whose test delivered less ends at a state of charge above 0, so the cell there reaches its cut-off sooner. Charge is still conserved as the cell warms or cools. Between curves, the voltage at a state of charge is interpolated linearly in temperature; beyond the coldest and warmest, those curves hold. A rest's voltage is read through the curve at the cell's temperature there, too. Without slow tests at other temperatures, one curve serves them all, as before.
+
 Fitted cell files name the model (`model.form: packtherm-circuit-1`) and hold it in full (`model.ecm`). The fitting code treats a model as an interface (parameters, a simulator, what PackTherm runs), so a generic circuit with a chosen number of branches can share everything else.
 
 ## How it fits
 
-1. **Open-circuit voltage and capacity** come from the slow discharge. Its charge to the cut-off is the measured capacity. Its voltage, plus the cell's own drop at that current (the fitted model's steady resistance at the slow test's temperature, rising near empty as the model's does), is the open-circuit curve.
+1. **Open-circuit voltage and capacity** come from the slow discharge. Its charge to the cut-off is the measured capacity. Its voltage, plus the cell's own drop at that current (the fitted model's steady resistance at the slow test's temperature, rising near empty as the model's does), is the open-circuit curve. The slow discharges at other temperatures, if given, are read the same way, each with the drop at its own temperature, onto the reference capacity's state of charge.
 2. **State of charge** through each test is anchored at a settled rest (20 min or more), where the voltage is the open-circuit voltage, or given (`start_soc`). It's carried by the charge counted, including charge moved while logging paused and across steps between two samples, both from the tester's own counter.
 3. **Through time.** Each pulse (5 s before it to 40 s after), each rest after a step, and each long test is replayed through the same simulation PackTherm runs (a test checks they agree to 1e-9 V) and scored on its voltage.
    - Pulses and rests are scored on the change from their first sample; long tests on the voltage itself, down to the knee near empty (40% of the way up from the cut-off: 3.18 V here).
@@ -100,7 +102,7 @@ Fitted cell files name the model (`model.form: packtherm-circuit-1`) and hold it
 | `model` | The form, the model in full (`ecm`: every value and the table by temperature), and its 10 s DC resistance at mid charge |
 | `values` | With several temperatures, the laws (`Ea_*`) with their 95% ranges; with one, every value. Each with its `unit`, `source` (`fitted`, `data`, `default` or `not fitted`), what it is, and any flag |
 | `by_temperature` | Each temperature's own values, with 95% ranges and flags |
-| `capacity`, `open_circuit_voltage` | Measured, how, and against the rated capacity if given |
+| `capacity`, `open_circuit_voltage` | Measured, how, and against the rated capacity if given. With curves by temperature, the reference's cell temperature (`cell_C`) and each other curve with its temperature and capacity (`by_temperature`) |
 | `valid_for` | What the tests covered: cell temperature, state of charge and C-rates |
 | `identifiability` | Pairs of values that trade off (correlation beyond ±0.95) |
 | `errors` | RMS and worst error on each kind of test fitted at each temperature, and on each check, in two forms: <br>• voltage, replayed at the check's measured temperature; <br>• with `like` and the rig given or calibrated, run as a study runs the cell (`held_out_electrothermal`): voltage and surface temperature from the current alone, beside the comparison cell's. The rig, and what it was calibrated on, is in `provenance.settings` |
@@ -138,19 +140,20 @@ Each check is run as a study runs the cell: only the measured current goes in, a
 
 | Chamber | Tests | Voltage RMS, library | Voltage RMS, fitted | Within 1 K, library | Within 1 K, fitted | Peak error, library | Peak error, fitted |
 |---|---|---|---|---|---|---|---|
-| 25 °C | 11 | 16.9 mV | 18.2 mV | 91% | 91% | 0.0 K | −0.8 K |
+| 25 °C | 11 | 16.9 mV | 18.1 mV | 91% | 91% | 0.0 K | −0.8 K |
 | 10 °C | 8 | 23.7 mV | **20.9 mV** | 100% | 100% | 0.0 K | −0.7 K |
-| 0 °C | 8 | 33.3 mV | **25.6 mV** | 88% | 75% | −0.8 K | −1.5 K |
-| −10 °C | 8 | 52.8 mV | **34.4 mV** | 75% | **88%** | −1.1 K | −0.9 K |
-| −20 °C | 8 | **69.2 mV** | 91.6 mV | 75% | 50% | −0.9 K | +0.1 K |
-| **All** | **43** | **32.7 mV** | **24.4 mV** | **86%** | **81%** | 0.6 K | 0.9 K |
+| 0 °C | 8 | 33.3 mV | **26.9 mV** | 88% | 75% | −0.8 K | −1.6 K |
+| −10 °C | 8 | 52.8 mV | **35.9 mV** | 75% | 75% | −1.1 K | −1.0 K |
+| −20 °C | 8 | **69.2 mV** | 87.3 mV | 75% | 62% | −0.9 K | +0.1 K |
+| **All** | **43** | **32.7 mV** | **26.4 mV** | **86%** | **81%** | 0.6 K | 1.0 K |
 
 All figures are medians, as `packtherm fit` reports them for the worked example. Voltage is scored down to the knee. Peak error is predicted minus measured peak surface temperature; in the "All" row it's the absolute value.
 
 **Reading it:**
 
 - **Voltage:** from tests alone, the fitted cell predicts voltage better than the hand-tuned model from 10 to −10 °C, and as well at 25 °C. It is worse at −20 °C, where the tests pin the least (below).
-- **Against v0.6.2:** setting the middle branch's time constant two ways (above) took the median from 28.2 to 24.4 mV and the share within 1 K from 79% to 81%. The 10, −10 and −20 °C fits now take it from their long tests: −10 °C improved from 54.2 to 34.4 mV, and −20 °C, whose checks warm into the −10 °C row, worsened from 67.4 to 91.6 mV.
+- **Against v0.6.2:** setting the middle branch's time constant two ways (v0.6.3) took the median from 28.2 to 24.4 mV and the share within 1 K from 79% to 81%.
+- **Against v0.6.4:** capping the middle branch at 120 s (v0.6.5) costs the Panasonic a little, 24.4 to 26.4 mV, at 0 and −10 °C, where its time constant had been 138 and 121 s. −20 °C improved from 91.6 to 87.3 mV. The Panasonic has a slow test at 25 °C only, so it keeps one open-circuit curve.
 - **Peaks:** it runs colder at its temperature peak, by about 0.8 K at 25 and 10 °C. Through the first 90% of a drive cycle, its heat is closer than the library's to the heat implied by the measured voltage. The shortfall comes in the last minutes near empty, where the voltage collapses faster than the near-empty rise (an exponential) can follow.
 - **Cold:** at −10 °C and below, the slow branch sits at the edge of its allowed range. The cold long tests don't pin it down, and the file flags it.
 
@@ -183,20 +186,22 @@ The checks are the other 82 tests, never fitted to. That's 0.5C, 1C and 2C disch
 
 | Chamber | Tests | Voltage RMS | Within 1 K | Temperature RMS | Peak error |
 |---|---|---|---|---|---|
-| 40 °C | 13 | 12.6 mV | 100% | 0.44 K | −0.7 K |
-| 25 °C | 13 | 17.4 mV | 100% | 0.45 K | +0.1 K |
-| 10 °C | 14 | 20.4 mV | 71% | 0.82 K | +0.3 K |
-| 0 °C | 14 | 27.8 mV | 64% | 0.88 K | −0.5 K |
-| −10 °C | 14 | 51.0 mV | 14% | 1.38 K | −0.6 K |
-| −20 °C | 14 | 78.5 mV | 29% | 1.17 K | −0.3 K |
-| **All** | **82** | **27.7 mV** | **62%** | 0.79 K | 0.8 K |
+| 40 °C | 13 | 10.3 mV | 100% | 0.46 K | −0.8 K |
+| 25 °C | 13 | 16.6 mV | 100% | 0.44 K | 0.0 K |
+| 10 °C | 14 | 19.2 mV | 86% | 0.77 K | +0.3 K |
+| 0 °C | 14 | 27.3 mV | 71% | 0.91 K | −0.5 K |
+| −10 °C | 14 | 50.0 mV | 14% | 1.38 K | −0.6 K |
+| −20 °C | 14 | 79.8 mV | 29% | 1.39 K | +0.2 K |
+| **All** | **82** | **26.5 mV** | **66%** | 0.75 K | 0.7 K |
+
+Since v0.6.5 the 30T is fitted with its slow test at each temperature too (it delivers 2.74 Ah at −20 °C, against 3.03 at 25 °C). Against v0.6.4: 27.7 to 26.5 mV, and 62% to 66% within 1 K.
 
 Medians, as `packtherm fit` reports them, scored as for the Panasonic. There is no hand-tuned 30T to compare with: the fit is the library's only circuit for it.
 
 **Reading it:**
 
-- **Warm:** from 40 to 0 °C the voltage is within 13–28 mV, and at 40 and 25 °C every test is within 1 K. The drive cycles here are harder than the Panasonic's: US06 and the Mixed cycles reach 36 A (12C), and the cell warms by up to 21 K.
-- **Cold:** at −10 °C and below, the drive cycles' temperature RMS runs 0.7–2.5 K. The peaks are close (within 1 K, median), but the cell warms by 10–20 K through the tested temperatures' rows, and the voltage errors double. At −20 °C the fit's own values sit at the edges of their ranges (the middle branch's time constant near its 5 s limit, the slow branch's at its 10 000 s limit). R0 comes out lower at −20 °C than at −10 °C, which is not physical. The file flags both.
+- **Warm:** from 40 to 0 °C the voltage is within 10–28 mV, and at 40 and 25 °C every test is within 1 K. The drive cycles here are harder than the Panasonic's: US06 and the Mixed cycles reach 36 A (12C), and the cell warms by up to 21 K.
+- **Cold:** at −10 °C and below, the drive cycles' temperature RMS runs 0.7–2.5 K. The peaks are close (within 1 K, median), but the cell warms by 10–20 K through the tested temperatures' rows, and the voltage errors double. At 0 °C and below the slow branch's time constant sits at its 10 000 s limit, and the file flags it. (In v0.6.4, R0 came out lower at −20 °C than at −10 °C; with the cold open-circuit curves it now rises, 20 to 32 mΩ.)
 - **The rig, or the cell's own conduction:** with h alone, calibrated on the 1C discharge, the drive cycles ran 2–5 K hot at their peaks, even with the heat from the measured voltage. A steady test's rise does not depend on how heat is stored or spread, but a drive cycle's peaks do. Two explanations fit about equally well, each with h calibrated on the same two fitted tests:
 
   | Rig and cell | Voltage RMS | Within 1 K | Peak error |
@@ -219,10 +224,10 @@ The figures above are therefore a check of the fitted values, not a blind test o
 | Value | Fitted |
 |---|---|
 | Capacity (C/20) | 3.03 Ah (rated 3.0 Ah) |
-| R0 | 6.3 mΩ (16–20 mΩ at −10 to −20 °C; law 14.0 kJ/mol) |
+| R0 | 6.2 mΩ (20 and 32 mΩ at −10 and −20 °C; law 19.8 kJ/mol) |
 | Charge-transfer time constant | 1.2 s |
-| Middle branch | 9.1 mΩ over 42 s (from the long tests) |
-| Slow branch | 8.2 mΩ over 24 min |
+| Middle branch | 8.8 mΩ over 40 s (from the long tests) |
+| Slow branch | 8.1 mΩ over 22 min |
 | 10 s DC resistance, mid charge, 1.5C | 14.3 mΩ (10.6 at 40 °C, 35.7 at 0 °C, 95 at −20 °C) |
 
 ## A third cell, fitted blind: the LG HG2
@@ -244,7 +249,7 @@ The fit is on each temperature's pulse test, first 1C discharge and Mixed1, and 
 **Reading it:**
 
 - **Temperature is easy here; voltage is not.** The HG2 warms by at most 8 K in these tests (the 30T: 21 K), so most tests come within 1 K. The voltage is the weakest of the three cells away from 25 °C: 43–70 mV.
-- **The main cause: the capacity changes with temperature, and the model has one.** The fit takes its capacity and open-circuit curve from the 25 °C C/20 test (2.78 Ah to 2.8 V). The dataset's C/20 tests at the other temperatures give less: 2.69 Ah at 40 °C, 2.65 at 10 °C, 2.60 at 0 °C, 2.56 at −10 °C and 2.50 at −20 °C. The model keeps the 25 °C capacity, so its state of charge drifts from the cell's through a discharge. At 40 °C the 1C discharge reaches 2.8 V after 2.50 Ah, against 2.72 Ah at 25 °C. The model, holding charge the cell doesn't have, is 180 mV high by the end. Even the discharges fitted on are 140 mV RMS at 40, 10 and 0 °C. The rise near empty and the slow branch take what they can, and end at their limits: no slow branch at 10 and 0 °C (Rd at its floor), and the middle branch's time constant at 235–300 s there. The 30T's capacity moves less with temperature, so the 30T didn't show it. This dataset has a C/20 test at every temperature, which a capacity by temperature could be fitted from (BACKLOG item 7).
+- **What v0.6.4 took for the main cause: the capacity changes with temperature, and the model has one** (v0.6.5 found it the smaller part: below). The fit takes its capacity and open-circuit curve from the 25 °C C/20 test (2.78 Ah to 2.8 V). The dataset's C/20 tests at the other temperatures give less: 2.69 Ah at 40 °C, 2.65 at 10 °C, 2.60 at 0 °C, 2.56 at −10 °C and 2.50 at −20 °C. The model keeps the 25 °C capacity, so its state of charge drifts from the cell's through a discharge. At 40 °C the 1C discharge reaches 2.8 V after 2.50 Ah, against 2.72 Ah at 25 °C. The model, holding charge the cell doesn't have, is 180 mV high by the end. Even the discharges fitted on are 140 mV RMS at 40, 10 and 0 °C. The rise near empty and the slow branch take what they can, and end at their limits: no slow branch at 10 and 0 °C (Rd at its floor), and the middle branch's time constant at 235–300 s there. The 30T's capacity moves less with temperature, so the 30T didn't show it. This dataset has a C/20 test at every temperature, which a capacity by temperature could be fitted from (BACKLOG item 7).
 - **The rig is ill-posed on this cell.** A 3 K rise on the calibrating discharge leaves h and the fixture loosely pinned: h came out at 130 W/(m² K), and the fixture at its limit. The alternatives, on the same two fitted tests:
 
   | Rig and cell | Voltage RMS | Within 1 K | Peak error |
@@ -255,37 +260,58 @@ The fit is on each temperature's pulse test, first 1C discharge and Mixed1, and 
 
   The radial conductivity explains the checks best here too, as on the 30T (0.12 W/(m K)). But 0.06 W/(m K) is below any jelly roll's, so it is standing in for something else: most likely the case thermocouple's lag under its tube, which neither calibration models. The voltage gains because a hotter core lowers the resistance, which offsets the capacity error above. The fit ships the fixture, as the method says.
 
-**Fitted values at 25 °C** (the library's `HG2`):
+### Fixed with it in view (v0.6.5)
+
+v0.6.5 added the two fixes the blind check pointed to, and refitted the HG2. It is no longer a blind check.
+
+| Chamber | Tests | v0.6.4 (blind) | Curves by temperature | And the middle branch capped at 120 s | Within 1 K, then |
+|---|---|---|---|---|---|
+| 40 °C | 8 | 43.5 mV | 38.5 mV | 37.6 mV | 88% |
+| 25 °C | 13 | 22.0 mV | 21.9 mV | 22.1 mV | 92% |
+| 10 °C | 13 | 60.6 mV | 55.7 mV | **20.5 mV** | 85% |
+| 0 °C | 12 | 64.4 mV | 60.2 mV | **27.7 mV** | 100% |
+| −10 °C | 14 | 61.2 mV | 57.7 mV | 61.0 mV | 100% |
+| −20 °C | 14 | 69.5 mV | 69.1 mV | 69.0 mV | 93% |
+| **All** | **74** | **59.7 mV** | 55.9 mV | **36.6 mV** | **93%** |
+
+- **The open-circuit curves by temperature** (each temperature's slow test) helped a little: 59.7 to 55.9 mV. v0.6.4 overstated their part.
+- **Most of the error was the middle branch.** At 10 and 0 °C it had taken the slow branch's place: a time constant of 235–300 s, with no slow branch left. That held the 1C discharges 90–150 mV low for most of their length. With its time constant capped at 120 s, the slow branch's floor, those temperatures came to 20.5 and 27.7 mV. The middle branch still sits at the cap there, with the slow branch at its floor (the file flags both), so the split between the two is not pinned. But the voltage is.
+- **What is left:**
+  - **40 °C:** the 1C discharge runs high through its second half, by up to 180 mV. At 40 °C the cell delivers 2.69 Ah at C/20 but 2.50 Ah at 1C (at 25 °C: 2.78 and 2.72). The model's losses at 1C don't take that much more charge, so the model holds charge the cell can't deliver. A loss of capacity with rate, strongest at 40 °C, is outside the model.
+  - **−10 and −20 °C:** about 60–70 mV, unchanged.
+
+**Fitted values at 25 °C** (the library's `HG2`, v0.6.5):
 
 | Value | Fitted |
 |---|---|
 | Capacity (C/20 to 2.8 V) | 2.78 Ah (rated 3.0 Ah, to 2.0 V) |
-| R0 | 19.2 mΩ (71 mΩ at −20 °C; law 16.4 kJ/mol) |
+| R0 | 19.3 mΩ (67 mΩ at −20 °C; law 16.4 kJ/mol) |
 | Charge-transfer time constant | 7.7 s (its limit is 10 s) |
-| Middle branch | 26.9 mΩ over 97 s (from the long tests) |
-| Slow branch | 22.6 mΩ over 10 000 s (its limit) |
-| 10 s DC resistance, mid charge, 1.5C | 28.3 mΩ (24.0 at 40 °C, 55.9 at 0 °C, 154 at −20 °C) |
+| Middle branch | 26.7 mΩ over 97 s (from the long tests) |
+| Slow branch | 22.3 mΩ over 10 000 s (its limit) |
+| 10 s DC resistance, mid charge, 1.5C | 28.5 mΩ (23.0 at 40 °C, 55.2 at 0 °C, 166 at −20 °C) |
 
 ## Three cells, side by side
 
 The checks are the tests never fitted to, predicted from their current alone, as a study runs the cell. The figures are medians.
 
-| Cell | Temperatures | Checks | Voltage RMS | Within 1 K | How blind |
-|---|---|---|---|---|---|
-| Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV | 81% | method compared on these checks (v0.6.2, v0.6.3) |
-| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV | 62% | method fixed with these checks in view (v0.6.3) |
-| LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV | 89% | blind: v0.6.3's method, run once |
+| Cell | Temperatures | Checks | Voltage RMS, v0.6.4 | Voltage RMS, v0.6.5 | Within 1 K, v0.6.5 | How blind |
+|---|---|---|---|---|---|---|
+| Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV | 26.4 mV | 81% | method compared on these checks (v0.6.2 to v0.6.5) |
+| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV | 26.5 mV | 66% | method fixed with these checks in view (v0.6.3, v0.6.5) |
+| LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV (blind) | 36.6 mV | 93% | blind in v0.6.4; fixed with it in view (v0.6.5) |
 
-The blind check is the weakest on voltage. At 25 °C, where each cell's capacity was measured, the three agree: 18.2, 17.4 and 22.0 mV. Away from 25 °C, the HG2 shows what the other two hid: a cell whose capacity moves with temperature.
+At 25 °C the three agree: 18.1, 16.6 and 22.1 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature. Both are now in the method, and none of the three cells is a blind check of it any more. The next cell is (v0.6.6).
 
 ## Known limits
 
 - **The collapse near empty.** The rise near empty is an exponential in the state of charge. The real collapse in the last minutes of a discharge is steeper, so heat there is under-predicted and peaks run cold (above).
 - **Cold slow branch.** At 0 °C and below, the slow branch is at the edge of its range on both datasets' tests. On the Panasonic at −20 °C, with no usable steps file, the middle branch is off and the slow branch has taken its place, so the recovery after a pulse is wrong there (the report shows it). On the 30T at −20 °C, R0 comes out below its −10 °C value. Drive cycles at those temperatures are the tests that pin it, and more of them would help.
-- **One capacity, one open-circuit curve.** Both come from one C/20 test, at one temperature. A cell whose capacity moves with temperature (the HG2 at C/20: 2.50 Ah at −20 °C, 2.78 at 25 °C, 2.69 at 40 °C) drifts in state of charge away from it, and the voltage error grows through a discharge (BACKLOG item 7).
+- **Capacity by temperature, but not by rate.** Slow tests at several temperatures give an open-circuit curve at each (v0.6.5). But a cell that delivers much less at 1C than at C/20 beyond what its losses explain (the HG2 at 40 °C: 2.50 against 2.69 Ah) runs out before the model does (BACKLOG item 7).
+- **The middle and slow branches can still trade.** With the middle branch capped at 120 s, the HG2 at 10 and 0 °C keeps it at the cap with no slow branch. The voltage fits, but how the loss splits between the two is not pinned.
 - **The test rig.** The thermal checks need the rig's convection and, for drive cycles, the heat capacity its fixture adds. Both come from fitted tests, but they are the rig's, and a cell's peaks in a pack depend on the pack's own.
 - **One shape across currents.** Pulses from 0.5C to 6C share one non-linear charge-transfer shape; the 1C pulses at mid charge come out about 10% too deep at every temperature.
-- **One open-circuit curve**, from the slow discharge at one temperature. It doesn't change with temperature, as in PackTherm's library cells.
+- **One open-circuit curve without slow tests at other temperatures**, as for the Panasonic and PackTherm's hand-made library cells.
 - **Hysteresis is not modelled.** The curve follows the discharge, and the report gives the gap to the charge if the slow test has one.
 - **Charge.** The near-empty rise applies on discharge only, as in PackTherm's runs.
 - **Speed.** With the middle branch fitted two ways, the stages after the first run twice, and a fit takes up to twice as long as in v0.6.2.

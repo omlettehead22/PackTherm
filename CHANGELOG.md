@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.6.5
+
+Capacity by temperature, the sixth v0.6 mini update: the two faults the LG HG2's blind check found, fixed.
+
+- **New: open-circuit curves by temperature.** A test list can give a slow (C/20) discharge at each temperature (`temperatures[].slow`), each starting full. Each becomes an open-circuit curve against the same state of charge: the charge left, as a share of the 25 °C capacity. A cell that delivers less in the cold reaches its cut-off sooner there, and charge is still conserved as it warms or cools. Between curves the voltage is interpolated linearly in temperature; beyond them, the end curve holds. Rests are read through the curve at the cell's temperature.
+  - The model (`ECM.ocv(soc, T)`), the studies, the measured-heat check, the fitted cell file (`open_circuit_voltage.by_temperature`) and the report's chart all follow.
+  - Cells and files without them run as before.
+- **Fixed: the middle branch could take the slow branch's place.** Its time constant is now capped at 120 s, the slow branch's floor (was 300 s). On the HG2 at 10 and 0 °C it had run to 235–300 s with no slow branch left, holding 1C discharges 90–150 mV low.
+- **Results** (median voltage error on the checks, never fitted to):
+
+  | Cell | v0.6.4 | v0.6.5 | Within 1 K |
+  |---|---|---|---|
+  | LG HG2 | 59.7 mV | 36.6 mV | 93% (was 89%) |
+  | Samsung 30T | 27.7 mV | 26.5 mV | 66% (was 62%) |
+  | Panasonic PF | 24.4 mV | 26.4 mV | 81% (unchanged) |
+
+  - **HG2:** the curves by temperature alone gave 59.7 → 55.9 mV; the cap gave the rest. v0.6.4 had named the capacity as the main cause, but it was the smaller part.
+  - **30T:** its R0 now rises from −10 to −20 °C, as it should.
+  - **Panasonic:** it has a slow test at 25 °C only. The cap costs it a little at 0 and −10 °C, where its middle branch had been at 138 and 121 s.
+- **Left open (BACKLOG item 7):**
+  - at 40 °C the HG2 delivers 2.50 Ah at 1C against 2.69 at C/20, which the model doesn't follow (up to 180 mV high near the end);
+  - at 10 and 0 °C its middle branch sits at the cap with no slow branch;
+  - −10 and −20 °C are still 60–70 mV.
+- **None of the three cells is a blind check now.** The next cell (an LFP, v0.6.6) will be.
+- **Data:** the C/20 test at every temperature for the 30T and the HG2, unchanged, in `tests/data/` (10 files, 0.7 MB). `validation/prepare_mcmaster.py` copies them.
+- **Tests:** a known cell whose curve shifts with temperature. The fit finds each curve within 6 mV, and a 0 °C discharge ends within 2% of where the cell's does (one curve runs 4% on). Plus the curves through the cell file.
+- **Docs:** FITTING.md (the model, the HG2 follow-up, three cells side by side), README, HISTORY, BACKLOG (item 7 rewritten).
+
 ## 0.6.4
 
 The LG INR18650-HG2, the fifth v0.6 mini update: a third cell, fitted blind with the method of v0.6.3 unchanged, and added to the library.

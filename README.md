@@ -67,9 +67,9 @@ LG M50 at a 1.5C full discharge, 25 °C, hex packing, 0.05 g/s coolant per cell 
 
 ![Cold-weather validation, before and after v0.4.10](docs/validation/cold_weather.png)
 
-**Fitted cell (LG INR18650-HG2), fitted blind:** 74 tests it never saw, from current alone: 59.7 mV median voltage error (22.0 mV at 25 °C) and 89% within 1 K; the fitted cell holds one capacity, and this cell's moves with temperature (see [docs/FITTING.md](docs/FITTING.md#a-third-cell-fitted-blind-the-lg-hg2)).
+**Fitted cell (LG INR18650-HG2):** 74 tests it never saw, from current alone: 36.6 mV median voltage error and 93% within 1 K. Blind in v0.6.4 it was 59.7 mV; v0.6.5 fixed what that showed (see [docs/FITTING.md](docs/FITTING.md#a-third-cell-fitted-blind-the-lg-hg2)).
 
-**Fitted cell (Samsung INR21700-30T):** fitted by `packtherm fit` from its own tests at six temperatures (McMaster, CC BY 4.0), and checked on 82 others from current alone: 27.7 mV median voltage error, 62% within 1 K, all within 1 K at 25 and 40 °C (see [docs/FITTING.md](docs/FITTING.md)).
+**Fitted cell (Samsung INR21700-30T):** fitted by `packtherm fit` from its own tests at six temperatures (McMaster, CC BY 4.0), and checked on 82 others from current alone: 26.5 mV median voltage error, 66% within 1 K, all within 1 K at 25 and 40 °C (see [docs/FITTING.md](docs/FITTING.md)).
 
 **LG M50 (the design cell):** no open temperature data for it is reachable, so its equivalent circuit is **derived** from a physics model (PyBaMM DFN with the ORegan2022 parameter set, measured on the LG M50T). Its heat matches that model within −6 % to +13 % on discharges and pulsed loads at 25, 10 and 0 °C, where the earlier lumped model was up to 42 % high.
 
@@ -153,11 +153,11 @@ print(run.result.summary())  # run.to_json() is the results document
 
 Tests the fit never saw were predicted from their current alone, as a study runs the cell:
 
-- **Panasonic NCR18650PF**, five temperatures (−20 to 25 °C), 43 tests: 24.4 mV median voltage error, against 32.7 mV for the hand-tuned library cell; 81% within 1 K, against 86%.
-- **Samsung INR21700-30T**, six temperatures (−20 to 40 °C), 82 tests: 27.7 mV, and 62% within 1 K (all within 1 K at 25 and 40 °C; the cold is weaker). It is in the library as `30T`.
-- **LG INR18650-HG2**, six temperatures, 74 tests, fitted blind (the method run once, unchanged): 59.7 mV, and 89% within 1 K. At 25 °C it is 22.0 mV, in line with the other two. Away from 25 °C the cell's capacity moves with temperature, and the fitted cell has one capacity (BACKLOG item 7). It is in the library as `HG2`.
+- **Panasonic NCR18650PF**, five temperatures (−20 to 25 °C), 43 tests: 26.4 mV median voltage error, against 32.7 mV for the hand-tuned library cell; 81% within 1 K, against 86%.
+- **Samsung INR21700-30T**, six temperatures (−20 to 40 °C), 82 tests: 26.5 mV, and 66% within 1 K (all within 1 K at 25 and 40 °C; the cold is weaker). It is in the library as `30T`.
+- **LG INR18650-HG2**, six temperatures, 74 tests: 36.6 mV, and 93% within 1 K. Fitted blind in v0.6.4 (59.7 mV), it showed a middle branch taking the slow branch's place and a capacity that moves with temperature; v0.6.5 fixes both. It is in the library as `HG2`.
 
-The Panasonic and the 30T helped shape the method; the HG2 is the blind check. See [docs/FITTING.md](docs/FITTING.md).
+All three cells have now shaped the method, so none is a blind check of it; the next cell will be. See [docs/FITTING.md](docs/FITTING.md).
 
 **Study files.** A study (cell, duty, ambient, limits, design space, options, normal or fast) can be written as one YAML or JSON file; `packtherm design` flags build the same document. Every key is described in [docs/STUDY_FILES.md](docs/STUDY_FILES.md). Each example study in [`docs/examples/`](docs/examples/) has its file and its results JSON, and every number this README quotes from them is checked in CI (`tests/test_docs.py`). CI also re-runs the examples in fast mode and checks they still match their committed results (`tests/test_examples_rerun.py`).
 
@@ -198,8 +198,9 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.1** | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
 | **v0.6.2** | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
 | **v0.6.3** | The Samsung INR21700-30T fitted at six temperatures and added to the library; the middle branch's time constant no longer left loose by the pulses; the test rig calibrated for the thermal checks |
-| **v0.6.4** (current) | The LG INR18650-HG2 fitted blind with v0.6.3's method and added to the library; one data-preparation script for the McMaster datasets |
-| v0.6.5 (next) | A capacity and open-circuit curve by temperature (what the HG2 exposed); then an LFP cell, the generic circuit, web fitting and the 3D view |
+| **v0.6.4** | The LG INR18650-HG2 fitted blind with v0.6.3's method and added to the library; one data-preparation script for the McMaster datasets |
+| **v0.6.5** (current) | Open-circuit curves by temperature from slow tests at each; the middle branch kept below the slow branch; the HG2 from 59.7 to 36.6 mV |
+| v0.6.6 (next) | An LFP cell, fitted blind with the method as it stands; then the generic circuit, web fitting and the 3D view |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).

@@ -28,6 +28,15 @@ an Arrhenius law between neighbours). Beyond the coldest or warmest row, the
 resistances and rates follow the laws above (Ea_*) from that row, and the shape
 and time constants hold. Without rows, the laws above apply everywhere.
 
+Open-circuit voltage by temperature (``ocv_by_T``, v0.6.5): curves from slow
+discharges at several temperatures, each against the same state of charge (the
+charge left, as a share of the reference capacity: the 25 degC slow test's). A
+cell whose capacity shrinks in the cold reaches its cut-off at a higher state of
+charge there, and charge is still conserved as its temperature changes. Between
+curves the voltage at a state of charge is interpolated linearly in T; beyond
+the coldest or warmest, that curve holds. Without them, the one curve applies
+at every temperature.
+
 Irreversible heat is I (OCV - V), so every loss term heats the cell.
 Discharge stops at V_min; charging switches from constant current to
 constant voltage at V_max and ends when |I| falls below the cut-off.
@@ -72,6 +81,8 @@ class ECM:
     Ea_Rm: float | None = None  # J/mol; None = as the slow branch
     # Values by temperature: rows of BY_T_COLUMNS, any order.
     by_T: tuple[tuple[float, ...], ...] = ()
+    # Open-circuit voltage by temperature: (T_K, soc, V) curves, on the reference capacity's state of charge.
+    ocv_by_T: tuple[tuple[float, tuple[float, ...], tuple[float, ...]], ...] = ()
 
     def __post_init__(self):
         if self.by_T:
@@ -80,6 +91,12 @@ class ECM:
                 raise ValueError(f"by_T needs two rows or more of {', '.join(BY_T_COLUMNS)}")
             object.__setattr__(self, "_x", tuple(1.0 / r[0] for r in rows))
             object.__setattr__(self, "_cols", tuple(tuple(r[i] for r in rows) for i in range(len(BY_T_COLUMNS))))
+        if self.ocv_by_T:
+            curves = sorted(self.ocv_by_T, key=lambda c: c[0])
+            if any(len(c[1]) != len(c[2]) or len(c[1]) < 2 for c in curves):
+                raise ValueError("ocv_by_T: each curve needs as many voltages as states of charge, two or more")
+            object.__setattr__(self, "_ocv_T", tuple(float(c[0]) for c in curves))
+            object.__setattr__(self, "_ocv_curves", tuple((tuple(c[1]), tuple(c[2])) for c in curves))
 
     def _at(self, col: str, T: float, Ea: float | None = None, sign: float = 1.0) -> float:
         """A tabulated value at T: log-interpolated in 1/T; beyond the rows, Ea from the end row (or held)."""
@@ -141,20 +158,19 @@ class ECM:
             b = self.soc_b
         return 1.0 + a * math.exp(-max(soc, 0.0) / b)
 
-    def ocv(self, soc: float) -> float:
-        """OCV from the table; linear extrapolation (slope of the last 5 %) outside it."""
-        s, v = self.ocv_soc, self.ocv_V
-        if soc > s[-1]:
-            k = min(len(s) - 1, max(1, round(0.05 / (s[-1] - s[-2]))))
-            return v[-1] + (v[-1] - v[-1 - k]) / (s[-1] - s[-1 - k]) * (soc - s[-1])
-        if soc < s[0]:
-            k = min(len(s) - 1, max(1, round(0.05 / (s[1] - s[0]))))
-            return v[0] + (v[k] - v[0]) / (s[k] - s[0]) * (soc - s[0])
-        # Scalar linear interpolation (np.interp on one value is slow in a time loop).
-        i = bisect_right(s, soc) - 1
-        if i >= len(s) - 1:
-            return float(v[-1])
-        return v[i] + (v[i + 1] - v[i]) * (soc - s[i]) / (s[i + 1] - s[i])
+    def ocv(self, soc: float, T: float | None = None) -> float:
+        """OCV at soc (and the cell temperature T, K, if the cell has curves by temperature)."""
+        if not self.ocv_by_T or T is None:
+            return curve_value(self.ocv_soc, self.ocv_V, soc)
+        Ts, cs = self._ocv_T, self._ocv_curves
+        if T <= Ts[0]:
+            return curve_value(*cs[0], soc)
+        if T >= Ts[-1]:
+            return curve_value(*cs[-1], soc)
+        k = bisect_right(Ts, T) - 1
+        u = (T - Ts[k]) / (Ts[k + 1] - Ts[k])
+        a, b = curve_value(*cs[k], soc), curve_value(*cs[k + 1], soc)
+        return a + (b - a) * u
 
     def R0(self, T: float) -> float:
         if self.by_T:
@@ -183,6 +199,21 @@ class ECM:
         return self.Rd_25C * self.R_ct_small_signal(T) / self.R_ct_small_signal(T_REF)
 
 
+def curve_value(s: tuple[float, ...], v: tuple[float, ...], soc: float) -> float:
+    """A curve's voltage at soc; linear extrapolation (slope of the last 5 %) outside it."""
+    if soc > s[-1]:
+        k = min(len(s) - 1, max(1, round(0.05 / (s[-1] - s[-2]))))
+        return v[-1] + (v[-1] - v[-1 - k]) / (s[-1] - s[-1 - k]) * (soc - s[-1])
+    if soc < s[0]:
+        k = min(len(s) - 1, max(1, round(0.05 / (s[1] - s[0]))))
+        return v[0] + (v[k] - v[0]) / (s[k] - s[0]) * (soc - s[0])
+    # Scalar linear interpolation (np.interp on one value is slow in a time loop).
+    i = bisect_right(s, soc) - 1
+    if i >= len(s) - 1:
+        return float(v[-1])
+    return v[i] + (v[i + 1] - v[i]) * (soc - s[i]) / (s[i + 1] - s[i])
+
+
 @dataclass
 class ECMState:
     eta_ct: float = 0.0
@@ -204,7 +235,7 @@ class ECMState:
         if Rm or self.V_m:
             e3 = math.exp(-dt / ecm.tau_m_at(T))
             vm = self.V_m * e3 + f * Rm * current * (1.0 - e3)
-        V = ecm.ocv(soc) - current * f * ecm.R0(T) - eta - vm - vd
+        V = ecm.ocv(soc, T) - current * f * ecm.R0(T) - eta - vm - vd
         return V, eta, vd, vm
 
     def apply(self, ecm: ECM, current: float, soc: float, T: float, dt: float) -> tuple[float, float]:

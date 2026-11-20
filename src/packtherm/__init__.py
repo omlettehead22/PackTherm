@@ -45,7 +45,7 @@ from .params import KELVIN, PCM, Geometry, Material, Params, SolverSettings, def
 from .scenarios import Scenario, run_scenario, thesis_scenarios
 from .testdata import TestRecord, load_test_data
 
-__version__ = "0.6.4"
+__version__ = "0.6.5"
 
 from .user_cells import from_datasheet, load_cell
 

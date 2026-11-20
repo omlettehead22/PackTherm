@@ -72,7 +72,7 @@ LAWS = {"Ea_R0": 20e3, "Ea_I0": 45e3, "Ea_Rm": 25e3, "Ea_Rd": 30e3, "Ea_soc": 20
 TRUE_ECM = CircuitModel().ecm({**TRUE, **LAWS}, _OCV)
 
 
-def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0) -> TestRecord:
+def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0, ecm=None) -> TestRecord:
     """A test from (duration_s, current_A, dt_s) parts, run through PackTherm's own model (ECMState).
 
     A discharge stops at its cut-off. The cell is held at T_C. The tester's
@@ -88,9 +88,10 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0) 
     V = np.empty(t.size)
     q = np.zeros(t.size)
     T = T_C + 273.15
+    ecm = TRUE_ECM if ecm is None else ecm
     st = ECMState()
     soc = soc0
-    V[0] = st.step(TRUE_ECM, 0.0, soc, T, 0.0)[0]
+    V[0] = st.step(ecm, 0.0, soc, T, 0.0)[0]
     stopped = False
     for k in range(1, t.size):
         if part[k] != part[k - 1]:
@@ -100,8 +101,8 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0) 
         dt = t[k] - t[k - 1]
         soc -= I[k] * dt / 3600 / CAP
         q[k] = q[k - 1] + I[k] * dt / 3600
-        V[k], st.eta_ct, st.V_d, st.V_m = st.step(TRUE_ECM, I[k], soc, T, dt)
-        if I[k] > 0 and V[k] < TRUE_ECM.V_min:
+        V[k], st.eta_ct, st.V_d, st.V_m = st.step(ecm, I[k], soc, T, dt)
+        if I[k] > 0 and V[k] < ecm.V_min:
             stopped = True  # the tester stops the discharge at its cut-off (from the next sample)
     return TestRecord(t=t, current_A=I, voltage_V=V, temperature_C=np.full(t.size, T_C), counter_Ah=q, source=name)
 
@@ -525,3 +526,92 @@ def test_rig_calibrated_from_measured_heat():
     assert 20.0 < both["h_W_m2K"] < 120.0 and not both["note"]
     assert 0.0 < both["fixture_J_K"] < 2.0 * both["cell_J_K"]
     assert both["T_rmse_K"] < 0.6
+
+
+# -- capacity by temperature (v0.6.5) ---------------------------------------------------------------
+
+# A cell whose open-circuit curve shifts with temperature: at 10 degC it holds 94% of its 25 degC
+# charge above the cut-off, at 0 degC 88% (the curve squeezed above a state of charge of 0.06, 0.12).
+# Not as cold as the laws' tests (-15 degC): there the synthetic cell's kinetics, 16x slower, are
+# the harder part, and this is about the curves.
+SHIFT = {25.0: 0.0, 10.0: 0.06, 0.0: 0.12}
+
+
+def _shifted(lost: float) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    soc = np.linspace(lost, 1.0, 101)
+    return tuple(soc), tuple(float(TRUE_ECM.ocv((x - lost) / (1.0 - lost))) for x in soc)
+
+
+SHIFTED_ECM = __import__("dataclasses").replace(
+    TRUE_ECM, ocv_by_T=tuple((T + 273.15, *_shifted(lost)) for T, lost in SHIFT.items())
+)
+
+
+@pytest.fixture(scope="module")
+def capacity_by_temperature():
+    def run(T, parts, name, soc0=1.0):
+        return synth(parts, soc0=soc0, name=name, T_C=T, ecm=SHIFTED_ECM)
+
+    slow = [(3600, 0, 60), (25 * 3600, 0.15, 60), (3600, 0, 60)]
+    pulses = [(3 * 3600, 0, 60)]
+    for _ in range(10):
+        pulses += [(10, CAP, 0.5), (60, 0, 0.5), (10, 2 * CAP, 0.5), (90, 0, 0.5), (360, CAP, 5), (3 * 3600, 0, 60)]
+    sets = [
+        TestSet(
+            run(T, pulses, f"pulses_{T:g}.csv"),
+            run(T, [(3 * 3600, 0, 60)] + [(5400, 0.3, 10), (3600, 0, 60)] * 6, f"steps_{T:g}.csv"),
+            T,
+            discharges=[run(T, [(4000, CAP, 2), (1800, 0, 10)], f"dis1c_{T:g}.csv")],
+            slow=run(T, slow, f"slow_{T:g}.csv") if T != 25.0 else None,
+        )
+        for T in SHIFT
+    ]
+    check = run(0.0, [(4000, CAP, 2), (600, 0, 10)], "dis1c_check.csv")
+    return fit_cell(run(25.0, slow, "slow_25.csv"), sets=sets, checks=[check], check_soc0=[1.0])
+
+
+def test_open_circuit_curves_by_temperature_are_found(capacity_by_temperature):
+    fit = capacity_by_temperature
+    caps = {round(c.T_K - 273.15): c.capacity_Ah for c in fit.ocv_curves}
+    assert set(caps) == {10, 0}
+    for T, lost in SHIFT.items():
+        if T == 25.0:
+            continue
+        # The slow test stops at its cut-off a little before the curve's end: its own drop.
+        assert caps[round(T)] == pytest.approx((1 - lost) * fit.capacity_Ah, rel=0.02)
+        for soc in (0.3, 0.5, 0.7, 0.9):
+            true = SHIFTED_ECM.ocv(soc, T + 273.15)
+            assert fit.ecm.ocv(soc, T + 273.15) == pytest.approx(true, abs=0.006), (T, soc)
+    # Between curves, linear in temperature.
+    mid = 0.5 * (fit.ecm.ocv(0.5, 273.15) + fit.ecm.ocv(0.5, 283.15))
+    assert fit.ecm.ocv(0.5, 278.15) == pytest.approx(mid, abs=1e-9)
+
+
+def test_a_cold_discharge_ends_where_the_cell_does(capacity_by_temperature):
+    fit = capacity_by_temperature
+    check = fit.checks[0]
+    assert check["rmse_mV"] < 12
+    one_curve = __import__("dataclasses").replace(fit.ecm, ocv_by_T=())
+    from packtherm.ecm import ECMState
+
+    def charge_out(ecm):
+        st, soc, q = ECMState(), 1.0, 0.0
+        while not st.cutoff and q < 2 * CAP:
+            I, _ = st.apply(ecm, CAP, soc, 273.15, 2.0)
+            soc -= I * 2.0 / 3600 / fit.capacity_Ah
+            q += I * 2.0 / 3600
+        return q
+
+    truth = charge_out(SHIFTED_ECM)
+    assert charge_out(fit.ecm) == pytest.approx(truth, rel=0.02)
+    assert charge_out(one_curve) > 1.03 * truth  # one curve runs on: 4% here, more where the cell loses more
+
+
+def test_curves_by_temperature_round_trip_through_the_cell_file(capacity_by_temperature, tmp_path):
+    from packtherm.fitting.cellfile import ecm_from_doc
+
+    doc = fitted_cell_doc(capacity_by_temperature, "shifted", {})
+    assert len(doc["open_circuit_voltage"]["by_temperature"]) == 2
+    ecm = ecm_from_doc(doc)
+    for T in (268.15, 273.15, 278.15, 290.0, 298.15):
+        assert ecm.ocv(0.4, T) == pytest.approx(capacity_by_temperature.ecm.ocv(0.4, T), abs=2e-4)
