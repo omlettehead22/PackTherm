@@ -138,7 +138,7 @@ def started(path: Path) -> dt.datetime:
     if not m:
         raise ValueError(f"{path.name}: no start time in the name")
     mo, d, y, h, mi = (int(x) for x in m.groups())
-    return dt.datetime(2000 + y, mo, d, h, mi, tzinfo=dt.UTC)
+    return dt.datetime(2000 + y, mo, d, h, mi, tzinfo=dt.timezone.utc)  # not dt.UTC: Python 3.10
 
 
 # A test that discharges less than this share of the C/20 capacity is an aborted or empty run (the
