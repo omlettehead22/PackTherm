@@ -52,5 +52,23 @@
   "V_nominal": 3.6,
   "DCIR_25C_mOhm": 14.277533189175186,
   "mass_g": 65.0
+ },
+ "HG2-LUMPED": {
+  "name": "LG INR18650-HG2 (lumped DCIR)",
+  "model": "lumped DCIR",
+  "format": "18650",
+  "capacity_Ah": 3.0,
+  "V_nominal": 3.6,
+  "DCIR_25C_mOhm": 28.299999999999997,
+  "mass_g": 45.0
+ },
+ "HG2": {
+  "name": "LG INR18650-HG2",
+  "model": "circuit (fitted)",
+  "format": "18650",
+  "capacity_Ah": 2.7788,
+  "V_nominal": 3.6,
+  "DCIR_25C_mOhm": 28.276014971101095,
+  "mass_g": 45.0
  }
 }

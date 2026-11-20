@@ -635,6 +635,14 @@
    "30T": {
     "name": "Samsung INR21700 30T",
     "model": "circuit (fitted)"
+   },
+   "HG2-LUMPED": {
+    "name": "LG INR18650-HG2 (lumped DCIR)",
+    "model": "lumped DCIR"
+   },
+   "HG2": {
+    "name": "LG INR18650-HG2",
+    "model": "circuit (fitted)"
    }
   },
   "fillers": [

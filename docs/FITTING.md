@@ -171,7 +171,7 @@ All figures are medians, as `packtherm fit` reports them for the worked example.
 [docs/examples/fitting/samsung_30t_tests.yaml](examples/fitting/samsung_30t_tests.yaml) fits the Samsung INR21700-30T, a 3 Ah high-power 21700 (Kollmeyer and Skells, McMaster University, CC BY 4.0), at 40, 25, 10, 0, −10 and −20 °C. Its tests ship in this repository:
 
 - each temperature's pulse test (four pulses from 1C to 12C, and the discharge steps between levels), and the 25 °C C/20 discharge, in `tests/data/samsung_30t/` (unchanged);
-- each temperature's first 1C discharge and drive cycle Mixed1, from `validation/data/samsung_30t/` (made by `validation/prepare_samsung_30t.py`).
+- each temperature's first 1C discharge and drive cycle Mixed1, from `validation/data/samsung_30t/` (made by `validation/prepare_mcmaster.py 30t`).
 
 The checks are the other 82 tests, never fitted to. That's 0.5C, 1C and 2C discharges, and the UDDS, HWFET, LA92, US06 and Mixed2 to Mixed8 drive cycles at every temperature. The rig is calibrated on the 25 °C 1C discharge and Mixed1 (both fitted to): h = 63.3 W/(m² K), and the fixture adds 58 J/K to the cell's own 55 J/K.
 
@@ -212,7 +212,7 @@ Medians, as `packtherm fit` reports them, scored as for the Panasonic. There is 
 - **The middle branch's time constant:** at 25 °C the fitted tests themselves showed it (101 mV on the 1C discharge fitted to). The fix decides on fitted tests only. But the alternatives were compared on both cells' checks before choosing.
 - **The rig's fixture:** this was found on the checks, and is calibrated on a fitted test. Which explanation to ship (above) was also decided with the checks in view.
 
-The figures above are therefore a check of the fitted values, not a blind test of the method. A third cell (the LG HG2, v0.6.4) will be fitted with the method as it stands.
+The figures above are therefore a check of the fitted values, not a blind test of the method. The LG HG2 (below) is the blind one.
 
 **Fitted values at 25 °C** (the library's `30T`):
 
@@ -225,10 +225,64 @@ The figures above are therefore a check of the fitted values, not a blind test o
 | Slow branch | 8.2 mΩ over 24 min |
 | 10 s DC resistance, mid charge, 1.5C | 14.3 mΩ (10.6 at 40 °C, 35.7 at 0 °C, 95 at −20 °C) |
 
+## A third cell, fitted blind: the LG HG2
+
+[docs/examples/fitting/lg_hg2_tests.yaml](examples/fitting/lg_hg2_tests.yaml) fits the LG INR18650-HG2, a 3 Ah NMC / graphite + SiO 18650 (Kollmeyer, Naguib and Skells, McMaster University, CC BY 4.0). It's from the same rig as the 30T, with the same plan of tests, and was fitted with the v0.6.3 method unchanged. The fit was run once, and its results are reported as they came out; nothing below changed the method or the cell. The data prepared by `validation/prepare_mcmaster.py hg2` follows the 30T's rules. Six runs are left out: five 40 °C drive cycles that ran at room temperature and stopped after 0.2 Ah, and an empty 25 °C HWFET file.
+
+The fit is on each temperature's pulse test, first 1C discharge and Mixed1, and the 25 °C C/20 discharge. The checks are the other 74 tests. The rig was calibrated on the 25 °C 1C discharge and Mixed1: h = 130 W/(m² K), with the fixture at the edge of its range (3× the cell's own heat capacity, which the file flags).
+
+| Chamber | Tests | Voltage RMS | Within 1 K | Temperature RMS | Peak error |
+|---|---|---|---|---|---|
+| 40 °C | 8 | 43.5 mV | 88% | 0.22 K | −0.1 K |
+| 25 °C | 13 | 22.0 mV | 92% | 0.18 K | −0.2 K |
+| 10 °C | 13 | 60.6 mV | 77% | 0.29 K | +0.2 K |
+| 0 °C | 12 | 64.4 mV | 92% | 0.35 K | −0.1 K |
+| −10 °C | 14 | 61.2 mV | 93% | 0.38 K | −0.5 K |
+| −20 °C | 14 | 69.5 mV | 93% | 0.37 K | −0.1 K |
+| **All** | **74** | **59.7 mV** | **89%** | 0.32 K | 0.3 K |
+
+**Reading it:**
+
+- **Temperature is easy here; voltage is not.** The HG2 warms by at most 8 K in these tests (the 30T: 21 K), so most tests come within 1 K. The voltage is the weakest of the three cells away from 25 °C: 43–70 mV.
+- **The main cause: the capacity changes with temperature, and the model has one.** The fit takes its capacity and open-circuit curve from the 25 °C C/20 test (2.78 Ah to 2.8 V). The dataset's C/20 tests at the other temperatures give less: 2.69 Ah at 40 °C, 2.65 at 10 °C, 2.60 at 0 °C, 2.56 at −10 °C and 2.50 at −20 °C. The model keeps the 25 °C capacity, so its state of charge drifts from the cell's through a discharge. At 40 °C the 1C discharge reaches 2.8 V after 2.50 Ah, against 2.72 Ah at 25 °C. The model, holding charge the cell doesn't have, is 180 mV high by the end. Even the discharges fitted on are 140 mV RMS at 40, 10 and 0 °C. The rise near empty and the slow branch take what they can, and end at their limits: no slow branch at 10 and 0 °C (Rd at its floor), and the middle branch's time constant at 235–300 s there. The 30T's capacity moves less with temperature, so the 30T didn't show it. This dataset has a C/20 test at every temperature, which a capacity by temperature could be fitted from (BACKLOG item 7).
+- **The rig is ill-posed on this cell.** A 3 K rise on the calibrating discharge leaves h and the fixture loosely pinned: h came out at 130 W/(m² K), and the fixture at its limit. The alternatives, on the same two fitted tests:
+
+  | Rig and cell | Voltage RMS | Within 1 K | Peak error |
+  |---|---|---|---|
+  | h alone | 57.8 mV | 85% | 1.3 K |
+  | h, and the fixture's heat capacity (shipped) | 59.7 mV | 89% | 0.3 K |
+  | h, and the cell's radial conductivity (0.06 W/(m K)) | 44.5 mV | 95% | 0.4 K |
+
+  The radial conductivity explains the checks best here too, as on the 30T (0.12 W/(m K)). But 0.06 W/(m K) is below any jelly roll's, so it is standing in for something else: most likely the case thermocouple's lag under its tube, which neither calibration models. The voltage gains because a hotter core lowers the resistance, which offsets the capacity error above. The fit ships the fixture, as the method says.
+
+**Fitted values at 25 °C** (the library's `HG2`):
+
+| Value | Fitted |
+|---|---|
+| Capacity (C/20 to 2.8 V) | 2.78 Ah (rated 3.0 Ah, to 2.0 V) |
+| R0 | 19.2 mΩ (71 mΩ at −20 °C; law 16.4 kJ/mol) |
+| Charge-transfer time constant | 7.7 s (its limit is 10 s) |
+| Middle branch | 26.9 mΩ over 97 s (from the long tests) |
+| Slow branch | 22.6 mΩ over 10 000 s (its limit) |
+| 10 s DC resistance, mid charge, 1.5C | 28.3 mΩ (24.0 at 40 °C, 55.9 at 0 °C, 154 at −20 °C) |
+
+## Three cells, side by side
+
+The checks are the tests never fitted to, predicted from their current alone, as a study runs the cell. The figures are medians.
+
+| Cell | Temperatures | Checks | Voltage RMS | Within 1 K | How blind |
+|---|---|---|---|---|---|
+| Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV | 81% | method compared on these checks (v0.6.2, v0.6.3) |
+| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV | 62% | method fixed with these checks in view (v0.6.3) |
+| LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV | 89% | blind: v0.6.3's method, run once |
+
+The blind check is the weakest on voltage. At 25 °C, where each cell's capacity was measured, the three agree: 18.2, 17.4 and 22.0 mV. Away from 25 °C, the HG2 shows what the other two hid: a cell whose capacity moves with temperature.
+
 ## Known limits
 
 - **The collapse near empty.** The rise near empty is an exponential in the state of charge. The real collapse in the last minutes of a discharge is steeper, so heat there is under-predicted and peaks run cold (above).
 - **Cold slow branch.** At 0 °C and below, the slow branch is at the edge of its range on both datasets' tests. On the Panasonic at −20 °C, with no usable steps file, the middle branch is off and the slow branch has taken its place, so the recovery after a pulse is wrong there (the report shows it). On the 30T at −20 °C, R0 comes out below its −10 °C value. Drive cycles at those temperatures are the tests that pin it, and more of them would help.
+- **One capacity, one open-circuit curve.** Both come from one C/20 test, at one temperature. A cell whose capacity moves with temperature (the HG2 at C/20: 2.50 Ah at −20 °C, 2.78 at 25 °C, 2.69 at 40 °C) drifts in state of charge away from it, and the voltage error grows through a discharge (BACKLOG item 7).
 - **The test rig.** The thermal checks need the rig's convection and, for drive cycles, the heat capacity its fixture adds. Both come from fitted tests, but they are the rig's, and a cell's peaks in a pack depend on the pack's own.
 - **One shape across currents.** Pulses from 0.5C to 6C share one non-linear charge-transfer shape; the 1C pulses at mid charge come out about 10% too deep at every temperature.
 - **One open-circuit curve**, from the slow discharge at one temperature. It doesn't change with temperature, as in PackTherm's library cells.

@@ -1,41 +1,43 @@
 # Known issues and improvement backlog
 
-Open items as of v0.6.3, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
+Open items as of v0.6.4, ranked within each group by how much they could change a design recommendation. What has been fixed, and when, is in the [resolved log](#resolved-log) at the end and in [CHANGELOG.md](../CHANGELOG.md).
 
 ## Cell model
 1. **LG M50 circuit is derived, not measured.** It comes from PyBaMM's DFN with the ORegan2022 parameter set and matches that model's heat within 0.94–1.13× ([VALIDATION.md](VALIDATION.md#lg-m50-checked-against-a-physics-model-not-measured)), but no measured M50 temperatures check it. The Warwick M50 core-temperature data (Mendeley bf6fksxpp2) would; it is not reachable from this build. Its cold voltage knee arrives late (cut-off up to 0.75 Ah after the DFN at 0 °C, 1.4C).
 2. **Lumped-resistance cells.** The LG MJ1 and every user-defined cell (v0.5.2) use a lumped DC resistance with assumed temperature and SOC shapes and no voltage model; `packtherm cells` shows which model each cell uses. User-defined cells are NMC, NCA or LFP; NCA has no entropic heat, and LFP's thermal and entropic values are literature data (its entropic fit understates the measured mid-charge peak, and the coefficient's temperature dependence near full and empty is not modelled). A full circuit fitted from a user's own tests at three temperatures or more (v0.6.2, `packtherm fit`) replaces this in studies.
 3. **Cold drive-cycle heat is 7–10 % low** on the validated PF cell: the slow-branch temperature law, fitted at 0.3C, is slightly too gentle at drive-cycle currents (worst peak −3.5 K at −20 °C).
 4. **NCA entropic heat is neglected** (no dU/dT data in the dataset; published NCA profiles disagree on the sign). The PF charge is under-predicted by 1.1–1.4 K.
-5. **Core temperature is not validated**; the datasets have one surface thermocouple. On the Samsung 30T drive cycles (v0.6.3), the measured case peaks are 2–5 K below the model's with the assumed jelly-roll values. A fixture adding heat capacity, or a radial conductivity of 0.12 W/(m K) rather than the assumed 1.2, explains the checks about as well ([FITTING.md](FITTING.md#checked-on-a-second-cell-the-samsung-30t)). The fit ships the fixture, which belongs to the rig. If the low conductivity is right instead, cores run hotter in fast transients than PackTherm predicts, for every library cell sharing these values. Data with a core thermocouple would decide.
+5. **Core temperature is not validated**; the datasets have one surface thermocouple. On the Samsung 30T drive cycles (v0.6.3), the measured case peaks are 2–5 K below the model's with the assumed jelly-roll values. A fixture adding heat capacity, or a radial conductivity of 0.12 W/(m K) rather than the assumed 1.2, explains the checks about as well ([FITTING.md](FITTING.md#checked-on-a-second-cell-the-samsung-30t)). The fit ships the fixture, which belongs to the rig. If the low conductivity is right instead, cores run hotter in fast transients than PackTherm predicts, for every library cell sharing these values. On the LG HG2 (v0.6.4) the same choice fits a radial conductivity of 0.06 W/(m K), below any jelly roll's: something the model lacks, most likely the case thermocouple's lag under its tube, is standing in. Data with a core thermocouple would decide.
 6. **Fitted cells run about 1 K cold at their temperature peaks** on the Panasonic drive cycles (median, 0 to 25 °C), against about 0 K for the hand-tuned library cell. The shortfall is in the last minutes near empty: the voltage collapses faster than the rise near empty (an exponential in the state of charge) can follow. Below 0 °C the fitted slow branch sits at the edge of its range on both fitted cells: the cold long tests do not pin it down. At −20 °C the 30T's R0 comes out below its −10 °C value, and its checks there are 78.5 mV (median) against 13–28 mV from 40 to 0 °C. A different shape for the rise near empty, more cold drive cycles, and a generic circuit with a chosen number of branches would each help ([FITTING.md](FITTING.md#known-limits)).
 
+7. **One capacity and one open-circuit curve per fitted cell**, from a C/20 test at one temperature. The LG HG2 (v0.6.4, fitted blind) delivers 2.78 Ah at C/20 at 25 °C, but 2.69 at 40 °C and 2.50 at −20 °C, so the fitted cell's state of charge drifts from the cell's through a discharge. Its checks are 22 mV at 25 °C, but 43–70 mV elsewhere (59.7 mV median), and its fitted discharges reach 140 mV at 40, 10 and 0 °C. The dataset has a C/20 test at every temperature: a capacity (and open-circuit curve) by temperature could be fitted from them. The HG2 also showed the middle branch drifting to the slow branch's time scale at 10 and 0 °C (235–300 s, with no slow branch left), which v0.6.3's fix did not prevent there.
+
 ## Module model
-7. **Roll-end-to-can resistance** (5e-4 m²K/W) dominates bottom-plate cooling and is the least certain value. A teardown or a bottom-cooling test would pin it down.
-8. **Reference flows and pressure drops are typical values, not a specific pack:** coolant 0.05 g/s per cell, h_ref 1500 W/m²K, module Δp 20 kPa plus loop 30 kPa, pump efficiency 0.3; air 0.3 g/s, h 30 W/m²K and Δp 200 Pa at a 2 mm gap. Only the scaling away from these points is physics (since v0.4.13: laminar coolant channels, cross-flow over the cans for air). The air correlation is used below its usual pitch range (pitch/diameter 1.1 against ≥ 1.25), and the ribbon's h_ref is not tied to its port geometry.
-9. **2D slices, not a 3D field.** The plate is solved in radius × height and the ribbon in radius × angle, separately. The ribbon displaces filler near the strip, but the angle model fills the full annulus.
-10. **Coolant holdup is one lump per cell**, not a transport delay, so a sharp inlet step arrives smeared rather than delayed.
-11. **Edge cells use an assumed wall** (U = 5 W/m²K over 1/3 of the share). With air gaps the wall is applied at the can, which slightly overstates the edge path. The chiller's heat leak and the edge wall are separate estimates of the same physics, and the leak is charged to the chiller but does not warm the cells.
-12. **Not modelled:** tab heating, top-side (tab/busbar) cooling, cell holders and module structure (not charged to any option).
+8. **Roll-end-to-can resistance** (5e-4 m²K/W) dominates bottom-plate cooling and is the least certain value. A teardown or a bottom-cooling test would pin it down.
+9. **Reference flows and pressure drops are typical values, not a specific pack:** coolant 0.05 g/s per cell, h_ref 1500 W/m²K, module Δp 20 kPa plus loop 30 kPa, pump efficiency 0.3; air 0.3 g/s, h 30 W/m²K and Δp 200 Pa at a 2 mm gap. Only the scaling away from these points is physics (since v0.4.13: laminar coolant channels, cross-flow over the cans for air). The air correlation is used below its usual pitch range (pitch/diameter 1.1 against ≥ 1.25), and the ribbon's h_ref is not tied to its port geometry.
+10. **2D slices, not a 3D field.** The plate is solved in radius × height and the ribbon in radius × angle, separately. The ribbon displaces filler near the strip, but the angle model fills the full annulus.
+11. **Coolant holdup is one lump per cell**, not a transport delay, so a sharp inlet step arrives smeared rather than delayed.
+12. **Edge cells use an assumed wall** (U = 5 W/m²K over 1/3 of the share). With air gaps the wall is applied at the can, which slightly overstates the edge path. The chiller's heat leak and the edge wall are separate estimates of the same physics, and the leak is charged to the chiller but does not warm the cells.
+13. **Not modelled:** tab heating, top-side (tab/busbar) cooling, cell holders and module structure (not charged to any option).
 
 ## Energy and hardware assumptions
-13. **Chiller:** the Carnot share (0.42) and the 9 h pack time constant are single-source assumptions; idle losses and the condenser fan are not modelled.
-14. **Radiator fan at 3 % of rejected heat** is an assumption; ram air at speed would make it smaller.
-15. **Pack-level parts** (liquid loop 3 kg, air system 4 kg, chiller 4 kg) are assumptions.
+14. **Chiller:** the Carnot share (0.42) and the 9 h pack time constant are single-source assumptions; idle losses and the condenser fan are not modelled.
+15. **Radiator fan at 3 % of rejected heat** is an assumption; ram air at speed would make it smaller.
+16. **Pack-level parts** (liquid loop 3 kg, air system 4 kg, chiller 4 kg) are assumptions.
 
 ## Advisor and product
-16. **Ageing as a third objective.** Temperature drives calendar and cycle ageing. Scoring designs on predicted capacity fade would show what "hotter but lighter" costs in battery life. Probably the highest-value product feature.
-17. **Cost objective (£/pack):** PCM £/kg, cooling hardware, chiller.
-18. **Cold climate:** pre-heating energy and cold-start limits, not just cooling.
-19. **Speed.** Fast mode (v0.5.0) runs the road-trip study in about 40 s on two cores, against about 3 minutes in normal mode. Not yet done: adaptive time steps (long steady cruise and rest periods would allow much longer steps), stopping a simulation once the cell has recovered, and compiled inner loops (Numba). A design is four cell simulations in a Python time loop, so more cores help directly.
-20. **Search instead of grid** once the design variables multiply (NSGA-II or Bayesian optimisation).
-21. **Uncertainty:** Monte Carlo over the assumptions instead of a single worst case.
-22. **Assumption registry.** Since v0.5.1 a results JSON carries the main assumptions (reference flows and pressure drops, efficiencies, chiller, wall, pack parts, resolution). Not yet: the cell-model and material values, and the CSV on its own carries none.
+17. **Ageing as a third objective.** Temperature drives calendar and cycle ageing. Scoring designs on predicted capacity fade would show what "hotter but lighter" costs in battery life. Probably the highest-value product feature.
+18. **Cost objective (£/pack):** PCM £/kg, cooling hardware, chiller.
+19. **Cold climate:** pre-heating energy and cold-start limits, not just cooling.
+20. **Speed.** Fast mode (v0.5.0) runs the road-trip study in about 40 s on two cores, against about 3 minutes in normal mode. Not yet done: adaptive time steps (long steady cruise and rest periods would allow much longer steps), stopping a simulation once the cell has recovered, and compiled inner loops (Numba). A design is four cell simulations in a Python time loop, so more cores help directly.
+21. **Search instead of grid** once the design variables multiply (NSGA-II or Bayesian optimisation).
+22. **Uncertainty:** Monte Carlo over the assumptions instead of a single worst case.
+23. **Assumption registry.** Since v0.5.1 a results JSON carries the main assumptions (reference flows and pressure drops, efficiencies, chiller, wall, pack parts, resolution). Not yet: the cell-model and material values, and the CSV on its own carries none.
 
 ## Engineering
-23. **API at scale.** One server process holds the job queue in memory, results are files kept 24 h, and the rate limit is per process. Several servers, or results that survive longer, would need a shared queue and store (e.g. Redis and object storage). Fine for one public instance.
-24. Publish to PyPI, add versioned docs.
-25. **Licence: on hold.** No licence for now (all rights reserved by default), which keeps the option of going proprietary. Needed before publishing to PyPI.
+24. **API at scale.** One server process holds the job queue in memory, results are files kept 24 h, and the rate limit is per process. Several servers, or results that survive longer, would need a shared queue and store (e.g. Redis and object storage). Fine for one public instance.
+25. Publish to PyPI, add versioned docs.
+26. **Licence: on hold.** No licence for now (all rights reserved by default), which keeps the option of going proprietary. Needed before publishing to PyPI.
 
 ## Resolved log
 
@@ -67,4 +69,5 @@ Open items as of v0.6.3, ranked within each group by how much they could change 
 | v0.6.0 | Cell test data reading |
 | v0.6.1 | Circuit fitting at one temperature; the charge counter used across steps between samples |
 | v0.6.2 | Fitting across temperatures, a third branch, fitted cells in studies; two branches no longer the limit (item 6 rewritten) |
+| v0.6.4 | The LG HG2 fitted blind and in the library; one data-preparation script for the McMaster datasets (item 7 added: capacity by temperature; item 5 updated) |
 | v0.6.3 | The Samsung 30T fitted and in the library; the middle branch's time constant no longer left loose by the pulses; the test rig calibrated for the thermal checks (items 5 and 6 updated) |

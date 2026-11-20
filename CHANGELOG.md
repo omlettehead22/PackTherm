@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.4
+
+The LG INR18650-HG2, the fifth v0.6 mini update: a third cell, fitted blind with the method of v0.6.3 unchanged, and added to the library.
+
+- **New: the LG HG2 in the library** (`HG2`). It is a 3 Ah NMC / graphite + SiO 18650, fitted at 40, 25, 10, 0, −10 and −20 °C from the McMaster tests (Kollmeyer, Naguib and Skells, Mendeley Data v2, 2020, CC BY 4.0). The fitted cell file ships with PackTherm. `HG2-LUMPED` carries its size and limits (from the lab's technical sheet), a mass derived from its stated 240 Wh/kg, and the fitted 10 s DC resistance (28.3 mΩ at 25 °C) as a lumped resistance.
+- **Blind results.** The fit was run once and reported as it came out. On 74 tests it never saw, from current alone: **59.7 mV** median voltage error and **89% within 1 K**. At 25 °C it is 22.0 mV, in line with the Panasonic (18.2) and the 30T (17.4). Elsewhere it is 43–70 mV. See [docs/FITTING.md](docs/FITTING.md#a-third-cell-fitted-blind-the-lg-hg2).
+- **What it exposed: one capacity for every temperature.** The fitted cell takes its capacity and open-circuit curve from the 25 °C C/20 test (2.78 Ah). The HG2's C/20 capacity is 2.69 Ah at 40 °C and 2.50 at −20 °C, so the state of charge drifts through a discharge, and even the fitted discharges reach 140 mV at 40, 10 and 0 °C. The middle branch also drifted to the slow branch's time scale at 10 and 0 °C. Both go to v0.6.5 (BACKLOG item 7, new). The method was not changed here.
+- **The rig, again.** The HG2 warms by at most 8 K in these tests, which leaves the rig loosely pinned: h = 130 W/(m² K), and the fixture at its limit. A radial conductivity of 0.06 W/(m K) fits the checks better (44.5 mV, 95% within 1 K), but it is below any jelly roll's. It is standing in for something the model lacks, most likely the thermocouple's lag. Reported only; the fixture ships (BACKLOG item 5).
+- **One data-preparation script for both McMaster datasets** (`validation/prepare_mcmaster.py 30t|hg2`, replacing `prepare_samsung_30t.py`). It rebuilds the 30T's 94 tests byte for byte. For the HG2 it also:
+  - picks the first 1C discharge as the one before the UDDS cycle (the 10 °C tests ran out of order);
+  - reads a start time missing its `_`;
+  - replaces a lone temperature reading more than 5 K from both neighbours;
+  - leaves out runs that discharged under a quarter of the capacity, listed in `excluded.json`: five 40 °C drive cycles run at room temperature and stopped at 0.2 Ah, and an empty 25 °C HWFET.
+
+  Gzipped CSVs are now written without a timestamp, and left alone when unchanged.
+- **Data:** the HG2's pulse tests at six temperatures and its 25 °C C/20 test, unchanged, in `tests/data/lg_hg2/` (3.8 MB). Its 86 discharges and drive cycles, processed, in `validation/data/lg_hg2/` (3.8 MB). Both CC BY 4.0, credited in their READMEs.
+- **Tests:** the library HG2 against its documented fit; the data preparation's rules (start times, folder names, tails) and both manifests.
+- **Docs:** FITTING.md (the HG2, and three cells side by side), README, HISTORY, BACKLOG (item 7 new, item 5 updated, later items renumbered), TEST_DATA.
+
 ## 0.6.3
 
 The Samsung INR21700-30T, the fourth v0.6 mini update: a second cell fitted with `packtherm fit` and added to the library, and what it showed about the method.
