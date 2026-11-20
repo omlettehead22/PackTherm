@@ -1,49 +1,63 @@
-"""Build the processed test set for the Samsung INR21700-30T from its public dataset.
+"""Build the processed test sets for the McMaster cells (Samsung INR21700-30T, LG HG2) from their public datasets.
 
 Usage:
-    python validation/prepare_samsung_30t.py "/path/to/Samsung INR21700 30T 3Ah Li-ion Battery Data"
+    python validation/prepare_mcmaster.py 30t "/path/to/Samsung INR21700 30T 3Ah Li-ion Battery Data"
+    python validation/prepare_mcmaster.py hg2 "/path/to/LG 18650HG2 data"
 
-Source: P. Kollmeyer and M. Skells, "Samsung INR21700 30T 3Ah Li-ion Battery
-Data", Mendeley Data v2 (2023), doi:10.17632/9xyvy2njj3.2, licensed CC BY 4.0.
-The tests were performed at McMaster University by Dr. Phillip Kollmeyer. The
-raw dataset (~460 MB) is not stored here. This script copies the pulse tests
-and the 25 degC C/20 test unchanged to tests/data/samsung_30t/, and writes the
-discharges and drive cycles, resampled to 1 s bin means, as gzipped CSVs with a
-manifest to validation/data/samsung_30t/.
+Sources (both licensed CC BY 4.0, tested at McMaster University by Dr. Phillip Kollmeyer):
+* P. Kollmeyer and M. Skells, "Samsung INR21700 30T 3Ah Li-ion Battery Data",
+  Mendeley Data v2 (2023), doi:10.17632/9xyvy2njj3.2.
+* P. Kollmeyer, M. Naguib and M. Skells, "LG 18650HG2 Li-ion Battery Data",
+  Mendeley Data v2 (2020), doi:10.17632/b5mj79w5w9.2.
+
+The two datasets come from the same rig and follow the same plan. The raw
+datasets (hundreds of MB) are not stored here. This script copies each
+temperature's pulse test and the 25 degC C/20 test unchanged to
+tests/data/<cell>/, and writes the discharges and drive cycles, resampled to
+1 s bin means, as gzipped CSVs with a manifest to validation/data/<cell>/.
 
 Selection, at each of 40, 25, 10, 0, -10 and -20 degC
 -----------------------------------------------------
-* role "fit" (fitted to): the first 1C discharge and drive cycle Mixed1.
+* role "fit" (fitted to): the first 1C discharge (the one before the UDDS
+  cycle, as the datasets' READMEs define it: the HG2's 10 degC tests ran out of
+  their usual order) and drive cycle Mixed1.
 * The constant-current files hold sequences (the 2C file at 10 to 40 degC
   starts with a 1C discharge and a charge, and some end in rests of days):
   each is cut to its named discharge, from 60 s before it to 30 min after.
-* role "validation" (never fitted to): the second 1C discharge, the 0.5C and
-  2C discharges, UDDS, HWFET, LA92, US06, and Mixed2 to Mixed8.
+* role "validation" (never fitted to): the other 1C discharge, the 0.5C and
+  2C discharges, UDDS, HWFET, LA92, US06, and Mixed2 to Mixed8 (those there are).
 
-Each test follows a full charge (the dataset's README: 1C to 4.2 V, 10 mA cut
-off, at a cell temperature of 25 degC) and a soak while the cell settles to the
-chamber, trimmed here to 60 s before the first current.
+Each test follows a full charge (the READMEs: 1C to 4.2 V, at a cell
+temperature of 22-25 degC) and a soak while the cell settles to the chamber,
+trimmed here to 60 s before the first current.
 
-Ambient. The dataset has no chamber channel, and the chambers ran off their
-setpoints (the 25 degC one at about 24 degC; at -10 degC from -13 to -9 degC).
-A cell settled after 15 minutes or more at rest is at the chamber's temperature,
-so the ambient is the cell temperature over the last minute of the rest before
-each test (in its own file, or at the end of the file before it). Every test
-here has one; one without would fall back to the setpoint, noted in the manifest.
+Ambient. The datasets have no chamber channel, and the chambers ran off their
+setpoints (the 30T's 25 degC one at about 24 degC; at -10 degC from -13 to -9
+degC). A cell settled after 10 minutes or more at rest is at the chamber's
+temperature, so the ambient is the cell temperature over the last minute of the
+rest before each test (in its own file, or at the end of the file before it).
+A test without one falls back to the setpoint, noted in the manifest.
 
-Start. The 0.5C and 2C files (and some drive cycles' files) begin with the
+Start. Some 0.5C and 2C files (and some drive cycles' files) begin with the
 discharge already running: logging started after it. The tester's charge
 counter (``Ah``) holds what moved before the first sample; where it is negative
 (discharged) the start is 1 - that / the C/20 capacity. Where it is positive
-(three 0.5C files, the counter not reset from the step before), the time
-between the files at the logged current is used instead (the file names' start
-minute: about 1%). The manifest records which.
+(the counter not reset from the step before), the time between the files at the
+logged current is used instead (the file names' start minute: about 1%). The
+manifest records which.
 
 End. The rest logged after a test can hold the chamber's ramp to 25 degC for
 the next charge: it is cut where the cell starts moving away from the ambient.
 
 Time. Some files log a block twice (the time steps back by up to 35 min, then
-repeats): only samples later than every one before are kept.
+repeats): only samples later than every one before are kept. One HG2 file name
+lacks the underscore in its start time ("12-24-1822.25"): read as 22:25.
+
+Aborted runs. A test that discharges less than a quarter of the capacity is
+left out and listed in excluded.json (the HG2 has six).
+
+Temperature. A single reading more than 5 K from both its neighbours (the
+HG2's 40 degC 1C discharge logs one of -0.4 degC) is replaced by their mean.
 """
 
 from __future__ import annotations
@@ -54,6 +68,7 @@ import json
 import re
 import shutil
 import sys
+from dataclasses import dataclass
 from itertools import pairwise
 from pathlib import Path
 
@@ -61,13 +76,40 @@ import numpy as np
 import scipy.io as sio
 
 REPO = Path(__file__).resolve().parents[1]
-OUT = REPO / "validation" / "data" / "samsung_30t"
-RAW = REPO / "tests" / "data" / "samsung_30t"
 SETPOINTS = (40, 25, 10, 0, -10, -20)
-CITATION = (
-    "P. Kollmeyer and M. Skells, Samsung INR21700 30T 3Ah Li-ion Battery Data, Mendeley Data v2 (2023), "
-    "doi:10.17632/9xyvy2njj3.2"
-)
+
+
+@dataclass(frozen=True)
+class Dataset:
+    slug: str  # validation/data/<slug>, tests/data/<slug>
+    title: str
+    citation: str
+    capacity_Ah: float  # rated: sets the discharges' currents
+    negative: str  # how the folders spell -10: "-10" or "n10"
+
+    def folder(self, root: Path, setpoint: int) -> Path:
+        return root / f"{setpoint if setpoint >= 0 else self.negative + str(-setpoint)}degC"
+
+
+DATASETS = {
+    "30t": Dataset(
+        "samsung_30t",
+        "Samsung INR21700-30T",
+        "P. Kollmeyer and M. Skells, Samsung INR21700 30T 3Ah Li-ion Battery Data, Mendeley Data v2 (2023), "
+        "doi:10.17632/9xyvy2njj3.2",
+        3.0,
+        "-",
+    ),
+    "hg2": Dataset(
+        "lg_hg2",
+        "LG INR18650-HG2",
+        "P. Kollmeyer, M. Naguib and M. Skells, LG 18650HG2 Li-ion Battery Data, Mendeley Data v2 (2020), "
+        "doi:10.17632/b5mj79w5w9.2",
+        3.0,
+        "n",
+    ),
+}
+OUT = RAW = Path()  # set by main() for the dataset chosen
 
 
 def load(path: Path) -> dict[str, np.ndarray]:
@@ -78,13 +120,31 @@ def load(path: Path) -> dict[str, np.ndarray]:
     d = {k: v[ok] for k, v in d.items()}
     t = d["Time"]
     keep = np.concatenate([[True], t[1:] > np.maximum.accumulate(t)[:-1]])  # a repeated block is dropped
-    return {k: v[keep] for k, v in d.items()}
+    d = {k: v[keep] for k, v in d.items()}
+    T = d["Battery_Temp_degC"]
+    if T.size > 2:  # a lone reading > 5 K from both neighbours is a glitch
+        mid = 0.5 * (T[:-2] + T[2:])
+        bad = (np.abs(T[1:-1] - T[:-2]) > 5.0) & (np.abs(T[1:-1] - T[2:]) > 5.0)
+        if bad.any():
+            T = T.copy()
+            T[1:-1][bad] = mid[bad]
+            d["Battery_Temp_degC"] = T
+    return d
 
 
 def started(path: Path) -> dt.datetime:
-    # The lab's local time; only differences between files are used.
-    return dt.datetime.strptime(path.name[:14], "%m-%d-%y_%H.%M").replace(tzinfo=dt.UTC)
+    # The lab's local time; only differences between files are used. One HG2 name lacks the "_".
+    m = re.match(r"(\d\d)-(\d\d)-(\d\d)_?(\d\d)\.(\d\d)", path.name)
+    if not m:
+        raise ValueError(f"{path.name}: no start time in the name")
+    mo, d, y, h, mi = (int(x) for x in m.groups())
+    return dt.datetime(2000 + y, mo, d, h, mi, tzinfo=dt.UTC)
 
+
+# A test that discharges less than this share of the C/20 capacity is an aborted or empty run (the
+# HG2's 40 degC Mixed4 to Mixed8, at room temperature and 0.19 Ah each; its 25 degC HWFET, no current):
+# left out, and listed in excluded.json. Every test runs to 95% of the 1C capacity, or a cut-off.
+MIN_SHARE = 0.25
 
 # At rest this long the cell is at the chamber's temperature: about 1.5 of its time constants (about
 # 7 min) after a charge in the same chamber (the 25 degC tests, within 1-2 K), and the colder
@@ -231,10 +291,13 @@ def resample(d: dict, dt: float = 1.0) -> dict[str, np.ndarray]:
 def write(name: str, r: dict, meta: dict, manifest: list) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.csv.gz"
-    with gzip.open(path, "wt", compresslevel=9) as f:
-        f.write("t_s,current_A,voltage_V,T_cell_C\n")
-        for row in zip(r["t"], r["current_A"], r["voltage_V"], r["T_cell_C"]):
-            f.write(f"{row[0]:.0f},{row[1]:.4f},{row[2]:.4f},{row[3]:.2f}\n")
+    text = "t_s,current_A,voltage_V,T_cell_C\n" + "".join(
+        f"{row[0]:.0f},{row[1]:.4f},{row[2]:.4f},{row[3]:.2f}\n"
+        for row in zip(r["t"], r["current_A"], r["voltage_V"], r["T_cell_C"])
+    )
+    # Left as it is when its content is unchanged (gzip stores a time); written with none otherwise.
+    if not (path.exists() and gzip.decompress(path.read_bytes()).decode() == text):
+        path.write_bytes(gzip.compress(text.encode(), compresslevel=9, mtime=0))
     manifest.append({"name": name, "file": path.name, **meta})
     print(
         f"{name:<24} {r['t'][-1] / 60:6.1f} min  {meta['role']:<10} T0 {r['T_cell_C'][0]:6.2f}  "
@@ -242,31 +305,37 @@ def write(name: str, r: dict, meta: dict, manifest: list) -> None:
     )
 
 
-def main(root: str) -> None:
+def main(which: str, root: str) -> None:
+    global OUT, RAW
+    ds = DATASETS[which]
+    OUT, RAW = REPO / "validation" / "data" / ds.slug, REPO / "tests" / "data" / ds.slug
     root = Path(root)
     manifest: list[dict] = []
+    excluded: list[dict] = []
     RAW.mkdir(parents=True, exist_ok=True)
-    c20 = next((root / "25degC").glob("*_C20DisCh_*.mat"))
+    c20 = next(p for p in ds.folder(root, 25).glob("*.mat") if "_C20DisCh_" in p.name)
     cap = c20_capacity(c20)
     print(f"C/20 capacity at 25 degC: {cap:.4f} Ah")
+    C = ds.capacity_Ah
+    rates = {"1C_discharge_1": C, "1C_discharge_2": C, "0p5C_discharge": 0.5 * C, "2C_discharge": 2.0 * C}
     for setpoint in SETPOINTS:
-        folder = root / f"{setpoint}degC"
-        files = sorted(folder.glob("*.mat"), key=started)
+        files = sorted(ds.folder(root, setpoint).glob("*.mat"), key=started)
         before = {}  # each file: the one logged before it (its rest at the end, and when it ended)
         for prev, p in pairwise(files):
             before[p] = prev
         hppc = next(p for p in files if "_HPPC_" in p.name)
         shutil.copy2(hppc, RAW / hppc.name)
         if setpoint == 25:
-            c20 = next(p for p in files if "_C20DisCh_" in p.name)
             shutil.copy2(c20, RAW / c20.name)
-        caps = [p for p in files if "_Cap_1C_" in p.name]
+        caps = [p for p in files if re.search(r"_Cap_1C(_|\.mat$)", p.name)]
+        udds = next((p for p in files if "_UDDS_" in p.name), None)
+        first = max((p for p in caps if udds is None or started(p) <= started(udds)), key=started, default=None)
+        caps.sort(key=lambda p: (p != first, started(p)))  # the one before the UDDS cycle first
         tests = []
         for i, p in enumerate(caps):
             tests.append((p, f"1C_discharge_{i + 1}", "cc_discharge", "fit" if i == 0 else "validation"))
         for tag, name in (("Dis_0p5C", "0p5C_discharge"), ("Dis_2C", "2C_discharge")):
             tests += [(p, name, "cc_discharge", "validation") for p in files if f"_{tag}_" in p.name]
-        rates = {"1C_discharge_1": 3.0, "1C_discharge_2": 3.0, "0p5C_discharge": 1.5, "2C_discharge": 6.0}
         for p in files:
             m = re.search(r"_(UDDS|HWFET|LA92|US06|Mixed\d)_", p.name)
             if m:
@@ -288,35 +357,44 @@ def main(root: str) -> None:
             r, cut = cut_tail(r, meta["ambient_C"])
             if cut:
                 meta["tail_cut_s"] = round(cut)
+            moved = float(np.sum(np.clip(r["current_A"], 0.0, None)) * 1.0 / 3600.0)  # 1 s bins
+            if moved < MIN_SHARE * cap:
+                excluded.append({"name": name, "source": path.name, "discharged_Ah": round(moved, 3), **meta})
+                print(f"{name:<24} EXCLUDED: {moved:.3f} Ah discharged (an aborted or empty run)")
+                continue
             write(name, r, meta, manifest)
 
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    if excluded:
+        (OUT / "excluded.json").write_text(json.dumps(excluded, indent=1))
     licence = (
-        f"Processed from {CITATION}, licensed **CC BY 4.0**. The tests were performed at McMaster University "
+        f"Processed from {ds.citation}, licensed **CC BY 4.0**. The tests were performed at McMaster University "
         "by Dr. Phillip Kollmeyer.\n\n"
     )
     (OUT / "README.md").write_text(
-        "# Samsung INR21700-30T test set\n\n"
+        f"# {ds.title} test set\n\n"
         + licence
         + "Changes from the original: tests selected (role `fit`: fitted to; `validation`: never fitted to), "
         "non-finite and duplicate-time samples removed, a cooling soak before each test trimmed to 60 s, "
         "resampled to exact 1 s bin means (current sign flipped so discharge is positive), battery case "
-        "temperature interpolated at bin centres, samples of a block logged twice dropped. The dataset has no "
+        "temperature interpolated at bin centres, samples of a block logged twice dropped, a lone temperature "
+        "reading more than 5 K from both neighbours replaced by their mean. The dataset has no "
         "chamber channel: the ambient is the cell temperature at the end of the settled rest before each test, "
         "and a test whose file starts with the discharge running starts below full by the charge the tester "
         "counted before it (see `ambient_from` and `soc0_from` in the manifest); the rest after a test is cut "
-        "where the chamber's ramp for the next charge begins (`tail_cut_s`). "
-        "Generated by `validation/prepare_samsung_30t.py`.\n"
+        "where the chamber's ramp for the next charge begins (`tail_cut_s`). Runs that discharged under a quarter "
+        "of the capacity (aborted or empty) are left out and listed in `excluded.json`. "
+        f"Generated by `validation/prepare_mcmaster.py {which}`.\n"
     )
     (RAW / "README.md").write_text(
-        "# Samsung INR21700-30T test files\n\n"
+        f"# {ds.title} test files\n\n"
         + licence
         + "Unchanged copies of the pulse (HPPC) test at each of 40, 25, 10, 0, -10 and -20 degC, and the C/20 "
-        "discharge and charge at 25 degC: what `packtherm fit` fits the 30T on, with the drive cycles and "
-        "discharges in `validation/data/samsung_30t/`. Copied by `validation/prepare_samsung_30t.py`.\n"
+        f"discharge and charge at 25 degC: what `packtherm fit` fits the cell on, with the drive cycles and "
+        f"discharges in `validation/data/{ds.slug}/`. Copied by `validation/prepare_mcmaster.py {which}`.\n"
     )
     print(f"{len(manifest)} tests written to {OUT}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2])

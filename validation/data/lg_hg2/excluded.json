@@ -1,0 +1,74 @@
+[
+ {
+  "name": "40C_Mixed4",
+  "source": "11-08-18_04.31 562_Mixed4_40degC_LGHG2.mat",
+  "discharged_Ah": 0.219,
+  "setpoint_C": 40,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 23.82,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ },
+ {
+  "name": "40C_Mixed5",
+  "source": "11-08-18_07.11 562_Mixed5_40degC_LGHG2.mat",
+  "discharged_Ah": 0.265,
+  "setpoint_C": 40,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 23.93,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ },
+ {
+  "name": "40C_Mixed6",
+  "source": "11-08-18_09.53 562_Mixed6_40degC_LGHG2.mat",
+  "discharged_Ah": 0.26,
+  "setpoint_C": 40,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 23.35,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ },
+ {
+  "name": "40C_Mixed7",
+  "source": "11-08-18_12.33 562_Mixed7_40degC_LGHG2.mat",
+  "discharged_Ah": 0.194,
+  "setpoint_C": 40,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 22.92,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ },
+ {
+  "name": "40C_Mixed8",
+  "source": "11-08-18_15.06 562_Mixed8_40degC_LGHG2.mat",
+  "discharged_Ah": 0.276,
+  "setpoint_C": 40,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 22.82,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ },
+ {
+  "name": "25C_HWFET",
+  "source": "10-29-18_01.36 551_HWFET_25degC_LGHG2.mat",
+  "discharged_Ah": 0.0,
+  "setpoint_C": 25,
+  "role": "validation",
+  "kind": "drive_cycle",
+  "ambient_C": 23.77,
+  "ambient_from": "cell temperature after a settled rest at the end of the file before",
+  "soc0_from": "full: charged to 4.2 V before it",
+  "soc0": 1.0
+ }
+]

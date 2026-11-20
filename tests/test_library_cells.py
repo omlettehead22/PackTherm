@@ -38,3 +38,20 @@ def test_samsung_30t_resistance_grows_in_the_cold():
     ecm = CELLS["30T"].ecm
     R = [dc_resistance(ecm, T=273.15 + T, capacity_Ah=3.0) for T in (40, 25, 10, 0, -10, -20)]
     assert all(b > a for a, b in pairwise(R))
+
+
+def test_lg_hg2_is_its_fitted_cell_file():
+    cell, lumped = CELLS["HG2"], CELLS["HG2-LUMPED"]
+    shipped = yaml.safe_load((ROOT / "src" / "packtherm" / "data" / "lg_hg2_fitted.yaml").read_text())
+    example = yaml.safe_load((ROOT / "docs" / "examples" / "fitting" / "lg_hg2_fitted.yaml").read_text())
+    assert shipped["model"] == example["model"] and shipped["open_circuit_voltage"] == example["open_circuit_voltage"]
+    assert shipped["usable_in_studies"] is True and shipped["like"] == "HG2-LUMPED"
+    assert get_cell("hg2") is cell and cell.model_label == "circuit (fitted)" and not cell.user_defined
+    assert len(cell.ecm.by_T) == 6
+    lo, hi = cell.validity["temperature_C"]
+    assert lo < -19.0 and hi > 37.0
+    for k in ("diameter", "height", "mass", "cp", "k_radial", "form_factor", "max_discharge_C"):
+        assert getattr(cell, k) == getattr(lumped, k), k
+    r0 = dc_resistance(cell.ecm, capacity_Ah=cell.capacity_Ah)
+    assert cell.R0_25C == pytest.approx(r0)
+    assert lumped.R0_25C == pytest.approx(r0, rel=0.02)

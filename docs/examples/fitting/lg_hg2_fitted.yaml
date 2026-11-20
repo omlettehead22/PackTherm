@@ -1,0 +1,2678 @@
+# A PackTherm fitted cell (packtherm fit). Fitted at one temperature: studies refuse it until
+# PackTherm v0.6.2, which fits the temperature behaviour. See the report beside it.
+packtherm_fitted_cell: 1
+name: LG INR18650-HG2 (fitted)
+status: multi-temperature
+usable_in_studies: true
+like: HG2-LUMPED
+model:
+  form: packtherm-circuit-1
+  description: 'open-circuit voltage, instant resistance R0, a charge-transfer branch (I0, gamma, tau_ct), a middle
+    branch (Rm, tau_m), a slow branch (Rd, tau_d) and a rise near empty (soc_a, soc_b): packtherm.ecm.ECM; values
+    by temperature, interpolated between the fitted temperatures and carried beyond them by the fitted laws'
+  ecm:
+    R0_25C: 0.0190245
+    Ea_R0: 16381.4
+    I0_25C: 1.71012
+    Ea_I0: 7305.03
+    gamma: 0.741044
+    tau_ct: 7.78207
+    Rm_25C: 0.0236976
+    tau_m: 93.23
+    Ea_Rm: 24109.8
+    Rd_25C: 0.0234057
+    tau_d: 7762.23
+    Ea_Rd: 24031.4
+    soc_a: 1.48864
+    soc_b: 0.0626913
+    Ea_soc: 19753.9
+    V_max: 4.2
+    V_min: 2.79993
+    cv_cutoff_A: 0.05
+    by_temperature:
+      columns:
+      - T_K
+      - R0
+      - I0
+      - gamma
+      - tau_ct
+      - Rm
+      - tau_m
+      - Rd
+      - tau_d
+      - soc_a
+      - soc_b
+      rows:
+      - - 253.485
+        - 0.070929
+        - 0.741719
+        - 3.4521
+        - 0.461494
+        - 0.0640862
+        - 33.7339
+        - 0.35141
+        - 10000.0
+        - 3.96347
+        - 0.080112
+      - - 262.95
+        - 0.044709
+        - 1.92564
+        - 3.16666
+        - 0.423662
+        - 0.0398459
+        - 34.9747
+        - 0.0637175
+        - 1408.93
+        - 6.16971
+        - 0.057678
+      - - 272.729
+        - 0.0399848
+        - 1.6607
+        - 1.27806
+        - 5.41951
+        - 0.0952264
+        - 234.575
+        - 0.00010001
+        - 9999.0
+        - 8.76867
+        - 0.0401572
+      - - 282.299
+        - 0.0292539
+        - 2.06163
+        - 1.21374
+        - 8.66439
+        - 0.0886941
+        - 300.0
+        - 0.0001
+        - 10000.0
+        - 4.23314
+        - 0.0530636
+      - - 297.126
+        - 0.0192298
+        - 1.69276
+        - 0.740639
+        - 7.70285
+        - 0.0268883
+        - 96.5195
+        - 0.0226306
+        - 10000.0
+        - 1.53766
+        - 0.0626913
+      - - 311.638
+        - 0.0166248
+        - 1.94403
+        - 0.746151
+        - 8.84927
+        - 0.00484893
+        - 60.3122
+        - 0.0357301
+        - 322.235
+        - 0.990973
+        - 0.0986339
+  dc_resistance_mOhm: 28.28
+values:
+  Ea_R0:
+    value: 16381.0
+    unit: J/mol
+    source: fitted
+    what: how the instant resistance grows in the cold (through the temperatures' own values; used beyond the coldest
+      and warmest)
+    range_95:
+    - 12950.0
+    - 19820.0
+  Ea_I0:
+    value: 7305.0
+    unit: J/mol
+    source: fitted
+    what: how the charge-transfer branch's exchange current falls in the cold (through the temperatures' own values;
+      used beyond the coldest and warmest)
+    range_95:
+    - -5226.0
+    - 19840.0
+    note: 'the temperatures'' own values sit up to 1.6x off this law: the table follows them'
+  Ea_Rm:
+    value: 24110.0
+    unit: J/mol
+    source: fitted
+    what: how the middle branch's resistance grows in the cold (through the temperatures' own values; used beyond
+      the coldest and warmest)
+    range_95:
+    - -8750.0
+    - 56970.0
+    note: 'the temperatures'' own values sit up to 2.7x off this law: the table follows them'
+  Ea_Rd:
+    value: 24031.0
+    unit: J/mol
+    source: fitted
+    what: how the slow branch's resistance grows in the cold (through the temperatures' own values; used beyond
+      the coldest and warmest)
+    range_95:
+    - -22790.0
+    - 70850.0
+    note: 'the temperatures'' own values sit up to 1.9x off this law: the table follows them'
+  Ea_soc:
+    value: 19754.0
+    unit: J/mol
+    source: fitted
+    what: how the rise near empty grows in the cold (through the temperatures' own values; used beyond the coldest
+      and warmest)
+    range_95:
+    - -2174.0
+    - 41680.0
+    note: 'the temperatures'' own values sit up to 2.2x off this law: the table follows them'
+  capacity_Ah:
+    value: 2.7788
+    unit: Ah
+    source: data
+    what: 'capacity: the slow discharge''s charge'
+  V_min:
+    value: 2.7999
+    unit: V
+    source: data
+    what: 'discharge cut-off: where the slow discharge stopped'
+  V_max:
+    value: 4.2
+    unit: V
+    source: data
+    what: 'charge limit: the highest voltage in the tests'
+by_temperature:
+- at_C: 25.0
+  cell_C: 24.0
+  pulses: 95
+  tau_m_from: long tests
+  values:
+    R0_25C:
+      value: 0.01923
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.01864
+      - 0.01984
+    I0_25C:
+      value: 1.6928
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 0.8842
+      - 3.241
+    gamma:
+      value: 0.74064
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 0.5317
+      - 1.032
+    tau_ct:
+      value: 7.7029
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 6.319
+      - 9.39
+    Rm_25C:
+      value: 0.026888
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.02328
+      - 0.03106
+    soc_a:
+      value: 1.5377
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - 0.7414
+      - 2.334
+    soc_b:
+      value: 0.062691
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.04487
+      - 0.08759
+    Rd_25C:
+      value: 0.022631
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      note: 'not determined by these tests: no usable range'
+    tau_d:
+      value: 10000.0
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_m:
+      value: 96.519
+      unit: s
+      source: fitted
+      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 68.25
+      - 136.5
+- at_C: 40.0
+  cell_C: 38.5
+  pulses: 88
+  tau_m_from: pulses
+  values:
+    R0_25C:
+      value: 0.016625
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.01598
+      - 0.01729
+    I0_25C:
+      value: 1.944
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 0.8822
+      - 4.284
+    gamma:
+      value: 0.74615
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 0.2442
+      - 2.28
+      note: poorly determined by these tests
+    tau_ct:
+      value: 8.8493
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 4.82
+      - 16.25
+    Rm_25C:
+      value: 0.0048489
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.0008005
+      - 0.02937
+      note: poorly determined by these tests
+    tau_m:
+      value: 60.312
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 0.5078
+      - 7163.0
+      note: poorly determined by these tests
+    soc_a:
+      value: 0.99097
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - -0.004153
+      - 1.986
+      note: poorly determined by these tests
+    soc_b:
+      value: 0.098634
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.03104
+      - 0.3134
+      note: poorly determined by these tests
+    Rd_25C:
+      value: 0.03573
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 0.01577
+      - 0.08097
+    tau_d:
+      value: 322.24
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 99.54
+      - 1043.0
+      note: poorly determined by these tests
+- at_C: 10.0
+  cell_C: 9.1
+  pulses: 87
+  tau_m_from: long tests
+  values:
+    R0_25C:
+      value: 0.029254
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.02818
+      - 0.03037
+    I0_25C:
+      value: 2.0616
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 1.03
+      - 4.128
+    gamma:
+      value: 1.2137
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 0.7948
+      - 1.853
+    tau_ct:
+      value: 8.6644
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 7.237
+      - 10.37
+    Rm_25C:
+      value: 0.088694
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.07643
+      - 0.1029
+    soc_a:
+      value: 4.2331
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - 1.676
+      - 6.79
+    soc_b:
+      value: 0.053064
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.04135
+      - 0.0681
+    Rd_25C:
+      value: 0.0001
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_d:
+      value: 10000.0
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_m:
+      value: 300.0
+      unit: s
+      source: fitted
+      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 168.0
+      - 535.8
+      note: 'at the edge of its allowed range: not determined by these tests'
+- at_C: 0.0
+  cell_C: -0.4
+  pulses: 79
+  tau_m_from: pulses
+  values:
+    R0_25C:
+      value: 0.039985
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.03848
+      - 0.04155
+    I0_25C:
+      value: 1.6607
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 0.874
+      - 3.156
+    gamma:
+      value: 1.2781
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 0.9088
+      - 1.797
+    tau_ct:
+      value: 5.4195
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 4.699
+      - 6.25
+    Rm_25C:
+      value: 0.095226
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.04673
+      - 0.194
+    tau_m:
+      value: 234.57
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 106.8
+      - 515.3
+    soc_a:
+      value: 8.7687
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - -5.071
+      - 22.61
+      note: poorly determined by these tests
+    soc_b:
+      value: 0.040157
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.02401
+      - 0.06717
+    Rd_25C:
+      value: 0.00010001
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_d:
+      value: 9999.0
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+- at_C: -10.0
+  cell_C: -10.2
+  pulses: 77
+  tau_m_from: pulses
+  values:
+    R0_25C:
+      value: 0.044709
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.03825
+      - 0.05226
+    I0_25C:
+      value: 1.9256
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 0.9692
+      - 3.826
+    gamma:
+      value: 3.1667
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 1.673
+      - 5.993
+    tau_ct:
+      value: 0.42366
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 0.3275
+      - 0.5481
+    Rm_25C:
+      value: 0.039846
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.03714
+      - 0.04275
+    tau_m:
+      value: 34.975
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 31.88
+      - 38.37
+    soc_a:
+      value: 6.1697
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - 0.498
+      - 11.84
+    soc_b:
+      value: 0.057678
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.03841
+      - 0.08661
+    Rd_25C:
+      value: 0.063718
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 0.04489
+      - 0.09044
+    tau_d:
+      value: 1408.9
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 450.8
+      - 4403.0
+      note: poorly determined by these tests
+- at_C: -20.0
+  cell_C: -19.7
+  pulses: 71
+  tau_m_from: pulses
+  values:
+    R0_25C:
+      value: 0.070929
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.05468
+      - 0.09201
+    I0_25C:
+      value: 0.74172
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      range_95:
+      - 0.416
+      - 1.322
+    gamma:
+      value: 3.4521
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      range_95:
+      - 1.964
+      - 6.067
+    tau_ct:
+      value: 0.46149
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      range_95:
+      - 0.3509
+      - 0.6069
+    Rm_25C:
+      value: 0.064086
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.05979
+      - 0.06869
+    tau_m:
+      value: 33.734
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 29.54
+      - 38.52
+    soc_a:
+      value: 3.9635
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - -6.919
+      - 14.85
+      note: poorly determined by these tests
+    soc_b:
+      value: 0.080112
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.02991
+      - 0.2146
+      note: poorly determined by these tests
+    Rd_25C:
+      value: 0.35141
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      note: 'not determined by these tests: no usable range'
+    tau_d:
+      value: 10000.0
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      note: 'at the edge of its allowed range: not determined by these tests'
+capacity:
+  measured_Ah: 2.7788
+  how: 'slow discharge at 0.152 A over 18.3 h, plus its own drop (12.1 mV: 0.152 A x 79.4 mOhm, the fitted model''s
+    steady resistance, rising near empty as the model''s does)'
+  rated_Ah: 3.0
+  measured_vs_rated: -7.4%
+open_circuit_voltage:
+  soc:
+  - 0.0
+  - 0.01
+  - 0.02
+  - 0.03
+  - 0.04
+  - 0.05
+  - 0.06
+  - 0.07
+  - 0.08
+  - 0.09
+  - 0.1
+  - 0.11
+  - 0.12
+  - 0.13
+  - 0.14
+  - 0.15
+  - 0.16
+  - 0.17
+  - 0.18
+  - 0.19
+  - 0.2
+  - 0.21
+  - 0.22
+  - 0.23
+  - 0.24
+  - 0.25
+  - 0.26
+  - 0.27
+  - 0.28
+  - 0.29
+  - 0.3
+  - 0.31
+  - 0.32
+  - 0.33
+  - 0.34
+  - 0.35
+  - 0.36
+  - 0.37
+  - 0.38
+  - 0.39
+  - 0.4
+  - 0.41
+  - 0.42
+  - 0.43
+  - 0.44
+  - 0.45
+  - 0.46
+  - 0.47
+  - 0.48
+  - 0.49
+  - 0.5
+  - 0.51
+  - 0.52
+  - 0.53
+  - 0.54
+  - 0.55
+  - 0.56
+  - 0.57
+  - 0.58
+  - 0.59
+  - 0.6
+  - 0.61
+  - 0.62
+  - 0.63
+  - 0.64
+  - 0.65
+  - 0.66
+  - 0.67
+  - 0.68
+  - 0.69
+  - 0.7
+  - 0.71
+  - 0.72
+  - 0.73
+  - 0.74
+  - 0.75
+  - 0.76
+  - 0.77
+  - 0.78
+  - 0.79
+  - 0.8
+  - 0.81
+  - 0.82
+  - 0.83
+  - 0.84
+  - 0.85
+  - 0.86
+  - 0.87
+  - 0.88
+  - 0.89
+  - 0.9
+  - 0.91
+  - 0.92
+  - 0.93
+  - 0.94
+  - 0.95
+  - 0.96
+  - 0.97
+  - 0.98
+  - 0.99
+  - 1.0
+  V:
+  - 2.8307
+  - 2.9342
+  - 3.0034
+  - 3.0566
+  - 3.0996
+  - 3.1351
+  - 3.1667
+  - 3.1974
+  - 3.2284
+  - 3.2593
+  - 3.2899
+  - 3.3181
+  - 3.3443
+  - 3.3678
+  - 3.3893
+  - 3.4096
+  - 3.4273
+  - 3.4462
+  - 3.4646
+  - 3.4745
+  - 3.482
+  - 3.4884
+  - 3.4944
+  - 3.5003
+  - 3.5063
+  - 3.5144
+  - 3.5267
+  - 3.54
+  - 3.5526
+  - 3.5658
+  - 3.5768
+  - 3.5864
+  - 3.5958
+  - 3.6052
+  - 3.6141
+  - 3.622
+  - 3.6291
+  - 3.6357
+  - 3.6422
+  - 3.6485
+  - 3.6549
+  - 3.6615
+  - 3.6683
+  - 3.6753
+  - 3.6827
+  - 3.6902
+  - 3.6983
+  - 3.7066
+  - 3.7151
+  - 3.724
+  - 3.7331
+  - 3.7423
+  - 3.7514
+  - 3.7607
+  - 3.77
+  - 3.7792
+  - 3.7884
+  - 3.7977
+  - 3.8072
+  - 3.8172
+  - 3.8283
+  - 3.8402
+  - 3.8531
+  - 3.8656
+  - 3.8769
+  - 3.8871
+  - 3.8963
+  - 3.905
+  - 3.9133
+  - 3.9215
+  - 3.9298
+  - 3.9383
+  - 3.947
+  - 3.9561
+  - 3.9655
+  - 3.9754
+  - 3.9855
+  - 3.9959
+  - 4.0062
+  - 4.0169
+  - 4.0273
+  - 4.0373
+  - 4.0469
+  - 4.0558
+  - 4.0638
+  - 4.0707
+  - 4.0762
+  - 4.0804
+  - 4.0839
+  - 4.0871
+  - 4.0901
+  - 4.0935
+  - 4.0972
+  - 4.1014
+  - 4.1065
+  - 4.1129
+  - 4.1208
+  - 4.1313
+  - 4.1448
+  - 4.1625
+  - 4.1881
+  how: 'slow discharge at 0.152 A over 18.3 h, plus its own drop (12.1 mV: 0.152 A x 79.4 mOhm, the fitted model''s
+    steady resistance, rising near empty as the model''s does)'
+valid_for:
+  temperature_C:
+  - -21.3
+  - 39.2
+  soc:
+  - 0.017
+  - 0.995
+  discharge_C:
+  - 0.27
+  - 6.48
+  charge_C:
+  - 0.02
+  - 2.16
+  pulse_s: 54.8
+  note: the tests covered these; outside them the model is extrapolating (beyond the coldest and warmest, by the
+    fitted laws).
+identifiability:
+  correlated_pairs:
+  - values:
+    - gamma
+    - tau_m
+    correlation: 0.968
+    meaning: 'these trade off: the tests pin a combination'
+  - values:
+    - I0_25C
+    - gamma
+    correlation: 0.965
+    meaning: 'these trade off: the tests pin a combination'
+  - values:
+    - Rm_25C
+    - tau_m
+    correlation: 0.993
+    meaning: 'these trade off: the tests pin a combination'
+  about_the_ranges: '95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show
+    how far the tests disagree, not a guarantee; a value the tests barely touch is flagged'
+errors:
+  fitted_on:
+    pulses at 20-95% SOC, 25 degC:
+      rmse_mV: 6.59
+      max_mV: 41.1
+      samples: 26468
+      parts: 64
+    pulses below 20% SOC, 25 degC:
+      rmse_mV: 20.24
+      max_mV: 213.92
+      samples: 9081
+      parts: 23
+    steps at 20-95% SOC, 25 degC:
+      rmse_mV: 11.06
+      max_mV: 19.0
+      samples: 3684
+      parts: 8
+    steps below 20% SOC, 25 degC:
+      rmse_mV: 10.03
+      max_mV: 17.57
+      samples: 922
+      parts: 2
+    discharges, 25 degC:
+      rmse_mV: 37.19
+      max_mV: 59.84
+      samples: 2699
+      parts: 1
+    drive cycles fitted on, 25 degC:
+      rmse_mV: 18.77
+      max_mV: 58.88
+      samples: 5883
+      parts: 1
+    pulses at 20-95% SOC, 40 degC:
+      rmse_mV: 6.31
+      max_mV: 56.02
+      samples: 26492
+      parts: 64
+    pulses below 20% SOC, 40 degC:
+      rmse_mV: 21.88
+      max_mV: 127.8
+      samples: 6453
+      parts: 16
+    steps at 20-95% SOC, 40 degC:
+      rmse_mV: 23.67
+      max_mV: 33.54
+      samples: 3686
+      parts: 8
+    steps below 20% SOC, 40 degC:
+      rmse_mV: 5.47
+      max_mV: 10.74
+      samples: 460
+      parts: 1
+    discharges, 40 degC:
+      rmse_mV: 139.8
+      max_mV: 180.0
+      samples: 1949
+      parts: 1
+    drive cycles fitted on, 40 degC:
+      rmse_mV: 36.07
+      max_mV: 87.82
+      samples: 5928
+      parts: 1
+    pulses at 20-95% SOC, 10 degC:
+      rmse_mV: 11.19
+      max_mV: 90.21
+      samples: 26464
+      parts: 64
+    pulses below 20% SOC, 10 degC:
+      rmse_mV: 21.79
+      max_mV: 268.01
+      samples: 6335
+      parts: 16
+    steps at 20-95% SOC, 10 degC:
+      rmse_mV: 43.78
+      max_mV: 58.36
+      samples: 3223
+      parts: 7
+    steps below 20% SOC, 10 degC:
+      rmse_mV: 52.56
+      max_mV: 60.78
+      samples: 461
+      parts: 1
+    discharges, 10 degC:
+      rmse_mV: 142.22
+      max_mV: 177.01
+      samples: 2289
+      parts: 1
+    drive cycles fitted on, 10 degC:
+      rmse_mV: 65.4
+      max_mV: 197.03
+      samples: 5723
+      parts: 1
+    pulses at 20-95% SOC, 0 degC:
+      rmse_mV: 14.22
+      max_mV: 146.4
+      samples: 26615
+      parts: 65
+    pulses below 20% SOC, 0 degC:
+      rmse_mV: 18.5
+      max_mV: 267.73
+      samples: 2659
+      parts: 7
+    steps at 20-95% SOC, 0 degC:
+      rmse_mV: 38.52
+      max_mV: 54.96
+      samples: 3223
+      parts: 7
+    discharges, 0 degC:
+      rmse_mV: 142.51
+      max_mV: 177.49
+      samples: 1919
+      parts: 1
+    drive cycles fitted on, 0 degC:
+      rmse_mV: 51.6
+      max_mV: 149.03
+      samples: 1788
+      parts: 1
+    pulses at 20-95% SOC, -10 degC:
+      rmse_mV: 19.8
+      max_mV: 142.63
+      samples: 26233
+      parts: 64
+    pulses below 20% SOC, -10 degC:
+      rmse_mV: 26.21
+      max_mV: 270.65
+      samples: 2665
+      parts: 7
+    steps at 20-95% SOC, -10 degC:
+      rmse_mV: 29.71
+      max_mV: 66.83
+      samples: 3684
+      parts: 8
+    discharges, -10 degC:
+      rmse_mV: 38.57
+      max_mV: 214.82
+      samples: 1509
+      parts: 1
+    drive cycles fitted on, -10 degC:
+      rmse_mV: 54.35
+      max_mV: 192.48
+      samples: 1710
+      parts: 1
+    pulses at 20-95% SOC, -20 degC:
+      rmse_mV: 19.75
+      max_mV: 163.41
+      samples: 26004
+      parts: 64
+    steps at 20-95% SOC, -20 degC:
+      rmse_mV: 45.04
+      max_mV: 110.29
+      samples: 3685
+      parts: 8
+    discharges, -20 degC:
+      rmse_mV: 54.52
+      max_mV: 279.05
+      samples: 969
+      parts: 1
+    drive cycles fitted on, -20 degC:
+      rmse_mV: 110.22
+      max_mV: 194.66
+      samples: 15
+      parts: 1
+  held_out:
+  - file: 40C_0p5C_discharge.csv.gz
+    rmse_mV: 46.58
+    max_mV: 67.62
+    rmse_whole_mV: 46.57
+    cell_C: 38.6
+    soc_start: 0.99
+    anchored: 99.1% at the start, as given
+  - file: 40C_2C_discharge.csv.gz
+    rmse_mV: 133.35
+    max_mV: 188.47
+    rmse_whole_mV: 149.01
+    cell_C: 40.2
+    soc_start: 0.96
+    anchored: 96.4% at the start, as given
+  - file: 40C_HWFET.csv.gz
+    rmse_mV: 53.0
+    max_mV: 85.27
+    rmse_whole_mV: 50.02
+    cell_C: 38.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 40C_LA92.csv.gz
+    rmse_mV: 29.03
+    max_mV: 67.46
+    rmse_whole_mV: 29.08
+    cell_C: 38.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 40C_Mixed2.csv.gz
+    rmse_mV: 38.4
+    max_mV: 105.96
+    rmse_whole_mV: 37.95
+    cell_C: 38.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 40C_Mixed3.csv.gz
+    rmse_mV: 42.72
+    max_mV: 118.36
+    rmse_whole_mV: 42.99
+    cell_C: 38.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 40C_UDDS.csv.gz
+    rmse_mV: 16.01
+    max_mV: 44.52
+    rmse_whole_mV: 18.94
+    cell_C: 38.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 40C_US06.csv.gz
+    rmse_mV: 71.69
+    max_mV: 128.57
+    rmse_whole_mV: 68.58
+    cell_C: 39.3
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_0p5C_discharge.csv.gz
+    rmse_mV: 19.7
+    max_mV: 50.15
+    rmse_whole_mV: 25.16
+    cell_C: 24.1
+    soc_start: 1.0
+    anchored: 99.6% at the start, as given
+  - file: 25C_1C_discharge_2.csv.gz
+    rmse_mV: 34.08
+    max_mV: 55.28
+    rmse_whole_mV: 37.13
+    cell_C: 24.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_2C_discharge.csv.gz
+    rmse_mV: 58.22
+    max_mV: 92.08
+    rmse_whole_mV: 76.29
+    cell_C: 26.3
+    soc_start: 0.96
+    anchored: 96.4% at the start, as given
+  - file: 25C_LA92.csv.gz
+    rmse_mV: 21.34
+    max_mV: 94.65
+    rmse_whole_mV: 26.0
+    cell_C: 24.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed2.csv.gz
+    rmse_mV: 20.89
+    max_mV: 80.93
+    rmse_whole_mV: 25.43
+    cell_C: 24.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed3.csv.gz
+    rmse_mV: 25.3
+    max_mV: 72.15
+    rmse_whole_mV: 26.7
+    cell_C: 24.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed4.csv.gz
+    rmse_mV: 21.6
+    max_mV: 85.18
+    rmse_whole_mV: 24.2
+    cell_C: 24.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed5.csv.gz
+    rmse_mV: 21.33
+    max_mV: 85.79
+    rmse_whole_mV: 24.99
+    cell_C: 24.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed6.csv.gz
+    rmse_mV: 20.43
+    max_mV: 55.75
+    rmse_whole_mV: 21.17
+    cell_C: 24.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed7.csv.gz
+    rmse_mV: 22.0
+    max_mV: 65.74
+    rmse_whole_mV: 22.61
+    cell_C: 24.3
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_Mixed8.csv.gz
+    rmse_mV: 17.66
+    max_mV: 62.79
+    rmse_whole_mV: 18.43
+    cell_C: 24.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_UDDS.csv.gz
+    rmse_mV: 11.43
+    max_mV: 51.22
+    rmse_whole_mV: 12.65
+    cell_C: 24.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 25C_US06.csv.gz
+    rmse_mV: 33.87
+    max_mV: 80.0
+    rmse_whole_mV: 45.4
+    cell_C: 24.9
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_0p5C_discharge.csv.gz
+    rmse_mV: 66.52
+    max_mV: 87.16
+    rmse_whole_mV: 64.33
+    cell_C: 9.4
+    soc_start: 0.99
+    anchored: 99.5% at the start, as given
+  - file: 10C_1C_discharge_2.csv.gz
+    rmse_mV: 145.85
+    max_mV: 179.79
+    rmse_whole_mV: 120.06
+    cell_C: 1.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_2C_discharge.csv.gz
+    rmse_mV: 226.67
+    max_mV: 298.75
+    rmse_whole_mV: 218.61
+    cell_C: 12.2
+    soc_start: 0.97
+    anchored: 96.5% at the start, as given
+  - file: 10C_HWFET.csv.gz
+    rmse_mV: 91.39
+    max_mV: 134.31
+    rmse_whole_mV: 86.82
+    cell_C: 9.5
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_LA92.csv.gz
+    rmse_mV: 41.74
+    max_mV: 90.15
+    rmse_whole_mV: 42.8
+    cell_C: 9.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed2.csv.gz
+    rmse_mV: 62.91
+    max_mV: 203.7
+    rmse_whole_mV: 63.67
+    cell_C: 9.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed4.csv.gz
+    rmse_mV: 60.62
+    max_mV: 184.02
+    rmse_whole_mV: 63.75
+    cell_C: 9.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed5.csv.gz
+    rmse_mV: 67.26
+    max_mV: 192.06
+    rmse_whole_mV: 69.73
+    cell_C: 9.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed6.csv.gz
+    rmse_mV: 63.51
+    max_mV: 174.54
+    rmse_whole_mV: 62.39
+    cell_C: 9.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed7.csv.gz
+    rmse_mV: 67.33
+    max_mV: 156.81
+    rmse_whole_mV: 64.77
+    cell_C: 9.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_Mixed8.csv.gz
+    rmse_mV: 58.11
+    max_mV: 182.52
+    rmse_whole_mV: 56.44
+    cell_C: 9.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_UDDS.csv.gz
+    rmse_mV: 27.57
+    max_mV: 80.05
+    rmse_whole_mV: 29.03
+    cell_C: 9.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 10C_US06.csv.gz
+    rmse_mV: 121.21
+    max_mV: 199.6
+    rmse_whole_mV: 116.37
+    cell_C: 10.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_0p5C_discharge.csv.gz
+    rmse_mV: 49.17
+    max_mV: 118.07
+    rmse_whole_mV: 49.37
+    cell_C: -0.2
+    soc_start: 0.99
+    anchored: 99.3% at the start, as given
+  - file: 0C_2C_discharge.csv.gz
+    rmse_mV: 275.54
+    max_mV: 376.0
+    rmse_whole_mV: 286.99
+    cell_C: 3.9
+    soc_start: 0.96
+    anchored: 96.4% at the start, as given
+  - file: 0C_HWFET.csv.gz
+    rmse_mV: 75.18
+    max_mV: 126.3
+    rmse_whole_mV: 70.39
+    cell_C: 0.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_LA92.csv.gz
+    rmse_mV: 43.69
+    max_mV: 118.62
+    rmse_whole_mV: 42.85
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed2.csv.gz
+    rmse_mV: 63.4
+    max_mV: 244.55
+    rmse_whole_mV: 61.84
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed4.csv.gz
+    rmse_mV: 60.77
+    max_mV: 235.92
+    rmse_whole_mV: 61.64
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed5.csv.gz
+    rmse_mV: 66.97
+    max_mV: 240.26
+    rmse_whole_mV: 64.68
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed6.csv.gz
+    rmse_mV: 69.67
+    max_mV: 224.8
+    rmse_whole_mV: 71.29
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed7.csv.gz
+    rmse_mV: 66.51
+    max_mV: 196.16
+    rmse_whole_mV: 67.54
+    cell_C: 0.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_Mixed8.csv.gz
+    rmse_mV: 54.2
+    max_mV: 223.65
+    rmse_whole_mV: 57.43
+    cell_C: 0.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_UDDS.csv.gz
+    rmse_mV: 20.18
+    max_mV: 102.54
+    rmse_whole_mV: 23.22
+    cell_C: -0.3
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: 0C_US06.csv.gz
+    rmse_mV: 136.72
+    max_mV: 253.09
+    rmse_whole_mV: 136.78
+    cell_C: 1.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_0p5C_discharge.csv.gz
+    rmse_mV: 52.13
+    max_mV: 180.33
+    rmse_whole_mV: 92.74
+    cell_C: -9.3
+    soc_start: 0.99
+    anchored: 99.2% at the start, as given
+  - file: m10C_1C_discharge_2.csv.gz
+    rmse_mV: 41.84
+    max_mV: 220.5
+    rmse_whole_mV: 106.86
+    cell_C: -8.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_2C_discharge.csv.gz
+    rmse_mV: 170.23
+    max_mV: 224.15
+    rmse_whole_mV: 141.77
+    cell_C: -4.7
+    soc_start: 0.96
+    anchored: 96.4% at the start, as given
+  - file: m10C_HWFET.csv.gz
+    rmse_mV: 52.54
+    max_mV: 216.82
+    rmse_whole_mV: 77.72
+    cell_C: -8.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_LA92.csv.gz
+    rmse_mV: 51.38
+    max_mV: 194.99
+    rmse_whole_mV: 55.33
+    cell_C: -9.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed2.csv.gz
+    rmse_mV: 55.99
+    max_mV: 210.86
+    rmse_whole_mV: 62.53
+    cell_C: -9.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed3.csv.gz
+    rmse_mV: 57.77
+    max_mV: 238.41
+    rmse_whole_mV: 74.93
+    cell_C: -8.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed4.csv.gz
+    rmse_mV: 84.95
+    max_mV: 250.36
+    rmse_whole_mV: 94.51
+    cell_C: -9.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed5.csv.gz
+    rmse_mV: 57.75
+    max_mV: 222.15
+    rmse_whole_mV: 69.06
+    cell_C: -8.9
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed6.csv.gz
+    rmse_mV: 59.15
+    max_mV: 249.46
+    rmse_whole_mV: 68.87
+    cell_C: -8.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed7.csv.gz
+    rmse_mV: 53.63
+    max_mV: 192.76
+    rmse_whole_mV: 59.52
+    cell_C: -8.8
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_Mixed8.csv.gz
+    rmse_mV: 52.98
+    max_mV: 204.99
+    rmse_whole_mV: 57.41
+    cell_C: -9.0
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_UDDS.csv.gz
+    rmse_mV: 39.9
+    max_mV: 176.01
+    rmse_whole_mV: 39.86
+    cell_C: -9.6
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m10C_US06.csv.gz
+    rmse_mV: 67.66
+    max_mV: 237.75
+    rmse_whole_mV: 77.46
+    cell_C: -6.9
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_0p5C_discharge.csv.gz
+    rmse_mV: 63.36
+    max_mV: 231.78
+    rmse_whole_mV: 96.55
+    cell_C: -18.8
+    soc_start: 0.98
+    anchored: 97.6% at the start, as given
+  - file: m20C_1C_discharge_2.csv.gz
+    rmse_mV: 55.39
+    max_mV: 286.41
+    rmse_whole_mV: 77.88
+    cell_C: -17.1
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_2C_discharge.csv.gz
+    rmse_mV: 211.08
+    max_mV: 230.7
+    rmse_whole_mV: 148.18
+    cell_C: -13.5
+    soc_start: 0.96
+    anchored: 96.4% at the start, as given
+  - file: m20C_HWFET.csv.gz
+    rmse_mV: 66.97
+    max_mV: 208.43
+    rmse_whole_mV: 69.19
+    cell_C: -17.9
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_LA92.csv.gz
+    rmse_mV: 58.9
+    max_mV: 197.03
+    rmse_whole_mV: 58.96
+    cell_C: -18.4
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed2.csv.gz
+    rmse_mV: 70.13
+    max_mV: 232.23
+    rmse_whole_mV: 70.0
+    cell_C: -18.3
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed3.csv.gz
+    rmse_mV: 58.71
+    max_mV: 193.84
+    rmse_whole_mV: 60.25
+    cell_C: -18.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed4.csv.gz
+    rmse_mV: 65.91
+    max_mV: 203.35
+    rmse_whole_mV: 69.05
+    cell_C: -18.3
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed5.csv.gz
+    rmse_mV: 56.02
+    max_mV: 218.56
+    rmse_whole_mV: 55.57
+    cell_C: -18.5
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed6.csv.gz
+    rmse_mV: 60.84
+    max_mV: 234.49
+    rmse_whole_mV: 63.29
+    cell_C: -18.5
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed7.csv.gz
+    rmse_mV: 63.47
+    max_mV: 225.22
+    rmse_whole_mV: 63.75
+    cell_C: -18.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_Mixed8.csv.gz
+    rmse_mV: 60.24
+    max_mV: 234.58
+    rmse_whole_mV: 64.96
+    cell_C: -18.5
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_UDDS.csv.gz
+    rmse_mV: 46.57
+    max_mV: 217.35
+    rmse_whole_mV: 47.58
+    cell_C: -19.2
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  - file: m20C_US06.csv.gz
+    rmse_mV: 78.35
+    max_mV: 215.09
+    rmse_whole_mV: 86.17
+    cell_C: -16.7
+    soc_start: 1.0
+    anchored: 100.0% at the start, as given
+  held_out_electrothermal:
+  - file: 40C_0p5C_discharge.csv.gz
+    ambient_C: 38.54
+    V_rmse_mV: 46.04986417149037
+    T_rmse_K: 0.23550331581495212
+    peak_error_K: -0.16559901954956757
+    rise_meas_K: 0.5799999999999983
+  - file: 40C_2C_discharge.csv.gz
+    ambient_C: 38.38
+    V_rmse_mV: 122.00639726735209
+    T_rmse_K: 1.3661905808687826
+    peak_error_K: 1.6226322289648891
+    rise_meas_K: 2.9499999999999957
+  - file: 40C_HWFET.csv.gz
+    ambient_C: 38.38
+    V_rmse_mV: 51.988945283514354
+    T_rmse_K: 0.16204546328957156
+    peak_error_K: -0.11818183162053231
+    rise_meas_K: 0.9499999999999957
+  - file: 40C_LA92.csv.gz
+    ambient_C: 38.38
+    V_rmse_mV: 29.80707447669669
+    T_rmse_K: 0.09351921567819146
+    peak_error_K: -0.44880909792542667
+    rise_meas_K: 1.1599999999999966
+  - file: 40C_Mixed2.csv.gz
+    ambient_C: 38.54
+    V_rmse_mV: 40.83173575166966
+    T_rmse_K: 0.2759194326502386
+    peak_error_K: -0.01668706572938561
+    rise_meas_K: 1.6300000000000026
+  - file: 40C_Mixed3.csv.gz
+    ambient_C: 38.49
+    V_rmse_mV: 41.0126534035142
+    T_rmse_K: 0.21448205408350185
+    peak_error_K: 0.1232219238354233
+    rise_meas_K: 1.4699999999999989
+  - file: 40C_UDDS.csv.gz
+    ambient_C: 38.44
+    V_rmse_mV: 15.132109858349176
+    T_rmse_K: 0.09004228434909727
+    peak_error_K: -0.2466670373032187
+    rise_meas_K: 0.5700000000000003
+  - file: 40C_US06.csv.gz
+    ambient_C: 38.43
+    V_rmse_mV: 71.31310882399178
+    T_rmse_K: 0.4254933083233053
+    peak_error_K: 0.12392720481444996
+    rise_meas_K: 2.3699999999999974
+  - file: 25C_0p5C_discharge.csv.gz
+    ambient_C: 23.93
+    V_rmse_mV: 19.126531887611275
+    T_rmse_K: 0.17761839146445388
+    peak_error_K: -0.6321129663617917
+    rise_meas_K: 1.0899999999999999
+  - file: 25C_1C_discharge_2.csv.gz
+    ambient_C: 23.93
+    V_rmse_mV: 31.343475532076983
+    T_rmse_K: 0.25246725411724324
+    peak_error_K: -0.149140610496044
+    rise_meas_K: 1.5199999999999996
+  - file: 25C_2C_discharge.csv.gz
+    ambient_C: 24.76
+    V_rmse_mV: 44.0671641238317
+    T_rmse_K: 1.0518544330965331
+    peak_error_K: 0.933506057268076
+    rise_meas_K: 3.099999999999998
+  - file: 25C_LA92.csv.gz
+    ambient_C: 23.71
+    V_rmse_mV: 21.741372538741224
+    T_rmse_K: 0.18322792341435748
+    peak_error_K: -0.5133283947673419
+    rise_meas_K: 1.3200000000000003
+  - file: 25C_Mixed2.csv.gz
+    ambient_C: 23.82
+    V_rmse_mV: 21.466710357236362
+    T_rmse_K: 0.17700012858236375
+    peak_error_K: -0.3844347683552698
+    rise_meas_K: 2.3599999999999994
+  - file: 25C_Mixed3.csv.gz
+    ambient_C: 23.87
+    V_rmse_mV: 22.01206084693057
+    T_rmse_K: 0.17228766865627762
+    peak_error_K: -0.013790647500901088
+    rise_meas_K: 1.6799999999999997
+  - file: 25C_Mixed4.csv.gz
+    ambient_C: 23.66
+    V_rmse_mV: 22.253572792186063
+    T_rmse_K: 0.16510183360471967
+    peak_error_K: -0.27652632587602355
+    rise_meas_K: 1.8900000000000006
+  - file: 25C_Mixed5.csv.gz
+    ambient_C: 23.87
+    V_rmse_mV: 22.97540767654729
+    T_rmse_K: 0.2675178601748859
+    peak_error_K: -0.32829076189513984
+    rise_meas_K: 2.4054573170731963
+  - file: 25C_Mixed6.csv.gz
+    ambient_C: 23.72
+    V_rmse_mV: 24.74659090575123
+    T_rmse_K: 0.1819689695128127
+    peak_error_K: -0.15210503166589362
+    rise_meas_K: 1.7300000000000004
+  - file: 25C_Mixed7.csv.gz
+    ambient_C: 23.77
+    V_rmse_mV: 19.743370615852818
+    T_rmse_K: 0.16650086993972457
+    peak_error_K: 0.062241257266531846
+    rise_meas_K: 1.4699999999999989
+  - file: 25C_Mixed8.csv.gz
+    ambient_C: 23.93
+    V_rmse_mV: 17.326602833784186
+    T_rmse_K: 0.2458841294120039
+    peak_error_K: 0.1751767728115503
+    rise_meas_K: 1.3099999999999987
+  - file: 25C_UDDS.csv.gz
+    ambient_C: 23.77
+    V_rmse_mV: 9.63713006049926
+    T_rmse_K: 0.12120924971093802
+    peak_error_K: -0.43598488586459183
+    rise_meas_K: 0.9400000000000013
+  - file: 25C_US06.csv.gz
+    ambient_C: 23.87
+    V_rmse_mV: 33.857965245464534
+    T_rmse_K: 0.34780780809123396
+    peak_error_K: -0.2143085115884631
+    rise_meas_K: 2.9499999999999993
+  - file: 10C_0p5C_discharge.csv.gz
+    ambient_C: 9.09
+    V_rmse_mV: 62.334378270910335
+    T_rmse_K: 0.2693137762217565
+    peak_error_K: 0.13830704450329456
+    rise_meas_K: 0.5800000000000001
+  - file: 10C_1C_discharge_2.csv.gz
+    ambient_C: 9.15
+    V_rmse_mV: 60.594214832739425
+    T_rmse_K: 9.594291360060275
+    peak_error_K: 2.3036457695590737
+    rise_meas_K: -0.030000000000001137
+  - file: 10C_2C_discharge.csv.gz
+    ambient_C: 9.04
+    V_rmse_mV: 178.953336082054
+    T_rmse_K: 1.556892859139249
+    peak_error_K: 1.1475127178189926
+    rise_meas_K: 4.950000000000001
+  - file: 10C_HWFET.csv.gz
+    ambient_C: 9.09
+    V_rmse_mV: 80.8334093320963
+    T_rmse_K: 0.49736276328734974
+    peak_error_K: 0.2212646846248525
+    rise_meas_K: 1.3200000000000003
+  - file: 10C_LA92.csv.gz
+    ambient_C: 8.99
+    V_rmse_mV: 41.5005170264505
+    T_rmse_K: 0.1367965753276673
+    peak_error_K: -0.413817778889511
+    rise_meas_K: 1.8399999999999999
+  - file: 10C_Mixed2.csv.gz
+    ambient_C: 9.1
+    V_rmse_mV: 58.96219828811388
+    T_rmse_K: 0.2528759611456469
+    peak_error_K: -0.033754540223396745
+    rise_meas_K: 2.5700000000000003
+  - file: 10C_Mixed4.csv.gz
+    ambient_C: 9.09
+    V_rmse_mV: 59.98217626491068
+    T_rmse_K: 0.2961829654589912
+    peak_error_K: -0.04706352236188671
+    rise_meas_K: 2.9000000000000004
+  - file: 10C_Mixed5.csv.gz
+    ambient_C: 9.09
+    V_rmse_mV: 67.35358861069452
+    T_rmse_K: 0.293226695849994
+    peak_error_K: 0.038154937284462065
+    rise_meas_K: 2.58
+  - file: 10C_Mixed6.csv.gz
+    ambient_C: 9.15
+    V_rmse_mV: 61.95518344508847
+    T_rmse_K: 0.3102123348654714
+    peak_error_K: 0.2630501676384416
+    rise_meas_K: 2.5199999999999996
+  - file: 10C_Mixed7.csv.gz
+    ambient_C: 9.15
+    V_rmse_mV: 58.585741998949565
+    T_rmse_K: 0.2662711692347812
+    peak_error_K: 0.20237970319159615
+    rise_meas_K: 2.209999999999999
+  - file: 10C_Mixed8.csv.gz
+    ambient_C: 9.15
+    V_rmse_mV: 53.41924392674957
+    T_rmse_K: 0.276832195988603
+    peak_error_K: 0.5815257051788194
+    rise_meas_K: 2.0999999999999996
+  - file: 10C_UDDS.csv.gz
+    ambient_C: 9.04
+    V_rmse_mV: 24.743898087091633
+    T_rmse_K: 0.10648556515593965
+    peak_error_K: -0.40298180944390616
+    rise_meas_K: 1.0600000000000005
+  - file: 10C_US06.csv.gz
+    ambient_C: 10.0
+    V_rmse_mV: 95.7902011505696
+    T_rmse_K: 1.3567327047560314
+    peak_error_K: 1.0978803539874455
+    rise_meas_K: 2.41
+  - file: 0C_0p5C_discharge.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 48.0837036139089
+    T_rmse_K: 0.31597621838447415
+    peak_error_K: -0.15733781012873577
+    rise_meas_K: 1.0
+  - file: 0C_2C_discharge.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 250.62456894230328
+    T_rmse_K: 2.360461744396369
+    peak_error_K: 2.483311984608065
+    rise_meas_K: 6.58
+  - file: 0C_HWFET.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 76.00006574245198
+    T_rmse_K: 0.3426204643842149
+    peak_error_K: -0.1443293379931856
+    rise_meas_K: 2.05
+  - file: 0C_LA92.csv.gz
+    ambient_C: -0.63
+    V_rmse_mV: 43.817894551908594
+    T_rmse_K: 0.15823581797685282
+    peak_error_K: -0.40014342752519494
+    rise_meas_K: 2.1
+  - file: 0C_Mixed2.csv.gz
+    ambient_C: -0.63
+    V_rmse_mV: 63.205352616197864
+    T_rmse_K: 0.334021759465713
+    peak_error_K: 0.6107408548983266
+    rise_meas_K: 2.94
+  - file: 0C_Mixed4.csv.gz
+    ambient_C: -0.53
+    V_rmse_mV: 59.33166578625324
+    T_rmse_K: 0.36656684794251054
+    peak_error_K: -0.635789378153818
+    rise_meas_K: 4.0
+  - file: 0C_Mixed5.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 72.15833731922082
+    T_rmse_K: 0.43028027855234896
+    peak_error_K: 0.9391676349492855
+    rise_meas_K: 2.58
+  - file: 0C_Mixed6.csv.gz
+    ambient_C: -0.48
+    V_rmse_mV: 76.04298736525006
+    T_rmse_K: 0.47712760934739357
+    peak_error_K: -0.27268439945007916
+    rise_meas_K: 4.27
+  - file: 0C_Mixed7.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 65.5051019763904
+    T_rmse_K: 0.3595885724779924
+    peak_error_K: -0.035250907835072454
+    rise_meas_K: 3.84
+  - file: 0C_Mixed8.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 52.424837788018905
+    T_rmse_K: 0.2939253920636021
+    peak_error_K: 0.3209184397238096
+    rise_meas_K: 3.52
+  - file: 0C_UDDS.csv.gz
+    ambient_C: -0.58
+    V_rmse_mV: 19.175368364086395
+    T_rmse_K: 0.14147003392306967
+    peak_error_K: -0.22965666508484445
+    rise_meas_K: 1.0
+  - file: 0C_US06.csv.gz
+    ambient_C: -0.68
+    V_rmse_mV: 143.72731047411526
+    T_rmse_K: 0.8154008029541044
+    peak_error_K: 0.32760667856136694
+    rise_meas_K: 4.57
+  - file: m10C_0p5C_discharge.csv.gz
+    ambient_C: -10.05
+    V_rmse_mV: 61.51665682119059
+    T_rmse_K: 0.6965346098029767
+    peak_error_K: -1.2209878680978363
+    rise_meas_K: 2.0500000000000007
+  - file: m10C_1C_discharge_2.csv.gz
+    ambient_C: -10.1
+    V_rmse_mV: 41.140590217470766
+    T_rmse_K: 0.4278153711744156
+    peak_error_K: -1.0610407894789482
+    rise_meas_K: 3.58
+  - file: m10C_2C_discharge.csv.gz
+    ambient_C: -10.04
+    V_rmse_mV: 179.59084884927094
+    T_rmse_K: 1.7174894411711825
+    peak_error_K: 2.1921902325070253
+    rise_meas_K: 7.529999999999999
+  - file: m10C_HWFET.csv.gz
+    ambient_C: -9.99
+    V_rmse_mV: 59.29478248611282
+    T_rmse_K: 0.2601454876553453
+    peak_error_K: -0.5752751616403682
+    rise_meas_K: 2.7300000000000004
+  - file: m10C_LA92.csv.gz
+    ambient_C: -10.1
+    V_rmse_mV: 57.158334171048644
+    T_rmse_K: 0.2201876803307833
+    peak_error_K: -0.5272478510472771
+    rise_meas_K: 2.7399999999999993
+  - file: m10C_Mixed2.csv.gz
+    ambient_C: -10.04
+    V_rmse_mV: 58.86273506296946
+    T_rmse_K: 0.3201750165100014
+    peak_error_K: 0.14534836240284932
+    rise_meas_K: 4.469999999999999
+  - file: m10C_Mixed3.csv.gz
+    ambient_C: -9.88
+    V_rmse_mV: 66.32300461887365
+    T_rmse_K: 0.3912601647267344
+    peak_error_K: 0.20041375400584016
+    rise_meas_K: 3.4700000000000006
+  - file: m10C_Mixed4.csv.gz
+    ambient_C: -9.94
+    V_rmse_mV: 91.11801041496113
+    T_rmse_K: 0.3750284944162674
+    peak_error_K: 0.5020154513182824
+    rise_meas_K: 3.209999999999999
+  - file: m10C_Mixed5.csv.gz
+    ambient_C: -10.05
+    V_rmse_mV: 60.935606320043064
+    T_rmse_K: 0.3109537962988069
+    peak_error_K: 0.0029052537302529657
+    rise_meas_K: 4.0600000000000005
+  - file: m10C_Mixed6.csv.gz
+    ambient_C: -9.88
+    V_rmse_mV: 63.08805291940277
+    T_rmse_K: 0.39221360903795355
+    peak_error_K: -0.656649465599692
+    rise_meas_K: 4.200000000000001
+  - file: m10C_Mixed7.csv.gz
+    ambient_C: -9.88
+    V_rmse_mV: 64.8256531040065
+    T_rmse_K: 0.3919048687085537
+    peak_error_K: -0.8632556743947131
+    rise_meas_K: 4.73
+  - file: m10C_Mixed8.csv.gz
+    ambient_C: -9.99
+    V_rmse_mV: 52.363226555283035
+    T_rmse_K: 0.2570266623533347
+    peak_error_K: -0.5607508602537452
+    rise_meas_K: 4.94
+  - file: m10C_UDDS.csv.gz
+    ambient_C: -10.1
+    V_rmse_mV: 44.80562713673078
+    T_rmse_K: 0.1494989602153353
+    peak_error_K: -0.5278172307866633
+    rise_meas_K: 1.6899999999999995
+  - file: m10C_US06.csv.gz
+    ambient_C: -9.94
+    V_rmse_mV: 71.78830970244678
+    T_rmse_K: 0.7559969590179828
+    peak_error_K: 0.047810065490391906
+    rise_meas_K: 5.209999999999999
+  - file: m20C_0p5C_discharge.csv.gz
+    ambient_C: -18.89
+    V_rmse_mV: 85.14504520257441
+    T_rmse_K: 1.4957462359655878
+    peak_error_K: -0.8950391024404993
+    rise_meas_K: 2.3798194794290524
+  - file: m20C_1C_discharge_2.csv.gz
+    ambient_C: -20.14
+    V_rmse_mV: 49.68753784343209
+    T_rmse_K: 0.33969025078686954
+    peak_error_K: -0.6227723116073225
+    rise_meas_K: 4.58
+  - file: m20C_2C_discharge.csv.gz
+    ambient_C: -19.77
+    V_rmse_mV: 185.8435559428743
+    T_rmse_K: 0.793882160329236
+    peak_error_K: 0.8237490255278495
+    rise_meas_K: 8.0
+  - file: m20C_HWFET.csv.gz
+    ambient_C: -19.82
+    V_rmse_mV: 72.86192721342469
+    T_rmse_K: 0.3189316760364127
+    peak_error_K: -0.12980836113431593
+    rise_meas_K: 3.4002581032413417
+  - file: m20C_LA92.csv.gz
+    ambient_C: -19.82
+    V_rmse_mV: 62.880637502588144
+    T_rmse_K: 0.422899435073223
+    peak_error_K: -0.17536201495739334
+    rise_meas_K: 2.8900000000000006
+  - file: m20C_Mixed2.csv.gz
+    ambient_C: -19.87
+    V_rmse_mV: 76.27930362626503
+    T_rmse_K: 0.3740681537592634
+    peak_error_K: -0.4704614641193583
+    rise_meas_K: 5.250000000000002
+  - file: m20C_Mixed3.csv.gz
+    ambient_C: -19.98
+    V_rmse_mV: 63.49106721799912
+    T_rmse_K: 0.3523462468391341
+    peak_error_K: 0.06140589358138371
+    rise_meas_K: 4.210000000000001
+  - file: m20C_Mixed4.csv.gz
+    ambient_C: -19.87
+    V_rmse_mV: 73.1605498215132
+    T_rmse_K: 0.4169438679344457
+    peak_error_K: 0.07615575983819056
+    rise_meas_K: 4.100000000000001
+  - file: m20C_Mixed5.csv.gz
+    ambient_C: -19.93
+    V_rmse_mV: 63.671731201129305
+    T_rmse_K: 0.3753780633095408
+    peak_error_K: -0.10574231297335501
+    rise_meas_K: 5.0
+  - file: m20C_Mixed6.csv.gz
+    ambient_C: -19.93
+    V_rmse_mV: 66.07793871609817
+    T_rmse_K: 0.45918024292273424
+    peak_error_K: 0.201132998723633
+    rise_meas_K: 3.84
+  - file: m20C_Mixed7.csv.gz
+    ambient_C: -20.03
+    V_rmse_mV: 74.98526902474087
+    T_rmse_K: 0.3220205018780948
+    peak_error_K: -0.6940125500853647
+    rise_meas_K: 4.050000000000001
+  - file: m20C_Mixed8.csv.gz
+    ambient_C: -19.93
+    V_rmse_mV: 62.96306059169166
+    T_rmse_K: 0.2985127823795099
+    peak_error_K: -0.387808281992152
+    rise_meas_K: 4.26
+  - file: m20C_UDDS.csv.gz
+    ambient_C: -19.87
+    V_rmse_mV: 49.37461174516415
+    T_rmse_K: 0.26662508775181576
+    peak_error_K: -0.10174134131496615
+    rise_meas_K: 1.8900000000000006
+  - file: m20C_US06.csv.gz
+    ambient_C: -19.82
+    V_rmse_mV: 88.79724040985028
+    T_rmse_K: 0.5973285765537667
+    peak_error_K: -0.02130951320203245
+    rise_meas_K: 5.200000000000001
+state_of_charge_anchors:
+  pulses at 25 degC: 94.0% from the voltage at the end of the settled 60-minute rest at 1.81 h
+  steps at 25 degC: 94.0% from the voltage at the end of the settled 60-minute rest at 1.81 h
+  discharge 1 at 25 degC: 100.0% at the start, as given
+  cycle 1 at 25 degC: 100.0% at the start, as given
+  pulses at 40 degC: 93.9% from the voltage at the end of the settled 60-minute rest at 1.82 h
+  steps at 40 degC: 93.9% from the voltage at the end of the settled 60-minute rest at 1.82 h
+  discharge 1 at 40 degC: 100.0% at the start, as given
+  cycle 1 at 40 degC: 100.0% at the start, as given
+  pulses at 10 degC: 94.3% from the voltage at the end of the settled 60-minute rest at 1.80 h
+  steps at 10 degC: 94.3% from the voltage at the end of the settled 60-minute rest at 1.80 h
+  discharge 1 at 10 degC: 100.0% at the start, as given
+  cycle 1 at 10 degC: 100.0% at the start, as given
+  pulses at 0 degC: 93.3% from the voltage at the end of the settled 60-minute rest at 1.80 h
+  steps at 0 degC: 93.3% from the voltage at the end of the settled 60-minute rest at 1.80 h
+  discharge 1 at 0 degC: 100.0% at the start, as given
+  cycle 1 at 0 degC: 100.0% at the start, as given
+  pulses at -10 degC: 92.6% from the voltage at the end of the settled 60-minute rest at 1.84 h
+  steps at -10 degC: 92.6% from the voltage at the end of the settled 60-minute rest at 1.84 h
+  discharge 1 at -10 degC: 100.0% at the start, as given
+  cycle 1 at -10 degC: 100.0% at the start, as given
+  pulses at -20 degC: 90.7% from the voltage at the end of the settled 60-minute rest at 1.87 h
+  steps at -20 degC: 90.7% from the voltage at the end of the settled 60-minute rest at 1.87 h
+  discharge 1 at -20 degC: 100.0% at the start, as given
+  cycle 1 at -20 degC: 100.0% at the start, as given
+data_warnings:
+- 'the slow charge and discharge differ by about -12 mV beyond their drops (hysteresis): the curve follows the discharge,
+  as the library''s does'
+- the middle branch's time constant (tau_m) set by the long tests at 24, 9 degC, where they fit better that way
+  and the pulses still fit (elsewhere by the pulses)
+- '10-26-18_09.29 549_C20DisCh_25degC_LGHG2.mat: 2 rows with a repeated time were dropped'
+- '10-26-18_09.29 549_C20DisCh_25degC_LGHG2.mat: median time step 60 s is coarse for pulse tests (1 s or finer is
+  usual)'
+- '10-25-18_07.39 549_HPPC_25degC_LGHG2.mat: 247 rows with a repeated time were dropped'
+- '10-25-18_07.39 549_HPPC_25degC_LGHG2.mat: 247 rows with a repeated time were dropped'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: 229 rows with a repeated time were dropped'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: the charge counter and the logged current disagree by +57% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: 107 gaps in the record (longest 1 min 00 s at 22 h 53 min): no current
+  is logged across them'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: the tester''s charge counter shows 4.084 Ah moved during 44 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: 229 rows with a repeated time were dropped'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: the charge counter and the logged current disagree by +57% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: 107 gaps in the record (longest 1 min 00 s at 22 h 53 min): no current
+  is logged across them'
+- '11-02-18_18.30 555_HPPC_40degC_LGHG2.mat: the tester''s charge counter shows 4.084 Ah moved during 44 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: 218 rows with a repeated time were dropped'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: the charge counter and the logged current disagree by +56% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: 96 gaps in the record (longest 1 min 00 s at 20 h 29 min): no current
+  is logged across them'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: the tester''s charge counter shows 3.658 Ah moved during 40 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: 218 rows with a repeated time were dropped'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: the charge counter and the logged current disagree by +56% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: 96 gaps in the record (longest 1 min 00 s at 20 h 29 min): no current
+  is logged across them'
+- '11-16-18_20.44 575_HPPC_10degC_LGHG2.mat: the tester''s charge counter shows 3.658 Ah moved during 40 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: 200 rows with a repeated time were dropped'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: the charge counter and the logged current disagree by +64% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: 101 gaps in the record (longest 1 min 00 s at 20 h 53 min): no current
+  is logged across them'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: the tester''s charge counter shows 3.831 Ah moved during 43 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: 200 rows with a repeated time were dropped'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: the charge counter and the logged current disagree by +64% over the
+  logged parts; the counter is used only across gaps and steps'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: 101 gaps in the record (longest 1 min 00 s at 20 h 53 min): no current
+  is logged across them'
+- '11-26-18_22.46 585_HPPC_0degC_LGHG2.mat: the tester''s charge counter shows 3.831 Ah moved during 43 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: 200 rows with a repeated time were dropped'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: the charge counter and the logged current disagree by +66% over the
+  logged parts; the counter is used only across gaps and steps'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: 100 gaps in the record (longest 1 min 00 s at 19 h 40 min): no current
+  is logged across them'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: the tester''s charge counter shows 3.744 Ah moved during 43 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: 200 rows with a repeated time were dropped'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: the charge counter and the logged current disagree by +66% over the
+  logged parts; the counter is used only across gaps and steps'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: 100 gaps in the record (longest 1 min 00 s at 19 h 40 min): no current
+  is logged across them'
+- '12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat: the tester''s charge counter shows 3.744 Ah moved during 43 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: 193 rows with a repeated time were dropped'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: the charge counter and the logged current disagree by +70% over the
+  logged parts; the counter is used only across gaps and steps'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: 101 gaps in the record (longest 1 min 00 s at 18 h 03 min): no current
+  is logged across them'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: the tester''s charge counter shows 3.440 Ah moved during 39 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: 193 rows with a repeated time were dropped'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: the charge counter and the logged current disagree by +70% over the
+  logged parts; the counter is used only across gaps and steps'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: 101 gaps in the record (longest 1 min 00 s at 18 h 03 min): no current
+  is logged across them'
+- '12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat: the tester''s charge counter shows 3.440 Ah moved during 39 of those
+  gaps, current the record does not log: it is counted, as unlogged parts'
+provenance:
+  packtherm: 0.6.3
+  fitted_at: '2026-11-20T16:37:17+00:00'
+  settings:
+    pulse window: 5 s before each pulse to 40 s after
+    kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all
+    temperature behaviour: Arrhenius laws fitted jointly over tests at -20, -10, 0, 10, 25, 40 degC, each replayed
+      at its measured cell temperature; the time constants, gamma and soc_b do not change with temperature, as in
+      PackTherm's model
+    uncertainty: '95% ranges counting each pulse and step as one piece of evidence (cluster-robust): they show how
+      far the tests disagree, not a guarantee; a value the tests barely touch is flagged'
+    test rig: '130.2 W/(m2 K), fixture 114 J/K (the cell: 38 J/K), calibrated on 25C_1C_discharge_1.csv.gz, 25C_Mixed1.csv.gz
+      with the heat from their measured voltage (0.24 K RMS there); the fixture''s heat capacity at the edge (3x
+      the cell''s): check the tests'
+  inputs:
+  - role: slow
+    file: 10-26-18_09.29 549_C20DisCh_25degC_LGHG2.mat
+    sha256: 570746af29365dbe2aa7850a8b095bf4f131a6692a1c47dc065141dfc789260d
+    samples: 2421
+    duration_h: 40.31
+    conversions:
+    - 'current sign flipped to + = discharge (the voltage agreed at 5 of 5 checks: 1 current starting, 2 current
+      stopping, 2 steady current)'
+  - role: pulses
+    file: 10-25-18_07.39 549_HPPC_25degC_LGHG2.mat
+    sha256: eb3fdfa111a9761d825ce164d8108c09be3129e039eb1fd1c95ba1f3520fcc75
+    samples: 47801
+    duration_h: 22.28
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 98% of 196 jumps)
+  - role: pulses
+    file: 11-02-18_18.30 555_HPPC_40degC_LGHG2.mat
+    sha256: 3d9108971b6909db18723a55dea7831ee78bcc6f3a63bc7523fcd09d53c795e8
+    samples: 44290
+    duration_h: 23.91
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 100% of 177 jumps)
+  - role: pulses
+    file: 11-16-18_20.44 575_HPPC_10degC_LGHG2.mat
+    sha256: 25fac068eb5176a1c15220dbfeb1b6f7a6f99245d3fdb240b882b09a9edcde34
+    samples: 44001
+    duration_h: 23.9
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 97% of 183 jumps)
+  - role: pulses
+    file: 11-26-18_22.46 585_HPPC_0degC_LGHG2.mat
+    sha256: 308bb12a50311ca18bab3df23eb1f81166a6d299df7016e76e726e93c103b389
+    samples: 40019
+    duration_h: 21.9
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 98% of 163 jumps)
+  - role: pulses
+    file: 12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat
+    sha256: 4459c01a348288d65437a62ec3b77539946c084a214759213066ffb29713ce35
+    samples: 39884
+    duration_h: 22.2
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 93% of 171 jumps)
+  - role: pulses
+    file: 12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat
+    sha256: 64206d3a4c7afe61c8ab82a537609d9d240a1700af3ffc0ab9091529b35cdab1
+    samples: 35874
+    duration_h: 20.43
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 93% of 176 jumps)
+  - role: steps
+    file: 10-25-18_07.39 549_HPPC_25degC_LGHG2.mat
+    sha256: eb3fdfa111a9761d825ce164d8108c09be3129e039eb1fd1c95ba1f3520fcc75
+    samples: 47801
+    duration_h: 22.28
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 98% of 196 jumps)
+  - role: steps
+    file: 11-02-18_18.30 555_HPPC_40degC_LGHG2.mat
+    sha256: 3d9108971b6909db18723a55dea7831ee78bcc6f3a63bc7523fcd09d53c795e8
+    samples: 44290
+    duration_h: 23.91
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 100% of 177 jumps)
+  - role: steps
+    file: 11-16-18_20.44 575_HPPC_10degC_LGHG2.mat
+    sha256: 25fac068eb5176a1c15220dbfeb1b6f7a6f99245d3fdb240b882b09a9edcde34
+    samples: 44001
+    duration_h: 23.9
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 97% of 183 jumps)
+  - role: steps
+    file: 11-26-18_22.46 585_HPPC_0degC_LGHG2.mat
+    sha256: 308bb12a50311ca18bab3df23eb1f81166a6d299df7016e76e726e93c103b389
+    samples: 40019
+    duration_h: 21.9
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 98% of 163 jumps)
+  - role: steps
+    file: 12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat
+    sha256: 4459c01a348288d65437a62ec3b77539946c084a214759213066ffb29713ce35
+    samples: 39884
+    duration_h: 22.2
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 93% of 171 jumps)
+  - role: steps
+    file: 12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat
+    sha256: 64206d3a4c7afe61c8ab82a537609d9d240a1700af3ffc0ab9091529b35cdab1
+    samples: 35874
+    duration_h: 20.43
+    conversions:
+    - current sign flipped to + = discharge (voltage rose with the current at 93% of 176 jumps)
+  - role: discharges
+    file: 25C_1C_discharge_1.csv.gz
+    sha256: e4fdb04740f42d4157901540fb2acaa63213cab3959a8c3b72b4ea532085972d
+  - role: discharges
+    file: 40C_1C_discharge_1.csv.gz
+    sha256: 44c59178c217307786ac503ce4168022301a235f565b51e7e6fe2ec74ddc2bdb
+  - role: discharges
+    file: 10C_1C_discharge_1.csv.gz
+    sha256: 30396b4db8b5db23d908dd9e71544ac1d74575c50a0cb8652276295aeccb14d4
+  - role: discharges
+    file: 0C_1C_discharge_1.csv.gz
+    sha256: dfac246e43243fac443dda49e4796088a0844f63c1b0fa2b668974d6051a6bc9
+  - role: discharges
+    file: m10C_1C_discharge_1.csv.gz
+    sha256: b799b5005c12e14f342a430dcaf0d4f9a9e68bb5576ad1c213c83f66311ff98f
+  - role: discharges
+    file: m20C_1C_discharge_1.csv.gz
+    sha256: 5d53d828c03f50e8c95a162d7b3b5f479575d04933aa69b92f43a77df6700424
+  - role: cycles
+    file: 25C_Mixed1.csv.gz
+    sha256: 8c9d14746ff3f029f450ff1bd24857fd2c46e0c43676e0bba97da508b5526c95
+  - role: cycles
+    file: 40C_Mixed1.csv.gz
+    sha256: eb240db87b4d48260a6652ba488ce8961f0dbdb9d82ba51a2783b25ba75369d9
+  - role: cycles
+    file: 10C_Mixed1.csv.gz
+    sha256: 175687e3bf76f4a9def81e792b1c697a3dc3e675a7e97493cc38ecea426601d2
+  - role: cycles
+    file: 0C_Mixed1.csv.gz
+    sha256: 400d89b8e60f8ed6f61ef85e3f45c9872a4780d7e3d8f0294b8b47d24fd75477
+  - role: cycles
+    file: m10C_Mixed1.csv.gz
+    sha256: ec6c82e9c1c3f9d729434fadb084d75a6be34b3f8c794344c41a61e29ebc2cfe
+  - role: cycles
+    file: m20C_Mixed1.csv.gz
+    sha256: c8abf76d0b420c595de59a543f069597724c16083c7ab0a3087664cc7dcddfc2
+  - role: checks
+    file: 40C_0p5C_discharge.csv.gz
+    sha256: afc6d6bb2181bfc6a754aa9a08b9281bc2acf6c88c37f7d0ee24870986be966f
+    samples: 6360
+    duration_h: 1.766
+  - role: checks
+    file: 40C_2C_discharge.csv.gz
+    sha256: 65ac1882ca4a44817234c52fb68d6d854ab58e76dfde64b37e674e5ab2185168
+    samples: 1514
+    duration_h: 0.4203
+  - role: checks
+    file: 40C_HWFET.csv.gz
+    sha256: eeb6fb107657c3bdc58504fc9dd23d548558fb1cff4e90b3d10c570a6b2f4afd
+    samples: 5590
+    duration_h: 1.552
+  - role: checks
+    file: 40C_LA92.csv.gz
+    sha256: e0fc81ab48e3638529c9b1170823af72c6bebb3641fe08949772730023dc6d0e
+    samples: 9874
+    duration_h: 2.743
+  - role: checks
+    file: 40C_Mixed2.csv.gz
+    sha256: c70be0afc23d49cdae5074bcaf8354c34055fb18fd1bae18575d6e717c4a7766
+    samples: 7895
+    duration_h: 2.193
+  - role: checks
+    file: 40C_Mixed3.csv.gz
+    sha256: d1c124ecadae71301829313d904163cee1aae1ee2fbe2161ec6a10fe35874e03
+    samples: 6762
+    duration_h: 1.878
+  - role: checks
+    file: 40C_UDDS.csv.gz
+    sha256: 75b0b199d98b71460f6e05a9fccd2b6178ef075da6549b85f15485ebc1bae37e
+    samples: 15896
+    duration_h: 4.415
+  - role: checks
+    file: 40C_US06.csv.gz
+    sha256: 3c8565410c477a5275a9e03619061c395556f6f23459e6e343cdc184250cc9cd
+    samples: 3995
+    duration_h: 1.109
+  - role: checks
+    file: 25C_0p5C_discharge.csv.gz
+    sha256: b27847432f9e748bafae10055b613b630c4f8f884f989995b0d01a4be1367c6e
+    samples: 6549
+    duration_h: 1.819
+  - role: checks
+    file: 25C_1C_discharge_2.csv.gz
+    sha256: e7243990dc7fbcd3b96128d1a5300f95ea0f424967a2a390788c4e891b6b8600
+    samples: 3880
+    duration_h: 1.077
+  - role: checks
+    file: 25C_2C_discharge.csv.gz
+    sha256: 6f0595ee6095b4d3f7a0115d8acc30f06e59cd9d463357bb843deab1b972cc3b
+    samples: 1548
+    duration_h: 0.4297
+  - role: checks
+    file: 25C_LA92.csv.gz
+    sha256: 81e22bacbc9a29e1a8cfc3f49663e18ef361fa98cb8ca281a7450687f69a7a5f
+    samples: 10083
+    duration_h: 2.801
+  - role: checks
+    file: 25C_Mixed2.csv.gz
+    sha256: 7f2f0c89f147571c8423fbd367b0543b12d3e3dda20b87d4e9cbc2aba85552f1
+    samples: 7916
+    duration_h: 2.199
+  - role: checks
+    file: 25C_Mixed3.csv.gz
+    sha256: df8514cc373535e7055cde2e87c69735bd37d66970e4c4c7ab5107d7c43910f9
+    samples: 7382
+    duration_h: 2.05
+  - role: checks
+    file: 25C_Mixed4.csv.gz
+    sha256: dae972a093b8ef27cb0d68e9bfdc36d1c3a0a3aa11fdfb77f1dfcbab8204d7f6
+    samples: 8084
+    duration_h: 2.245
+  - role: checks
+    file: 25C_Mixed5.csv.gz
+    sha256: 04f266acd6afeb7ee8a8cfecb4b4e4cdec01a7ea840fb2dd79cb60d2f9063cab
+    samples: 7218
+    duration_h: 2.005
+  - role: checks
+    file: 25C_Mixed6.csv.gz
+    sha256: 82fe2563f0eb9568b93410af74374bbf93afaa7e099c3eab4a377599edec4f48
+    samples: 7810
+    duration_h: 2.169
+  - role: checks
+    file: 25C_Mixed7.csv.gz
+    sha256: 7cd1fde19acade814611cb7d839e43afaeb1539a4decec4eda003ffc62502e26
+    samples: 7323
+    duration_h: 2.034
+  - role: checks
+    file: 25C_Mixed8.csv.gz
+    sha256: ad04d32762852e8b253599953672e7ba3d2778af1e5879cd88a6f66f61e17b01
+    samples: 8591
+    duration_h: 2.386
+  - role: checks
+    file: 25C_UDDS.csv.gz
+    sha256: d8d34f4216fb4baf7189ba35ba8bb599516e380c7231357b0124354ec0e60ec6
+    samples: 15965
+    duration_h: 4.434
+  - role: checks
+    file: 25C_US06.csv.gz
+    sha256: 29e019d41998e35bd17bc4603740094f371935c891d5f03d3ad99da950408d57
+    samples: 4015
+    duration_h: 1.115
+  - role: checks
+    file: 10C_0p5C_discharge.csv.gz
+    sha256: 6c04e3329189a235457a6dbdd613b3f7199ba057721373ae333fda5813ddbc65
+    samples: 6308
+    duration_h: 1.752
+  - role: checks
+    file: 10C_1C_discharge_2.csv.gz
+    sha256: 1180d189d7c6848b31e9feff2a0e7f13674dfce353e1f31467dbc99e67654e21
+    samples: 3518
+    duration_h: 0.9769
+  - role: checks
+    file: 10C_2C_discharge.csv.gz
+    sha256: 807cae2ae66162b7796291aaef2a6f8bff75adf7e17e7ed2b668d9d6e85b3592
+    samples: 1487
+    duration_h: 0.4128
+  - role: checks
+    file: 10C_HWFET.csv.gz
+    sha256: 5ffb3a109d2f044b4806154a28b9e1f50d3a61d33dea6f6702605a47d0d5fa94
+    samples: 5287
+    duration_h: 1.468
+  - role: checks
+    file: 10C_LA92.csv.gz
+    sha256: d23b3d0e56c57e1b3c7486ee32bce2cedc714a7315a14c0700c2b6a659abb7ad
+    samples: 9082
+    duration_h: 2.522
+  - role: checks
+    file: 10C_Mixed2.csv.gz
+    sha256: aabde6b7f346292f97eb22fdba748c0cb85a6476e750dce16fbda92a03435d4a
+    samples: 7774
+    duration_h: 2.159
+  - role: checks
+    file: 10C_Mixed4.csv.gz
+    sha256: 24b1041f5043ece3dc72d22d80f06d28677210809c6e501c45f7d4255cf58b94
+    samples: 7392
+    duration_h: 2.053
+  - role: checks
+    file: 10C_Mixed5.csv.gz
+    sha256: 8a4fb8bf58a764e6a1e931959d70d3e0dc094bf850cd87ad3beefd105bd8c173
+    samples: 6717
+    duration_h: 1.866
+  - role: checks
+    file: 10C_Mixed6.csv.gz
+    sha256: eea4532c2c6bf1d5697e65c7bad6ca6a033acff2b5ddfd267a10f7ff2667a724
+    samples: 7391
+    duration_h: 2.053
+  - role: checks
+    file: 10C_Mixed7.csv.gz
+    sha256: ffac7e1430a45caeebe74cadc1065f505999fe74b2c3c828c7d1d88b750011c2
+    samples: 6932
+    duration_h: 1.925
+  - role: checks
+    file: 10C_Mixed8.csv.gz
+    sha256: d2f633378ef01ecfcbecbd373f8a9500891279c67bb196b75ecba55febcb9f1d
+    samples: 8141
+    duration_h: 2.261
+  - role: checks
+    file: 10C_UDDS.csv.gz
+    sha256: 4414ffec9893eb2bf69274ecce4710573b9323c1426a86fad9a8718d5aa43320
+    samples: 14891
+    duration_h: 4.136
+  - role: checks
+    file: 10C_US06.csv.gz
+    sha256: 344e8e1210323c15fc8da788a2cf68a012b2ebb5e4c075022500e2d37821871a
+    samples: 3710
+    duration_h: 1.03
+  - role: checks
+    file: 0C_0p5C_discharge.csv.gz
+    sha256: 5e3145d71531a81d1ecbfb17887d0f545082a785149508171d11871ef6f430c6
+    samples: 5948
+    duration_h: 1.652
+  - role: checks
+    file: 0C_2C_discharge.csv.gz
+    sha256: d22c89c45b51719f82928cef62811567ec3c5f3a11e02de3a6f236ecc6a6e9ca
+    samples: 1360
+    duration_h: 0.3775
+  - role: checks
+    file: 0C_HWFET.csv.gz
+    sha256: 3fd0b7caee62c4896c777b7f1302504c320d932f7ecd22912aacc5398737854d
+    samples: 4967
+    duration_h: 1.379
+  - role: checks
+    file: 0C_LA92.csv.gz
+    sha256: 6d150ecfb8083aa3a81fc1ec50e9c76a1a039fcd0ecc77dff47da1c64c83391d
+    samples: 8166
+    duration_h: 2.268
+  - role: checks
+    file: 0C_Mixed2.csv.gz
+    sha256: ba1afcc9b1f0aae33672d7c0a0ab36e8a8e69df1cf2ce5e78e6bc5359fa183f5
+    samples: 7230
+    duration_h: 2.008
+  - role: checks
+    file: 0C_Mixed4.csv.gz
+    sha256: ff5450611420766d9f9399d423bf7a0c81e9f59596dccb6904fc2789f64e2efa
+    samples: 6802
+    duration_h: 1.889
+  - role: checks
+    file: 0C_Mixed5.csv.gz
+    sha256: 61200e018b1156056892e58bf686856cea8755a7898987a87892993b38c35cc2
+    samples: 6499
+    duration_h: 1.805
+  - role: checks
+    file: 0C_Mixed6.csv.gz
+    sha256: 4b6d4c448d8f3999abcf9437ec01b81bdea4095a2f088934621feecde2b950a3
+    samples: 6248
+    duration_h: 1.735
+  - role: checks
+    file: 0C_Mixed7.csv.gz
+    sha256: 47bcc3b5abcd05ec8c1386c861bbdc7d82cc0711ff56345679660822c79a0622
+    samples: 6153
+    duration_h: 1.709
+  - role: checks
+    file: 0C_Mixed8.csv.gz
+    sha256: 298df8e0b1df0119caf52cf7ea42747de893fe8c770d5a0b5aa85a8693dd45cc
+    samples: 7583
+    duration_h: 2.106
+  - role: checks
+    file: 0C_UDDS.csv.gz
+    sha256: 0201c31fd52e29e96bcd02672d61f1ac50bdc3c38232ed51bf77ffe193c2df48
+    samples: 14043
+    duration_h: 3.901
+  - role: checks
+    file: 0C_US06.csv.gz
+    sha256: ad95fc07b368ea305928abf46785374cd935818c5b8015c560ec86fc3dc54afd
+    samples: 3380
+    duration_h: 0.9386
+  - role: checks
+    file: m10C_0p5C_discharge.csv.gz
+    sha256: 58b6c70c5a734381756a29fea6454a2f6538db5e1f78d1d9c40cd19ddc038f89
+    samples: 5639
+    duration_h: 1.566
+  - role: checks
+    file: m10C_1C_discharge_2.csv.gz
+    sha256: 5b75310e86ce4485f424e9081916e7c3f6068012393789df62ecd18f415a0052
+    samples: 3328
+    duration_h: 0.9242
+  - role: checks
+    file: m10C_2C_discharge.csv.gz
+    sha256: 86ac792d7be9f1dfd28a9a0bee70f9521d14be7875bffaead243596a9fc10269
+    samples: 1114
+    duration_h: 0.3092
+  - role: checks
+    file: m10C_HWFET.csv.gz
+    sha256: 7bc1a8078dc99c70a0bb422476a7792411258e12d17c30349752b28bcb567657
+    samples: 4490
+    duration_h: 1.247
+  - role: checks
+    file: m10C_LA92.csv.gz
+    sha256: 1ea2489db4de92bf8e96626920676f636914c97f8ed9b1c03bbe7ac3231432a4
+    samples: 7216
+    duration_h: 2.004
+  - role: checks
+    file: m10C_Mixed2.csv.gz
+    sha256: 8597b669d87c8fca54eb614295d8afd4366914dfd8341c7ba5afb5bc1e37a615
+    samples: 6525
+    duration_h: 1.812
+  - role: checks
+    file: m10C_Mixed3.csv.gz
+    sha256: 7d925d998188d85bc61be80e13506efa24551a839e570594d1c058ba0443d7ae
+    samples: 5521
+    duration_h: 1.533
+  - role: checks
+    file: m10C_Mixed4.csv.gz
+    sha256: 1136f27cfd2956ca6b16f1ddec298c00cc2058df0776f71221acc4ee90142227
+    samples: 6567
+    duration_h: 1.824
+  - role: checks
+    file: m10C_Mixed5.csv.gz
+    sha256: e6f16fce297708530d3fb4425206f87c41edf09a87c460badfebe15eb60ef248
+    samples: 6008
+    duration_h: 1.669
+  - role: checks
+    file: m10C_Mixed6.csv.gz
+    sha256: 6f1ab4cca05ecf28c8b9e79b826057f7f3ba8155f2ca68baf79704adbce2fa7e
+    samples: 5596
+    duration_h: 1.554
+  - role: checks
+    file: m10C_Mixed7.csv.gz
+    sha256: 5d3292ee75865f577881fc6159e7f8220124c1baf1185ba1aa4fd5a4d97b0ee3
+    samples: 5593
+    duration_h: 1.553
+  - role: checks
+    file: m10C_Mixed8.csv.gz
+    sha256: cd48d3c231cbcfd1722e942511e116020b3ad03cae04b43a97ca473abd6ecbc1
+    samples: 6732
+    duration_h: 1.87
+  - role: checks
+    file: m10C_UDDS.csv.gz
+    sha256: a504576ecd3cf9cdefb085f01b17809d7f5b96fc0c0576c1b800ea5757c826d0
+    samples: 12359
+    duration_h: 3.433
+  - role: checks
+    file: m10C_US06.csv.gz
+    sha256: 7c5f1478f4e1e94125c3290b284ede7a66bd52412ef9ccbf19c0ab345f389408
+    samples: 3191
+    duration_h: 0.8861
+  - role: checks
+    file: m20C_0p5C_discharge.csv.gz
+    sha256: 891d6ddc9747bdb44d6ec6af0edc71e587713040ec02e3fde805b7138ac2cb1d
+    samples: 4766
+    duration_h: 1.324
+  - role: checks
+    file: m20C_1C_discharge_2.csv.gz
+    sha256: 96428117010dfd87f3e90af1055c1a39d9a790b8826a7676232a2a42ca5f4a01
+    samples: 2590
+    duration_h: 0.7192
+  - role: checks
+    file: m20C_2C_discharge.csv.gz
+    sha256: a9ff4f99db542792454f746ad263301cb32e220ff9ceace0ee315a5b91523f60
+    samples: 733
+    duration_h: 0.2033
+  - role: checks
+    file: m20C_HWFET.csv.gz
+    sha256: 23a6d4b4d1224d905ee68d392e1279575ddad93a3f74c7ca6c2d23d487513dcf
+    samples: 3334
+    duration_h: 0.9258
+  - role: checks
+    file: m20C_LA92.csv.gz
+    sha256: 41be4307dce0345cfb41930eae52cc2b4c202592330c7fc2ecb8e021fff7f05d
+    samples: 5253
+    duration_h: 1.459
+  - role: checks
+    file: m20C_Mixed2.csv.gz
+    sha256: a39301bb54eb998418feef32df0fdcbd23cc319376babe82901b564898820e86
+    samples: 4304
+    duration_h: 1.195
+  - role: checks
+    file: m20C_Mixed3.csv.gz
+    sha256: 7a5805211f364f3d497bec9fc106603ae6760fb0944408a9c10fcf5037f68cea
+    samples: 4516
+    duration_h: 1.254
+  - role: checks
+    file: m20C_Mixed4.csv.gz
+    sha256: a85fa6861cc755600751dd5f1cd6a29db3f9eaa08d26d76f21a8c56eac41361a
+    samples: 4605
+    duration_h: 1.279
+  - role: checks
+    file: m20C_Mixed5.csv.gz
+    sha256: 7d7087a6a8226d204ec5a24517fc2c0fe72572f88dc0b70f5e128de48f93daa3
+    samples: 4545
+    duration_h: 1.262
+  - role: checks
+    file: m20C_Mixed6.csv.gz
+    sha256: a2cccdd15664924f0bbe1c8662cf21ab739f30cfb03a739023b91e92c44c55f3
+    samples: 4419
+    duration_h: 1.227
+  - role: checks
+    file: m20C_Mixed7.csv.gz
+    sha256: 4a334e3c613508905a48adb7b842680f23000106ce73f5f4826063573afa0ac8
+    samples: 4068
+    duration_h: 1.13
+  - role: checks
+    file: m20C_Mixed8.csv.gz
+    sha256: ee5078ca6cd0836ce1f5805387314bdd2705620d32c2331537c549344a78476a
+    samples: 4676
+    duration_h: 1.299
+  - role: checks
+    file: m20C_UDDS.csv.gz
+    sha256: ce0c5cf06336d5edd994f62845ad778448a6da3ae0487dd0d3d994a866563cf4
+    samples: 8190
+    duration_h: 2.275
+  - role: checks
+    file: m20C_US06.csv.gz
+    sha256: 416d8328767d4b46e7dce16cb6618c08e6e1b8d5a5affb04812ff5617a8b8372
+    samples: 2760
+    duration_h: 0.7664
+  dataset:
+    citation: P. Kollmeyer, M. Naguib and M. Skells, LG 18650HG2 Li-ion Battery Data, Mendeley Data v2 (2020), doi:10.17632/b5mj79w5w9.2
+    licence: CC BY 4.0

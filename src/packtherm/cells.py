@@ -35,6 +35,14 @@ Sources
               IN21700-30T" (McMaster, April 2020, in [Kollmeyer2023]): Li-ion,
               3.6 V, 3.0 Ah, 166 Wh/kg, charge 1.5 A (4 A fast) to 4.2 V,
               discharge to 2.5 V, 35 A max continuous.
+[Kollmeyer2020] P. Kollmeyer, M. Naguib and M. Skells, "LG 18650HG2 Li-ion
+              Battery Data", Mendeley Data v2 (2020), doi:10.17632/b5mj79w5w9.2,
+              CC BY 4.0. Tests at McMaster University at -20 to 40 degC.
+[HG2-TI]      "Technical Information and Experimental Test Results for LG
+              18650HG2" (McMaster, January 2020, in [Kollmeyer2020]):
+              Li[NiMnCo]O2 / graphite + SiO, 3.6 V, 3.0 Ah, 240 Wh/kg, 18.3 x
+              65.0 mm, charge 1.5 A (4 A fast) to 4.2 V, discharge to 2.0 V,
+              20 A max continuous.
 """
 
 from __future__ import annotations
@@ -529,6 +537,45 @@ def _packaged_fitted_cell(file: str, name: str, sources: tuple[str, ...]) -> Cel
 # [Kollmeyer2023] (docs/examples/fitting/samsung_30t_tests.yaml; the report beside it).
 SAMSUNG_30T = _packaged_fitted_cell("samsung_30t_fitted.yaml", "Samsung INR21700 30T", ("Kollmeyer2023", "30T-TI"))
 CELLS["30T"] = SAMSUNG_30T
+
+
+# ---------------------------------------------------------------------------
+# LG INR18650-HG2: geometry and limits; its circuit is fitted (v0.6.4)
+# ---------------------------------------------------------------------------
+
+# The lumped-resistance HG2: the base a fitted circuit is laid on (its "like" cell),
+# and the comparison for it. Its R0_25C is the fitted circuit's 10 s DC resistance.
+LG_HG2_LUMPED = Cell(
+    name="LG INR18650-HG2 (lumped DCIR)",
+    form_factor="18650",
+    chemistry="NMC / graphite + SiO",
+    capacity_Ah=3.0,
+    V_nominal=3.6,
+    diameter=18.3e-3,
+    height=65.0e-3,
+    # Derived: 3.6 V x 3.0 Ah at 240 Wh/kg [HG2-TI] is 45 g; no mass is stated.
+    mass=0.045,
+    # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (HG2 below); it
+    # rises 2x by 0 degC, close to the default Arrhenius law's 20 kJ/mol.
+    R0_25C=0.0283,
+    R0_range=(0.0255, 0.0311),
+    # ASSUMPTION: NMC811-family jelly-roll properties, as for the other library cells.
+    cp=_CP_JR,
+    k_radial=_K_JR,
+    # ASSUMPTION: entropic heat neglected, as for the NCR18650PF and the 30T.
+    dUdT=_zero_dUdT,
+    max_charge_C=4.0 / 3.0,  # 4 A fast charge
+    max_discharge_C=20.0 / 3.0,  # 20 A continuous
+    sources=("Kollmeyer2020", "HG2-TI"),
+)
+
+CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
+
+# v0.6.4: the HG2's circuit fitted by `packtherm fit` at -20 to 40 degC, from the tests in
+# [Kollmeyer2020] (docs/examples/fitting/lg_hg2_tests.yaml; the report beside it), with the
+# method of v0.6.3 unchanged.
+LG_HG2 = _packaged_fitted_cell("lg_hg2_fitted.yaml", "LG INR18650-HG2", ("Kollmeyer2020", "HG2-TI"))
+CELLS["HG2"] = LG_HG2
 
 
 def library_summary() -> dict[str, dict]:

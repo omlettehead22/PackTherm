@@ -1,0 +1,127 @@
+# The LG INR18650-HG2 fitted at six temperatures, from the tests in this repository (v0.6.4, the method
+# of v0.6.3 unchanged: a blind check of it).
+# Run from the repository's root:  packtherm fit docs/examples/fitting/lg_hg2_tests.yaml
+# Data: P. Kollmeyer, M. Naguib and M. Skells, LG 18650HG2 Li-ion Battery Data, Mendeley Data v2 (2020),
+# doi:10.17632/b5mj79w5w9.2, CC BY 4.0. Fitted on each temperature's pulse test (its pulses, and the
+# discharge steps between them), first 1C discharge and Mixed1 drive cycle, and the 25 degC C/20 discharge;
+# every other test is a check, never fitted to. The rig is calibrated on the 25 degC 1C discharge #1 and
+# Mixed1 (both fitted to), with the heat from their measured voltage. Each test's ambient and start are in
+# validation/data/lg_hg2/manifest.json; six aborted or empty runs are left out (excluded.json there).
+packtherm_fit: 1
+name: LG INR18650-HG2 (fitted)
+like: HG2-LUMPED
+rated_capacity_Ah: 3.0
+dataset:
+  citation: P. Kollmeyer, M. Naguib and M. Skells, LG 18650HG2 Li-ion Battery Data, Mendeley Data v2 (2020), doi:10.17632/b5mj79w5w9.2
+  licence: CC BY 4.0
+slow: "../../../tests/data/lg_hg2/10-26-18_09.29 549_C20DisCh_25degC_LGHG2.mat"
+temperatures:
+  - at: 25
+    pulses: "../../../tests/data/lg_hg2/10-25-18_07.39 549_HPPC_25degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/10-25-18_07.39 549_HPPC_25degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/25C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/25C_Mixed1.csv.gz"]
+  - at: 40
+    pulses: "../../../tests/data/lg_hg2/11-02-18_18.30 555_HPPC_40degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/11-02-18_18.30 555_HPPC_40degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/40C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/40C_Mixed1.csv.gz"]
+  - at: 10
+    pulses: "../../../tests/data/lg_hg2/11-16-18_20.44 575_HPPC_10degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/11-16-18_20.44 575_HPPC_10degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/10C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/10C_Mixed1.csv.gz"]
+  - at: 0
+    pulses: "../../../tests/data/lg_hg2/11-26-18_22.46 585_HPPC_0degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/11-26-18_22.46 585_HPPC_0degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/0C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/0C_Mixed1.csv.gz"]
+  - at: -10
+    pulses: "../../../tests/data/lg_hg2/12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/12-04-18_22.00 593_HPPC_n10degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/m10C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/m10C_Mixed1.csv.gz"]
+  - at: -20
+    pulses: "../../../tests/data/lg_hg2/12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat"
+    steps: "../../../tests/data/lg_hg2/12-21-18_13.25 607_HPPC_n20degC_LGHG2.mat"
+    discharges: ["../../../validation/data/lg_hg2/m20C_1C_discharge_1.csv.gz"]
+    cycles: ["../../../validation/data/lg_hg2/m20C_Mixed1.csv.gz"]
+chamber_calibration:  # the rig: h from the 1C discharge, the fixture's heat capacity from the drive cycle
+  - {file: "../../../validation/data/lg_hg2/25C_1C_discharge_1.csv.gz", start_soc: 1, ambient_C: 23.87}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed1.csv.gz", start_soc: 1, ambient_C: 23.93}
+checks:
+  - {file: "../../../validation/data/lg_hg2/40C_0p5C_discharge.csv.gz", start_soc: 0.9906, ambient_C: 38.54}
+  - {file: "../../../validation/data/lg_hg2/40C_2C_discharge.csv.gz", start_soc: 0.964, ambient_C: 38.38}
+  - {file: "../../../validation/data/lg_hg2/40C_HWFET.csv.gz", start_soc: 1, ambient_C: 38.38}
+  - {file: "../../../validation/data/lg_hg2/40C_LA92.csv.gz", start_soc: 1, ambient_C: 38.38}
+  - {file: "../../../validation/data/lg_hg2/40C_Mixed2.csv.gz", start_soc: 1, ambient_C: 38.54}
+  - {file: "../../../validation/data/lg_hg2/40C_Mixed3.csv.gz", start_soc: 1, ambient_C: 38.49}
+  - {file: "../../../validation/data/lg_hg2/40C_UDDS.csv.gz", start_soc: 1, ambient_C: 38.44}
+  - {file: "../../../validation/data/lg_hg2/40C_US06.csv.gz", start_soc: 1, ambient_C: 38.43}
+  - {file: "../../../validation/data/lg_hg2/25C_0p5C_discharge.csv.gz", start_soc: 0.9963, ambient_C: 23.93}
+  - {file: "../../../validation/data/lg_hg2/25C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: 23.93}
+  - {file: "../../../validation/data/lg_hg2/25C_2C_discharge.csv.gz", start_soc: 0.964, ambient_C: 24.76}
+  - {file: "../../../validation/data/lg_hg2/25C_LA92.csv.gz", start_soc: 1, ambient_C: 23.71}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed2.csv.gz", start_soc: 1, ambient_C: 23.82}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed3.csv.gz", start_soc: 1, ambient_C: 23.87}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed4.csv.gz", start_soc: 1, ambient_C: 23.66}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed5.csv.gz", start_soc: 1, ambient_C: 23.87}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed6.csv.gz", start_soc: 1, ambient_C: 23.72}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed7.csv.gz", start_soc: 1, ambient_C: 23.77}
+  - {file: "../../../validation/data/lg_hg2/25C_Mixed8.csv.gz", start_soc: 1, ambient_C: 23.93}
+  - {file: "../../../validation/data/lg_hg2/25C_UDDS.csv.gz", start_soc: 1, ambient_C: 23.77}
+  - {file: "../../../validation/data/lg_hg2/25C_US06.csv.gz", start_soc: 1, ambient_C: 23.87}
+  - {file: "../../../validation/data/lg_hg2/10C_0p5C_discharge.csv.gz", start_soc: 0.9945, ambient_C: 9.09}
+  - {file: "../../../validation/data/lg_hg2/10C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: 9.15}
+  - {file: "../../../validation/data/lg_hg2/10C_2C_discharge.csv.gz", start_soc: 0.9652, ambient_C: 9.04}
+  - {file: "../../../validation/data/lg_hg2/10C_HWFET.csv.gz", start_soc: 1, ambient_C: 9.09}
+  - {file: "../../../validation/data/lg_hg2/10C_LA92.csv.gz", start_soc: 1, ambient_C: 8.99}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed2.csv.gz", start_soc: 1, ambient_C: 9.1}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed4.csv.gz", start_soc: 1, ambient_C: 9.09}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed5.csv.gz", start_soc: 1, ambient_C: 9.09}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed6.csv.gz", start_soc: 1, ambient_C: 9.15}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed7.csv.gz", start_soc: 1, ambient_C: 9.15}
+  - {file: "../../../validation/data/lg_hg2/10C_Mixed8.csv.gz", start_soc: 1, ambient_C: 9.15}
+  - {file: "../../../validation/data/lg_hg2/10C_UDDS.csv.gz", start_soc: 1, ambient_C: 9.04}
+  - {file: "../../../validation/data/lg_hg2/10C_US06.csv.gz", start_soc: 1, ambient_C: 10}
+  - {file: "../../../validation/data/lg_hg2/0C_0p5C_discharge.csv.gz", start_soc: 0.9927, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_2C_discharge.csv.gz", start_soc: 0.964, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_HWFET.csv.gz", start_soc: 1, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_LA92.csv.gz", start_soc: 1, ambient_C: -0.63}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed2.csv.gz", start_soc: 1, ambient_C: -0.63}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed4.csv.gz", start_soc: 1, ambient_C: -0.53}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed5.csv.gz", start_soc: 1, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed6.csv.gz", start_soc: 1, ambient_C: -0.48}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed7.csv.gz", start_soc: 1, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_Mixed8.csv.gz", start_soc: 1, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_UDDS.csv.gz", start_soc: 1, ambient_C: -0.58}
+  - {file: "../../../validation/data/lg_hg2/0C_US06.csv.gz", start_soc: 1, ambient_C: -0.68}
+  - {file: "../../../validation/data/lg_hg2/m10C_0p5C_discharge.csv.gz", start_soc: 0.9921, ambient_C: -10.05}
+  - {file: "../../../validation/data/lg_hg2/m10C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: -10.1}
+  - {file: "../../../validation/data/lg_hg2/m10C_2C_discharge.csv.gz", start_soc: 0.964, ambient_C: -10.04}
+  - {file: "../../../validation/data/lg_hg2/m10C_HWFET.csv.gz", start_soc: 1, ambient_C: -9.99}
+  - {file: "../../../validation/data/lg_hg2/m10C_LA92.csv.gz", start_soc: 1, ambient_C: -10.1}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed2.csv.gz", start_soc: 1, ambient_C: -10.04}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed3.csv.gz", start_soc: 1, ambient_C: -9.88}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed4.csv.gz", start_soc: 1, ambient_C: -9.94}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed5.csv.gz", start_soc: 1, ambient_C: -10.05}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed6.csv.gz", start_soc: 1, ambient_C: -9.88}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed7.csv.gz", start_soc: 1, ambient_C: -9.88}
+  - {file: "../../../validation/data/lg_hg2/m10C_Mixed8.csv.gz", start_soc: 1, ambient_C: -9.99}
+  - {file: "../../../validation/data/lg_hg2/m10C_UDDS.csv.gz", start_soc: 1, ambient_C: -10.1}
+  - {file: "../../../validation/data/lg_hg2/m10C_US06.csv.gz", start_soc: 1, ambient_C: -9.94}
+  - {file: "../../../validation/data/lg_hg2/m20C_0p5C_discharge.csv.gz", start_soc: 0.9758, ambient_C: -18.89}
+  - {file: "../../../validation/data/lg_hg2/m20C_1C_discharge_2.csv.gz", start_soc: 1, ambient_C: -20.14}
+  - {file: "../../../validation/data/lg_hg2/m20C_2C_discharge.csv.gz", start_soc: 0.964, ambient_C: -19.77}
+  - {file: "../../../validation/data/lg_hg2/m20C_HWFET.csv.gz", start_soc: 1, ambient_C: -19.82}
+  - {file: "../../../validation/data/lg_hg2/m20C_LA92.csv.gz", start_soc: 1, ambient_C: -19.82}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed2.csv.gz", start_soc: 1, ambient_C: -19.87}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed3.csv.gz", start_soc: 1, ambient_C: -19.98}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed4.csv.gz", start_soc: 1, ambient_C: -19.87}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed5.csv.gz", start_soc: 1, ambient_C: -19.93}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed6.csv.gz", start_soc: 1, ambient_C: -19.93}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed7.csv.gz", start_soc: 1, ambient_C: -20.03}
+  - {file: "../../../validation/data/lg_hg2/m20C_Mixed8.csv.gz", start_soc: 1, ambient_C: -19.93}
+  - {file: "../../../validation/data/lg_hg2/m20C_UDDS.csv.gz", start_soc: 1, ambient_C: -19.87}
+  - {file: "../../../validation/data/lg_hg2/m20C_US06.csv.gz", start_soc: 1, ambient_C: -19.82}
+output: lg_hg2_fitted.yaml
