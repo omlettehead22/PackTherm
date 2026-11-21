@@ -55,3 +55,23 @@ def test_lg_hg2_is_its_fitted_cell_file():
     r0 = dc_resistance(cell.ecm, capacity_Ah=cell.capacity_Ah)
     assert cell.R0_25C == pytest.approx(r0)
     assert lumped.R0_25C == pytest.approx(r0, rel=0.02)
+
+
+def test_a123_is_its_fitted_cell_file():
+    # v0.6.6: an LFP cell, fitted blind without pulse tests.
+    cell, lumped = CELLS["A123"], CELLS["A123-LUMPED"]
+    shipped = yaml.safe_load((ROOT / "src" / "packtherm" / "data" / "a123_26650_fitted.yaml").read_text())
+    example = yaml.safe_load((ROOT / "docs" / "examples" / "fitting" / "a123_26650_fitted.yaml").read_text())
+    assert shipped["model"] == example["model"] and shipped["open_circuit_voltage"] == example["open_circuit_voltage"]
+    assert shipped["usable_in_studies"] is True and shipped["like"] == "A123-LUMPED"
+    assert "no pulse test" in shipped["provenance"]["settings"]["kinetics fitted on"]
+    assert get_cell("a123") is cell and cell.chemistry == lumped.chemistry == "LFP / graphite"
+    assert len(cell.ecm.by_T) == 7 and len(shipped["open_circuit_voltage"]["by_temperature"]) == 6  # and 25 degC
+    for k in ("diameter", "height", "mass", "cp", "k_radial", "form_factor", "max_discharge_C"):
+        assert getattr(cell, k) == getattr(lumped, k), k
+    r0 = dc_resistance(cell.ecm, capacity_Ah=cell.capacity_Ah)
+    assert cell.R0_25C == pytest.approx(r0)
+    assert lumped.R0_25C == pytest.approx(r0, rel=0.02)
+    R = [dc_resistance(cell.ecm, T=273.15 + T, capacity_Ah=cell.capacity_Ah) for T in (45, 25, 5, -15)]
+    assert all(b > a for a, b in pairwise(R))
+    assert 3.2 < cell.ecm.ocv(0.5) < 3.4  # the LFP plateau

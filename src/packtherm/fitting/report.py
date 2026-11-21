@@ -423,9 +423,11 @@ def report_html(fit, doc: dict, thermal: list[dict] | None = None) -> str:
     )
     parts.append(f"<p class='sub'>{_e(fit.ocv.method)}.{_e(extra)}</p>{plots['ocv']}")
     if "pulses" in plots:
-        parts.append(f"<h2>Pulses, measured against the model</h2>{plots['pulses']}")
+        what = "Pulses" if fit.records.get("pulses") else "Changes in current (no pulse test)"
+        parts.append(f"<h2>{what}, measured against the model</h2>{plots['pulses']}")
     if "pulses_by_T" in plots:
-        parts.append(f"<h2>A pulse at each temperature, measured against the model</h2>{plots['pulses_by_T']}")
+        what = "A pulse" if fit.records.get("pulses") else "A change in current"
+        parts.append(f"<h2>{what} at each temperature, measured against the model</h2>{plots['pulses_by_T']}")
     if "steps" in plots:
         parts.append(f"<h2>Steps and rests, measured against the model</h2>{plots['steps']}")
 

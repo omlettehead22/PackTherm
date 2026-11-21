@@ -11,7 +11,8 @@ dataset:                    # optional, kept in the fitted cell file
 slow: c20.mat               # a slow full discharge: the open-circuit voltage and the capacity
 temperatures:               # one entry per test temperature (three or more for studies)
   - at: 25                  # the chamber setpoint (a label: the fit uses the measured cell temperature)
-    pulses: hppc_25.mat     # required: a pulse (HPPC) test
+    pulses: hppc_25.mat     # a pulse (HPPC) test; optional with discharges or cycles (the kinetics
+                            # then come from the start of load after each rest of a minute or more)
     steps: steps_25.mat     # optional: steady steps with rests after them
     discharges: [dis1c.mat] # optional: full discharges at a working rate
     cycles: [cycle1.csv.gz] # optional: drive cycles to fit on
@@ -155,7 +156,10 @@ def read_test_list(path: str | Path) -> TestList:
         sets.append(
             {
                 "at": at,
-                "pulses": file(s.get("pulses"), f"{w}.pulses"),
+                # Optional when there are discharges or cycles (v0.6.6): the kinetics then come from them.
+                "pulses": file(s.get("pulses"), f"{w}.pulses")
+                if s.get("pulses") or not (s.get("discharges") or s.get("cycles"))
+                else None,
                 "steps": file(s["steps"], f"{w}.steps") if s.get("steps") else None,
                 "discharges": files(s.get("discharges"), f"{w}.discharges"),
                 "cycles": files(s.get("cycles"), f"{w}.cycles"),
@@ -265,7 +269,7 @@ def run_test_list(tl: TestList, progress=print):
 
     sets = [
         TestSet(
-            read(s["pulses"]),
+            read(s["pulses"]) if s["pulses"] else None,
             read(s["steps"]) if s["steps"] else None,
             s["at"],
             discharges=[read(p) for p in s["discharges"]],

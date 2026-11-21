@@ -45,6 +45,12 @@ PRE_S, POST_S = 5.0, 40.0  # each pulse window: this long before, and after the 
 ROUNDS = 3
 MIN_STEP_S = 5 * 60  # a steady step this long has settled by its end
 SETTLED_REST_S = 10 * 60  # a rest this long leaves the cell settled enough to replay a pulse from
+# With no pulse test (v0.6.6), the kinetics are fitted on the long tests' sudden changes in current
+# (STEP_C or more, in C, from one sample to the next: a start of load after a rest, or a step within a
+# drive cycle), each from PRE_S before it to LOAD_S after.
+STEP_C = 0.5
+LOAD_S = 60.0
+MIN_PULSES = 5
 
 
 @dataclass(frozen=True)
@@ -418,11 +424,13 @@ def _rms_mV(r: np.ndarray) -> tuple[float, float]:
 
 @dataclass
 class TestSet:
-    """The tests at one temperature: a pulse test and, optionally, steps with rests."""
+    """The tests at one temperature: a pulse test or long tests (or both), and optionally steps with rests."""
 
     __test__ = False  # not a pytest class
 
-    pulses: TestRecord
+    # The pulse test (HPPC). Optional from v0.6.6: without one, the kinetics are fitted on the start of
+    # load after each quiet spell in the discharges and cycles (load_windows).
+    pulses: TestRecord | None
     steps: TestRecord | None = None
     at_C: float | None = None  # the chamber's setpoint, as a label; the fit uses the measured cell temperature
     # Full discharges at a working rate (1C, say), each starting rested at a known state of charge
@@ -509,12 +517,45 @@ def discharge_windows(
     return Window(kind, tr, 0, max(k1, 2), rate, soc0, relative=False, end=tr.t.size), how
 
 
+def load_windows(long_w: Window, capacity: float) -> list[Window]:
+    """The long test's sudden changes in current: the kinetics, with no pulse test.
+
+    Each runs from PRE_S before the change to LOAD_S after it, whatever the
+    test does then (a rest, a step, a drive cycle's varying current), and is
+    scored on the change from its first sample, as a pulse is. It is a part
+    of the long test's own replay, which runs from the test's rested start,
+    so it needs no settled rest before it: what is still relaxing from the
+    load before is in the replay. The windows don't overlap: a change inside
+    one window starts none of its own.
+    """
+    tr = long_w.trace
+    n = min(tr.t.size, long_w.end or tr.t.size)
+    jumps = np.flatnonzero(np.abs(np.diff(tr.now[:n])) >= STEP_C * capacity) + 1
+    out: list[Window] = []
+    last = 0
+    for k in jumps:
+        if tr.t[k] - PRE_S < tr.t[last] and out:
+            continue
+        a = max(int(np.searchsorted(tr.t, tr.t[k] - PRE_S)), last)
+        b = min(int(np.searchsorted(tr.t, tr.t[k] + LOAD_S, side="right")), n)
+        if b - a < 5:
+            continue
+        rate = float(np.max(np.abs(tr.now[k:b]))) / capacity
+        out.append(Window("load", tr, a, b, rate, float(tr.soc[k])))
+        last = b
+    return out
+
+
 def _windows(test: TestSet, ocv: OCVCurve, cap: float, anchors: dict[str, str]) -> tuple[list[Window], list[Window]]:
     tag = f" at {test.label()}" if test.at_C is not None else ""
-    soc_p, anchors["pulses" + tag] = track_soc(test.pulses, ocv, cap)
-    wins = pulse_windows(test.pulses, soc_p, cap)
-    if len(wins) < 5:
-        raise ValueError(f"{test.pulses.source}: only {len(wins)} pulses found; a pulse test needs at least 5")
+    wins: list[Window] = []
+    if test.pulses is not None:
+        soc_p, anchors["pulses" + tag] = track_soc(test.pulses, ocv, cap)
+        wins = pulse_windows(test.pulses, soc_p, cap)
+        if len(wins) < MIN_PULSES:
+            raise ValueError(f"{test.pulses.source}: only {len(wins)} pulses found; a pulse test needs at least 5")
+    elif not (test.discharges or test.cycles):
+        raise ValueError(f"tests{tag}: give a pulse test, or discharges or cycles to fit the kinetics on")
     step_wins: list[Window] = []
     if test.steps is not None:
         soc_s, anchors["steps" + tag] = track_soc(test.steps, ocv, cap)
@@ -527,6 +568,13 @@ def _windows(test: TestSet, ocv: OCVCurve, cap: float, anchors: dict[str, str]) 
         for i, rec in enumerate(recs):
             w, anchors[f"{kind} {i + 1}{tag}"] = discharge_windows(rec, test.discharge_soc0, ocv, cap, kind)
             step_wins.append(w)  # the long tests: they fit the slow branch together
+    if test.pulses is None:
+        wins = [lw for w in step_wins if w.kind in ("discharge", "cycle") for lw in load_windows(w, cap)]
+        if len(wins) < MIN_PULSES:
+            raise ValueError(
+                f"tests{tag}: no pulse test, and only {len(wins)} sudden changes in current ({STEP_C:g}C or more) "
+                f"in the discharges and cycles; the kinetics need at least {MIN_PULSES}"
+            )
     return wins, step_wins
 
 
@@ -541,8 +589,9 @@ def _fit_one(model, ocv, values, wins, step_wins, V_max):
        a drive cycle's heat builds over are lost: predicted cycles ran cold.
     3. The rise near empty (soc_a, soc_b) on the pulses and the long tests
        run to their end: the knee at the end of a discharge is that rise.
-    4. The kinetics again, on all the pulses, with the rest held. Not on the
-       long tests: there the middle branch's resistance can take over the slow
+    4. The kinetics again, on all the pulses, with the rest held (with no
+       pulse test, on the long tests' changes in current at 20-95% SOC, as
+       in step 1). Not on the long tests as a whole: there the middle branch's resistance can take over the slow
        branch's part, and the two drift apart round after round (on tests made
        by a known cell, the slow branch's time constant ran to 10x).
 
@@ -564,12 +613,15 @@ def _fit_one(model, ocv, values, wins, step_wins, V_max):
     """
     values = dict(values)
     mid = [w for w in wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]
+    # Stage 4 on every pulse, but on the long tests' changes in current at 20-95% SOC only: a test run
+    # to empty has as many below 20% as above, and their slope there would set the kinetics.
+    last = mid if any(w.kind == "load" for w in wins) else list(wins)
     kin = ["R0_25C", "I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m"]
     values, _ = _fit(model, ocv, values, kin, mid, V_max)
     if not step_wins:
         rise_w = list(wins)
         values, r = _fit(model, ocv, values, ["soc_a", "soc_b"], rise_w, V_max)
-        values, res = _fit(model, ocv, values, kin, list(wins), V_max)
+        values, res = _fit(model, ocv, values, kin, last, V_max)
         return values, kin, res, {"rise": (["soc_a", "soc_b"], r, rise_w), "middle": "pulses"}
 
     long_w = _long_for_slow(step_wins)
@@ -582,7 +634,7 @@ def _fit_one(model, ocv, values, wins, step_wins, V_max):
         slow, k = [*SLOW_NAMES, *own], [n for n in kin if n not in own]
         v, r_slow = _fit(model, ocv, dict(values), slow, long_w, V_max)
         v, r_rise = _fit(model, ocv, v, ["soc_a", "soc_b"], rise_w, V_max)
-        v, res = _fit(model, ocv, v, k, list(wins), V_max)
+        v, res = _fit(model, ocv, v, k, last, V_max)
         stages = {"slow": (slow, r_slow, long_w), "rise": (["soc_a", "soc_b"], r_rise, rise_w), "middle": way}
         score = (_rms(_residuals(model, ocv, v, judge, V_max)), _rms(_residuals(model, ocv, v, mid, V_max)))
         ways[way] = (v, k, res, stages, score)
@@ -832,9 +884,10 @@ def fit_cell(
     for f in fits:
         tag = f", {f.test.label()}" if multi else ""
         steps_only = [w for w in f.step_wins if w.kind == "step"]
+        kin = "pulses" if f.test.pulses is not None else "changes in current"
         for label, ws in (
-            ("pulses at 20-95% SOC", [w for w in f.wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
-            ("pulses below 20% SOC", [w for w in f.wins if w.soc0 < MID_SOC[0]]),
+            (f"{kin} at 20-95% SOC", [w for w in f.wins if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
+            (f"{kin} below 20% SOC", [w for w in f.wins if w.soc0 < MID_SOC[0]]),
             ("steps at 20-95% SOC", [w for w in steps_only if MID_SOC[0] <= w.soc0 <= MID_SOC[1]]),
             ("steps below 20% SOC", [w for w in steps_only if w.soc0 < MID_SOC[0]]),
             ("discharges", [w for w in f.step_wins if w.kind == "discharge"]),
@@ -890,11 +943,18 @@ def fit_cell(
         for w in rec.warnings:
             notes.append(f"{rec.source}: {w}")
 
+    sims: dict[int, np.ndarray] = {}  # one replay per trace: windows from the long tests share theirs
+
+    def sim(w: Window) -> np.ndarray:
+        if id(w.trace) not in sims:
+            sims[id(w.trace)] = w.trace.simulate(model, ecm)
+        return w.model_V(sims[id(w.trace)])
+
     plot_data = {
         "ocv": ocv,
-        "pulses": [(w, w.simulate(model, ecm)) for w in fits[0].wins] if not multi else [],
-        "steps": [(w, w.simulate(model, ecm)) for w in fits[0].step_wins] if not multi else [],
-        "pulses_by_T": {f.test.label(): [(w, w.simulate(model, ecm)) for w in f.wins] for f in fits} if multi else {},
+        "pulses": [(w, sim(w)) for w in fits[0].wins] if not multi else [],
+        "steps": [(w, sim(w)) for w in fits[0].step_wins] if not multi else [],
+        "pulses_by_T": {f.test.label(): [(w, sim(w)) for w in f.wins] for f in fits} if multi else {},
         "checks": plot_checks,
     }
     temps = sorted({f.test.at_C for f in fits if f.test.at_C is not None})
@@ -912,14 +972,21 @@ def fit_cell(
         notes=notes,
         records={
             "slow": [slow, *(t.slow for t in others)],
-            "pulses": [t.pulses for t in sets],
+            "pulses": [t.pulses for t in sets if t.pulses is not None],
             "steps": [t.steps for t in sets if t.steps is not None],
             "checks": list(checks or []),
         },
         soc_anchors=anchors,
         settings={
             "pulse window": f"{PRE_S:g} s before each pulse to {POST_S:g} s after",
-            "kinetics fitted on": f"pulses at {MID_SOC[0]:.0%}-{MID_SOC[1]:.0%} SOC, then the near-empty rise on all",
+            "kinetics fitted on": f"pulses at {MID_SOC[0]:.0%}-{MID_SOC[1]:.0%} SOC, then the near-empty rise on all"
+            + (
+                f"; with no pulse test (at {', '.join(t.label() or 'its temperature' for t in sets if t.pulses is None)}), "
+                f"on the discharges' and cycles' changes in current of {STEP_C:g}C or more from one sample to the "
+                f"next, each from {PRE_S:g} s before to {LOAD_S:g} s after, at {MID_SOC[0]:.0%}-{MID_SOC[1]:.0%} SOC"
+                if any(t.pulses is None for t in sets)
+                else ""
+            ),
             "temperature behaviour": (
                 "Arrhenius laws fitted jointly over tests at "
                 + ", ".join(f"{x:g}" for x in temps)

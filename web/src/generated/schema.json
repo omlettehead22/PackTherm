@@ -643,6 +643,14 @@
    "HG2": {
     "name": "LG INR18650-HG2",
     "model": "circuit (fitted)"
+   },
+   "A123-LUMPED": {
+    "name": "A123 ANR26650M1B (lumped DCIR)",
+    "model": "lumped DCIR"
+   },
+   "A123": {
+    "name": "A123 ANR26650M1B",
+    "model": "circuit (fitted)"
    }
   },
   "fillers": [

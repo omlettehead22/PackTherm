@@ -70,5 +70,23 @@
   "V_nominal": 3.6,
   "DCIR_25C_mOhm": 28.47121153849018,
   "mass_g": 45.0
+ },
+ "A123-LUMPED": {
+  "name": "A123 ANR26650M1B (lumped DCIR)",
+  "model": "lumped DCIR",
+  "format": "26650",
+  "capacity_Ah": 2.5,
+  "V_nominal": 3.3,
+  "DCIR_25C_mOhm": 16.9,
+  "mass_g": 76.0
+ },
+ "A123": {
+  "name": "A123 ANR26650M1B",
+  "model": "circuit (fitted)",
+  "format": "26650",
+  "capacity_Ah": 2.5777,
+  "V_nominal": 3.3,
+  "DCIR_25C_mOhm": 16.85323519187934,
+  "mass_g": 76.0
  }
 }
