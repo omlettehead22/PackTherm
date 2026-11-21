@@ -1154,8 +1154,17 @@ def _validity(slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: li
         temps.append(slow.temperature_C[a:b])
     T = np.concatenate(temps) if temps else np.zeros(0)
     T = T[np.isfinite(T)]
-    dis = [w.c_rate for w in wins if w.c_rate > 0]
-    chg = [-w.c_rate for w in wins if w.c_rate < 0]
+    dis = [w.c_rate for w in wins if w.kind != "load" and w.c_rate > 0]
+    chg = [-w.c_rate for w in wins if w.kind != "load" and w.c_rate < 0]
+    # A change in current (no pulse test) can hold both: its peak each way, where it has one of 0.05C or more,
+    # over 30 s as a study's check of the range takes it (electrothermal.check_fitted_range).
+    for w in wins:
+        if w.kind == "load":
+            i = w.trace.now[w.k0 : w.k1] / ocv.capacity_Ah
+            n = max(1, min(i.size, round(30.0 / float(np.median(np.diff(w.t))))))
+            i = np.convolve(i, np.ones(n) / n, mode="valid")
+            dis += [float(i.max())] if i.max() >= 0.05 else []
+            chg += [float(-i.min())] if i.min() <= -0.05 else []
     return {
         "temperature_C": [round(float(T.min()), 1), round(float(T.max()), 1)] if T.size else None,
         "soc": [round(float(min(w.soc0 for w in wins)), 3), round(float(max(w.soc0 for w in wins)), 3)],

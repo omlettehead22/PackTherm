@@ -225,6 +225,9 @@ def test_without_a_pulse_test_the_kinetics_come_from_the_changes_in_current():
         assert got[name] == pytest.approx(value, rel=0.06), name
     mid = fit.errors["changes in current at 20-95% SOC"]
     assert mid["rmse_mV"] < 0.5 and mid["parts"] > 40
+    # The profile charges too (to 0.5C): the tested range says so, over 30 s as a study checks it.
+    assert fit.validity["charge_C"] is not None and 0.05 <= fit.validity["charge_C"][1] <= 0.5
+    assert fit.validity["discharge_C"][1] <= 1.5
     assert fit.checks[0]["rmse_mV"] < 1
 
 
