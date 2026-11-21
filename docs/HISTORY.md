@@ -39,6 +39,7 @@ How PackTherm grew from an MSc thesis model to a module design tool. Results on 
 | **v0.6.3** | The Samsung INR21700-30T fitted at six temperatures (−20 to 40 °C) and added to the library (`30T`); 82 tests it never saw: 27.7 mV median voltage error, 62% within 1 K. The middle branch's time constant set by the long tests where they fit better; the test rig (convection and fixture) calibrated on fitted tests. The Panasonic refitted: 24.4 mV, 81% within 1 K |
 | **v0.6.4** | The LG INR18650-HG2 fitted blind with v0.6.3's method, run once, and added to the library (`HG2`); 74 tests it never saw: 59.7 mV median voltage error (22.0 mV at 25 °C), 89% within 1 K. It exposed one capacity for every temperature as the fitted cells' main limit. One data-preparation script for the McMaster datasets |
 | **v0.6.5** | Open-circuit curves by temperature from slow tests at each, on one state of charge; the middle branch capped below the slow branch (120 s). The HG2's checks from 59.7 to 36.6 mV (93% within 1 K), the 30T's to 26.5 mV; the Panasonic 26.4 mV |
+| **v0.6.6** | Fitting without a pulse test: the kinetics from the long tests' sudden changes in current. The 30T and HG2 refitted without their pulses: 29.4 and 35.4 mV on the same checks. The A123 ANR26650M1B (LFP) fitted blind at −15 to 45 °C and added to the library (`A123`): 4–7 mV on its profiles from 5 to 45 °C, 8.2 mV on a 4C-peak profile at 25 °C it never saw, about 100 mV at −12 °C; a C/30 charge 35–50 mV above the model (hysteresis) |
 
 ## v0.3.1: single-cell design advisor
 

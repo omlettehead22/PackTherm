@@ -17,6 +17,7 @@ the test list; and fits across temperatures, against known laws.
 
 from __future__ import annotations
 
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -199,6 +200,48 @@ def test_too_few_pulses_is_an_error():
     few = synth([(1800, 0, 30), (10, CAP, 0.5), (40, 0, 0.5)], name="few.csv")
     with pytest.raises(ValueError, match="pulses found"):
         fit_cell(slow_test(), few)
+
+
+def dyn_test(T_C: float = 25.0) -> TestRecord:
+    """Plett's drive-profile test, as the A123 data has: a 1C step, a rest, then profile blocks with 5 min rests."""
+    rng = np.random.default_rng(5)
+    parts = [(2 * 3600, 0, 60), (720, CAP, 1), (900, 0, 1)]
+    for _ in range(9):
+        for _ in range(60):
+            cur = rng.choice([0.0, rng.uniform(-1.5, 4.5)], p=[0.15, 0.85])
+            parts.append((float(rng.integers(3, 40)), float(cur), 1.0))
+        parts.append((300, 0, 1))
+    return synth(parts, name="dyn.csv", T_C=T_C)
+
+
+def test_without_a_pulse_test_the_kinetics_come_from_the_changes_in_current():
+    # v0.6.6: a cell tested as the A123 was, with no pulse test, still gives the known values.
+    fit = fit_cell(
+        slow_test(), sets=[TestSet(None, discharges=[discharge_test()], cycles=[dyn_test()])],
+        checks=[drive_test()], check_soc0=[0.8],
+    )  # fmt: skip
+    got = {p.name: p.value for p in fit.params}
+    for name, value in TRUE.items():
+        assert got[name] == pytest.approx(value, rel=0.06), name
+    mid = fit.errors["changes in current at 20-95% SOC"]
+    assert mid["rmse_mV"] < 0.5 and mid["parts"] > 40
+    assert fit.checks[0]["rmse_mV"] < 1
+
+
+def test_load_windows_are_the_sudden_changes_and_do_not_overlap():
+    from packtherm.fitting.circuit import LOAD_S, PRE_S, discharge_windows, load_windows
+
+    w, _ = discharge_windows(dyn_test(), 1.0, _OCV, CAP, "cycle")
+    wins = load_windows(w, CAP)
+    assert all(x.kind == "load" and x.relative for x in wins)
+    assert all(a.k1 <= b.k0 for a, b in pairwise(wins))
+    assert all(x.t[-1] - x.t[0] <= PRE_S + LOAD_S + 1 for x in wins)
+    assert wins[0].soc0 == pytest.approx(1.0, abs=0.01)  # the 1C step from the rested start
+
+
+def test_with_no_pulse_test_and_no_long_tests_it_says_what_to_give():
+    with pytest.raises(ValueError, match="give a pulse test, or discharges or cycles"):
+        fit_cell(slow_test(), sets=[TestSet(None, steps_test())])
 
 
 def test_soc_from_a_start_given_or_from_the_first_voltage():
@@ -428,6 +471,20 @@ def test_test_list_reports_every_problem(tmp_path):
     for bit in ("colour: unknown key", "slow: file not found", "temperatures[0].pulses: file not found",
                 "temperatures[1].at: give the temperature", "like: Unknown cell"):  # fmt: skip
         assert bit in msg, bit
+
+
+def test_a_test_list_needs_pulses_only_without_long_tests(tmp_path):
+    from packtherm.fitting.testlist import TestListError, read_test_list
+
+    for f in ("slow.csv", "cycle.csv"):
+        (tmp_path / f).write_text("t_s,current_A,voltage_V\n")
+    (tmp_path / "t.yaml").write_text(
+        "packtherm_fit: 1\nname: x\nslow: slow.csv\ntemperatures:\n  - at: 25\n    cycles: [cycle.csv]\n"
+    )
+    assert read_test_list(tmp_path / "t.yaml").sets[0]["pulses"] is None
+    (tmp_path / "t.yaml").write_text("packtherm_fit: 1\nname: x\nslow: slow.csv\ntemperatures:\n  - at: 25\n")
+    with pytest.raises(TestListError, match="pulses: give a file name"):
+        read_test_list(tmp_path / "t.yaml")
 
 
 def test_fit_command_with_a_test_list(tmp_path, capsys):

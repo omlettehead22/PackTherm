@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.6
+
+An LFP cell, and fitting without a pulse test: the seventh v0.6 mini update.
+
+- **New: fitting without a pulse test.** A test list's `pulses` is now optional where a temperature has discharges or drive cycles. The kinetics then come from their sudden changes in current (0.5C or more from one sample to the next), each from 5 s before to 60 s after, scored on the change from its first sample as a pulse is. They're parts of the long test's own replay from its rested start, so they need no settled rest before them. Stages 1 and 4 use those at 20–95% state of charge. The file and report say when a fit had no pulse test.
+- **Proven before the LFP fit:**
+  - on a known cell tested as the A123 was (no pulses): every value within 6%;
+  - on the 30T and the HG2 with their pulse and step tests taken out: checks 29.4 mV (with pulses 26.5) and 35.4 mV (36.6), 77% and 96% within 1 K. The branch values differ a lot either way; the library's 30T and HG2 keep their pulse fits.
+- **New cell: the A123 ANR26650M1B** (LFP / graphite, 26650, 2.5 Ah), fitted blind once at −15 to 45 °C from the open UCCS dataset (Kawakita de Souza, CC BY 4.0) and added to the library as `A123`, with `A123-LUMPED` for its size and thermal properties (LFP values; entropic heat from v0.5.4's LFP profile).
+  - Fitted on: 4–7 mV RMS on its drive profiles from 5 to 45 °C; 21.8 mV at −5 °C, 48.4 mV at −15 °C.
+  - Checks, never fitted to: a 25 °C profile at four times the current, 8.2 mV; two −12 °C profiles, 104 and 93 mV; a 25 °C C/30 charge, 59.7 mV. Median 76.5 mV, 75% within 1 K.
+  - What it exposed (v0.6.7): in the cold the cell runs out well before the model (180–270 mV high below 25%), and its early losses are over-predicted by about 120 mV; on charge the model is 35–50 mV low, LFP's hysteresis.
+  - The rig can't be calibrated on these tests (rises under 1 K at 25 °C): h ran to its limit, which the file flags.
+- **Data:** `validation/prepare_a123.py` reads the dataset's Excel exports (its .mat files have no temperature) into `validation/data/a123_26650/` (19 files, 4.4 MB) with a manifest. −25 °C is left out: its drive profile logged no cell temperature.
+- **Tests:** the known cell without pulses; the windows (no overlaps, from the long test's replay); a test list without pulses; the A123 in the library.
+- **Docs:** FITTING.md (fitting without pulses, the 30T and HG2 without them, the A123 blind, limits), README, HISTORY, BACKLOG (item 7), TEST_DATA.
+
 ## 0.6.5
 
 Capacity by temperature, the sixth v0.6 mini update: the two faults the LG HG2's blind check found, fixed.

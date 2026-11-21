@@ -43,6 +43,15 @@ Sources
               Li[NiMnCo]O2 / graphite + SiO, 3.6 V, 3.0 Ah, 240 Wh/kg, 18.3 x
               65.0 mm, charge 1.5 A (4 A fast) to 4.2 V, discharge to 2.0 V,
               20 A max continuous.
+[Souza2021]   M. Kawakita de Souza, "A123 26650 m1b LFP Cell Data", University
+              of Colorado Colorado Springs, Mendeley Data v1,
+              doi:10.17632/p8kf893yv3.1, CC BY 4.0. Plett-format OCV and
+              drive-profile tests at -25 to 45 degC.
+[A123-DS]     A123 Systems ANR26650M1-B datasheet (MD100113): LiFePO4 /
+              graphite, 26 x 65 mm, 76 g, 2.5 Ah nominal (2.4 min), 3.3 V,
+              charge 1C (fast 4C) to 3.6 V CC-CV, operating -30 to 55 degC; and
+              Lithium Werks (A123's successor), "ANR26650m1B Power Cell": 50 A
+              (20C) max continuous discharge, 120 A 10 s pulse, discharge to 2.0 V.
 """
 
 from __future__ import annotations
@@ -576,6 +585,45 @@ CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
 # method of v0.6.3 unchanged.
 LG_HG2 = _packaged_fitted_cell("lg_hg2_fitted.yaml", "LG INR18650-HG2", ("Kollmeyer2020", "HG2-TI"))
 CELLS["HG2"] = LG_HG2
+
+
+# ---------------------------------------------------------------------------
+# A123 ANR26650M1B (LFP): geometry and limits; its circuit is fitted (v0.6.6)
+# ---------------------------------------------------------------------------
+
+# The lumped-resistance A123: the base a fitted circuit is laid on (its "like" cell). Its
+# R0_25C is the fitted circuit's 10 s DC resistance.
+A123_26650_LUMPED = Cell(
+    name="A123 ANR26650M1B (lumped DCIR)",
+    form_factor="26650",
+    chemistry="LFP / graphite",
+    capacity_Ah=2.5,
+    V_nominal=3.3,
+    diameter=26.0e-3,
+    height=65.0e-3,
+    mass=0.076,
+    # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (A123 below); it
+    # rises 2x by 5 degC and 7x by -15 degC.
+    R0_25C=0.0169,
+    R0_range=(0.0152, 0.0186),
+    # Whole-cell LFP values, as for user-defined LFP cells (v0.5.4).
+    cp=LFP_CP,
+    k_radial=LFP_K_RADIAL,
+    k_axial=LFP_K_AXIAL,
+    dUdT=lfp_graphite_dUdT,
+    max_charge_C=4.0,  # 4C fast charge
+    max_discharge_C=20.0,  # 50 A continuous
+    sources=("Souza2021", "A123-DS"),
+)
+
+CELLS["A123-LUMPED"] = A123_26650_LUMPED
+
+# v0.6.6: the A123's circuit fitted blind by `packtherm fit` at -15 to 45 degC, from the tests in
+# [Souza2021] (docs/examples/fitting/a123_26650_tests.yaml; the report beside it). There are no pulse
+# tests: the kinetics come from the drive profiles' changes in current. Good at 15-45 degC; in the
+# cold, and on charge (hysteresis, not modelled), much less so (docs/FITTING.md).
+A123_26650 = _packaged_fitted_cell("a123_26650_fitted.yaml", "A123 ANR26650M1B", ("Souza2021", "A123-DS"))
+CELLS["A123"] = A123_26650
 
 
 def library_summary() -> dict[str, dict]:

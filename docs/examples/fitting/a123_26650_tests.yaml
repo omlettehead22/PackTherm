@@ -1,0 +1,47 @@
+# The A123 ANR26650M1B (LFP) fitted at seven temperatures, blind (v0.6.6), from the tests in this repository.
+# Run from the repository's root:  packtherm fit docs/examples/fitting/a123_26650_tests.yaml
+# Data: M. Kawakita de Souza, A123 26650 m1b LFP Cell Data, University of Colorado Colorado Springs,
+# Mendeley Data v1, doi:10.17632/p8kf893yv3.1, CC BY 4.0 (prepared by validation/prepare_a123.py).
+# There are no pulse tests: the kinetics are fitted on the drive profile's sudden changes in current
+# (v0.6.6). Fitted on each temperature's C/30 discharge (its open-circuit voltage; the 25 degC one sets
+# the capacity) and one drive profile (Plett's DYN script 1: a 1C step, a rest, then blocks of the
+# profile with 5 min rests, from full); every other test is a check, never fitted to. -25 degC is a check
+# (its drive profile logged no cell temperature). Ambients are the cell temperature at the end of the
+# soak before each test (validation/data/a123_26650/manifest.json).
+packtherm_fit: 1
+name: A123 ANR26650M1B (fitted)
+like: A123-LUMPED
+rated_capacity_Ah: 2.5
+dataset:
+  citation: M. Kawakita de Souza, A123 26650 m1b LFP Cell Data, University of Colorado Colorado Springs, Mendeley Data v1, doi:10.17632/p8kf893yv3.1
+  licence: CC BY 4.0
+slow: "../../../validation/data/a123_26650/P25_C30_discharge.csv.gz"
+temperatures:
+  - at: 25
+    cycles: ["../../../validation/data/a123_26650/P25_DYN20.csv.gz"]
+  - at: 35
+    cycles: ["../../../validation/data/a123_26650/P35_DYN05.csv.gz"]
+    slow: "../../../validation/data/a123_26650/P35_C30_discharge.csv.gz"
+  - at: 45
+    cycles: ["../../../validation/data/a123_26650/P45_DYN10.csv.gz"]
+    slow: "../../../validation/data/a123_26650/P45_C30_discharge.csv.gz"
+  - at: 15
+    cycles: ["../../../validation/data/a123_26650/P15_DYN10.csv.gz"]
+    slow: "../../../validation/data/a123_26650/P15_C30_discharge.csv.gz"
+  - at: 5
+    cycles: ["../../../validation/data/a123_26650/P05_DYN10.csv.gz"]
+    slow: "../../../validation/data/a123_26650/P05_C30_discharge.csv.gz"
+  - at: -5
+    cycles: ["../../../validation/data/a123_26650/N05_DYN15.csv.gz"]
+    slow: "../../../validation/data/a123_26650/N05_C30_discharge.csv.gz"
+  - at: -15
+    cycles: ["../../../validation/data/a123_26650/N15_DYN20.csv.gz"]
+    slow: "../../../validation/data/a123_26650/N15_C30_discharge.csv.gz"
+chamber_calibration:  # the rig: h from the 25 degC drive profile (fitted to)
+  - {file: "../../../validation/data/a123_26650/P25_DYN20.csv.gz", start_soc: 1, ambient_C: 25.73}
+checks:
+  - {file: "../../../validation/data/a123_26650/N15_DYN05.csv.gz", start_soc: 1, ambient_C: -12.14}
+  - {file: "../../../validation/data/a123_26650/N15_DYN15.csv.gz", start_soc: 1, ambient_C: -12.51}
+  - {file: "../../../validation/data/a123_26650/P25_DYN50.csv.gz", start_soc: 1, ambient_C: 25.94}
+  - {file: "../../../validation/data/a123_26650/P25_C30_charge.csv.gz", start_soc: 0, ambient_C: 24.94}
+output: a123_26650_fitted.yaml
