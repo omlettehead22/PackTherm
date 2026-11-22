@@ -37,7 +37,17 @@ curves the voltage at a state of charge is interpolated linearly in T; beyond
 the coldest or warmest, that curve holds. Without them, the one curve applies
 at every temperature.
 
-Irreversible heat is I (OCV - V), so every loss term heats the cell.
+Hysteresis (``hyst``, v0.6.7; LFP): the open-circuit curve is the discharge's,
+and a state h runs from 0 (on the discharge branch) to 1 (on the charge
+branch). Charging moves h towards 1 and discharging towards 0, by
+dh = (target - h)(1 - exp(-k |I| dt / 3600)): about 1/k Ah of charge in one
+direction crosses most of the way. The voltage is raised by G h, G the gap
+between the two branches. Rows (T_K, G, k) by temperature, interpolated
+linearly in T and held beyond the ends; off when there are none.
+
+Irreversible heat is I (OCV - V), so every loss term heats the cell; with
+hysteresis, OCV is taken midway between the branches (the curve plus G/2), so
+each pass round the loop heats by about G/2 per unit of charge.
 Discharge stops at V_min; charging switches from constant current to
 constant voltage at V_max and ends when |I| falls below the cut-off.
 """
@@ -51,6 +61,7 @@ from dataclasses import dataclass, field, replace
 F = 96485.33212
 R_GAS = 8.314462618
 T_REF = 298.15
+FULL_SOC = 0.98  # a run or test starting this full starts just charged: on the charge branch (hysteresis)
 BY_T_COLUMNS = ("T_K", "R0", "I0", "gamma", "tau_ct", "Rm", "tau_m", "Rd", "tau_d", "soc_a", "soc_b")
 
 
@@ -83,6 +94,9 @@ class ECM:
     by_T: tuple[tuple[float, ...], ...] = ()
     # Open-circuit voltage by temperature: (T_K, soc, V) curves, on the reference capacity's state of charge.
     ocv_by_T: tuple[tuple[float, tuple[float, ...], tuple[float, ...]], ...] = ()
+    # Hysteresis (v0.6.7): (T_K, G, k) rows: the gap between the charge and discharge branches (V), and how
+    # quickly a change of direction crosses it (1/Ah). Off when empty.
+    hyst: tuple[tuple[float, float, float], ...] = ()
 
     def __post_init__(self):
         if self.by_T:
@@ -97,6 +111,31 @@ class ECM:
                 raise ValueError("ocv_by_T: each curve needs as many voltages as states of charge, two or more")
             object.__setattr__(self, "_ocv_T", tuple(float(c[0]) for c in curves))
             object.__setattr__(self, "_ocv_curves", tuple((tuple(c[1]), tuple(c[2])) for c in curves))
+
+    def _hyst_at(self, i: int, T: float) -> float:
+        rows = sorted(self.hyst)
+        if T <= rows[0][0]:
+            return rows[0][i]
+        if T >= rows[-1][0]:
+            return rows[-1][i]
+        k = bisect_right([r[0] for r in rows], T) - 1
+        a, b = rows[k], rows[k + 1]
+        return a[i] + (b[i] - a[i]) * (T - a[0]) / (b[0] - a[0])
+
+    def hyst_V(self, T: float) -> float:
+        """The gap between the charge and discharge branches at T (K): 0 without hysteresis."""
+        return self._hyst_at(1, T) if self.hyst else 0.0
+
+    def hyst_rate(self, T: float) -> float:
+        """How quickly a change of direction crosses the gap at T (K), 1/Ah."""
+        return self._hyst_at(2, T) if self.hyst else 0.0
+
+    def hyst_step(self, h: float, current: float, dt: float, T: float = T_REF) -> float:
+        """The hysteresis state after dt at current (+ = discharge): towards 1 on charge, 0 on discharge."""
+        if not self.hyst or current == 0.0:
+            return h
+        target = 1.0 if current < 0 else 0.0
+        return target + (h - target) * math.exp(-self.hyst_rate(T) * abs(current) * dt / 3600.0)
 
     def _at(self, col: str, T: float, Ea: float | None = None, sign: float = 1.0) -> float:
         """A tabulated value at T: log-interpolated in 1/T; beyond the rows, Ea from the end row (or held)."""
@@ -219,6 +258,7 @@ class ECMState:
     eta_ct: float = 0.0
     V_d: float = 0.0
     V_m: float = 0.0
+    h: float = 0.0  # hysteresis: 0 on the discharge branch, 1 on the charge branch
     cutoff: bool = False  # discharge hit V_min
     charge_done: bool = False  # CV phase ended
 
@@ -236,6 +276,8 @@ class ECMState:
             e3 = math.exp(-dt / ecm.tau_m_at(T))
             vm = self.V_m * e3 + f * Rm * current * (1.0 - e3)
         V = ecm.ocv(soc, T) - current * f * ecm.R0(T) - eta - vm - vd
+        if ecm.hyst:
+            V += ecm.hyst_V(T) * ecm.hyst_step(self.h, current, dt, T)
         return V, eta, vd, vm
 
     def apply(self, ecm: ECM, current: float, soc: float, T: float, dt: float) -> tuple[float, float]:
@@ -273,4 +315,5 @@ class ECMState:
                 current = 0.0
             V, eta, vd, vm = self.step(ecm, current, soc, T, dt)
         self.eta_ct, self.V_d, self.V_m = eta, vd, vm
+        self.h = ecm.hyst_step(self.h, current, dt, T)
         return current, V

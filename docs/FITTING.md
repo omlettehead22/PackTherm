@@ -349,18 +349,47 @@ Before the A123, which has no pulse tests, the 30T and the HG2 were fitted again
 | Slow branch | 11.8 mΩ over 10 000 s (its limit) |
 | 10 s DC resistance, mid charge, 1.5C | 16.9 mΩ (13.4 at 45 °C, 33.8 at 5 °C, 114 at −15 °C) |
 
+## Hysteresis, and the A123 refitted (v0.6.7)
+
+LFP's charge and discharge sit on two branches. On the A123 the gap is about 28 mV at 25 °C, and in v0.6.6 a C/30 charge ran 35–50 mV above the model all the way. This was fixed with that error known, so the A123 is no longer a blind check.
+
+**How it's modelled.** A state h runs from 0 (on the discharge branch) to 1 (on the charge branch). Charging moves it towards 1 and discharging towards 0, crossing most of the way in 1/k Ah of charge in one direction. The voltage is raised by G·h, G the gap. G and k are fitted at each temperature, interpolated in between and held beyond the ends (`model.ecm.hysteresis` in the cell file). For heat, the open-circuit voltage is taken midway between the branches, so each pass round the loop heats the cell by about G/2 per unit of charge. A run or test starting full (98% or more) starts on the charge branch, just charged; otherwise on the discharge branch.
+
+**How it's fitted.** Give a temperature a `slow_charge` (a slow charge from empty) in the test list. G is what's left between the model, replayed on its discharge branch, and the charge at 20–85% state of charge (median). k is fitted on the charge's first 40%, with G held, and bounded at 100 per Ah: faster, a regen pulse of a few mAh crosses the whole gap, and the hysteresis took the place of the middle and charge-transfer branches (with a bound of 500, both went to their floors at 25 °C and the profiles fitted worse). A temperature without a slow charge takes the nearest one's. The top of each slow discharge's curve, where it comes down the gap from the charge branch, is taken off the curve. A cell with no slow charges has no hysteresis: the 30T and the HG2 are unchanged (their gaps are about 10 mV, and their refits give 26.5 and 36.6 mV on the checks, as before).
+
+**The A123, refitted** with its C/30 charges at six temperatures; the one at 15 °C is held out as a check:
+
+| | v0.6.6 | v0.6.7 |
+|---|---|---|
+| Slow charges, fitted on (10–95%), 5 to 45 °C | 35–50 mV low (not modelled) | 7.0–11.2 mV |
+| Slow charges, fitted on, −5 / −15 °C | | 22.6 / 82.7 mV |
+| **Held-out slow charge, 15 °C (10–95%)** | **41.2 mV** | **8.2 mV** |
+| Drive profiles fitted on, 5 to 45 °C | 4.2–6.6 mV | 4.1–8.1 mV |
+| Drive profiles fitted on, −5 / −15 °C | 21.8 / 48.4 mV | 22.3 / 44.6 mV |
+| Check: 25 °C profile at 4C peaks | 8.2 mV | 11.9 mV |
+| Checks: two profiles at −12 °C | 104.3 / 93.4 mV | 98.2 / 88.1 mV |
+| 10 s DC resistance, 25 °C | 16.9 mΩ | 14.4 mΩ |
+
+- **The charge is now right:** the held-out 15 °C charge from 41 to 8 mV, like the ones fitted on. The gap is 27–29 mV from 18 to 44 °C, and wider in the cold (40 mV at 7 °C, 51 mV at −12 °C).
+- **The discharge profiles got a little worse,** by 1–2 mV at most temperatures and 3.7 mV on the 4C check. The fitted rate is at its bound (100 per Ah) at every temperature, so the data wants a faster change of branch than the model allows without its branches trading places.
+- **The branches are less physical than before.** At 25–45 °C the charge-transfer branch is close to linear and small, the middle branch is nearly gone and the slow branch is 0.05–0.10 Ω over its 10 000 s limit. The voltage is pinned; the split isn't, as without pulses on the 30T and HG2.
+- **The whole-test error on the held-out charge is still 96.5 mV,** because the first 10% of a charge from empty runs about 200 mV low. Charging from empty (the steep end of the curve, and the rise near empty, which is only applied on discharge) is not right yet.
+- **The cold is not fixed.** Two attempts, neither shipped. A "surface" state of charge (the bulk less the charge held in the slow branch), so the cell runs out sooner at rate and in the cold, improved the −12 °C profiles by about 5% on the v0.6.6 fit. Fitting the rise near empty on the long tests only (not their changes in current) brought the −12 °C checks to 70 and 54 mV, but sent the −5 and 5 °C values to their bounds (the −5 °C profile to 148 mV). The cold needs a better model of charge lost with rate, not a tweak of the rise.
+
 ## The cells side by side
 
 The checks are the tests never fitted to, predicted from their current alone, as a study runs the cell. The figures are medians.
 
-| Cell | Temperatures | Checks | Voltage RMS, v0.6.4 | Voltage RMS, v0.6.5 | Within 1 K, v0.6.5 | How blind |
+| Cell | Temperatures | Checks | Voltage RMS, first fit | Voltage RMS, now | Within 1 K, now | How blind |
 |---|---|---|---|---|---|---|
-| Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV | 26.4 mV | 81% | method compared on these checks (v0.6.2 to v0.6.5) |
-| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV | 26.5 mV | 66% | method fixed with these checks in view (v0.6.3, v0.6.5) |
-| LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV (blind) | 36.6 mV | 93% | blind in v0.6.4; fixed with it in view (v0.6.5) |
-| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | – | 76.5 mV (v0.6.6, blind) | 75% | blind in v0.6.6; no pulse tests |
+| Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV (v0.6.4) | 26.4 mV | 81% | method compared on these checks (v0.6.2 to v0.6.5) |
+| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV (v0.6.4) | 26.5 mV | 66% | method fixed with these checks in view (v0.6.3, v0.6.5) |
+| LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV (v0.6.4, blind) | 36.6 mV | 93% | blind in v0.6.4; fixed with it in view (v0.6.5) |
+| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | 76.5 mV (v0.6.6, blind) | 92.3 mV* | 100% | blind in v0.6.6; hysteresis with its errors known (v0.6.7); no pulse tests |
 
-At 25 °C the four agree: 18.1, 16.6, 22.1 and 8.2 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 is v0.6.6's blind check, and its four checks are few: two of them are in the cold, where it fails, and one is a charge, which shows the hysteresis. Its median says less than the others'.
+\* Not the same four checks: v0.6.7 fits on the 25 °C charge and holds out the 15 °C one, whose whole-test error (96.5 mV) is mostly its first 10% from empty. On the three drive profiles both fits share, v0.6.7 is better in the cold and 3.7 mV worse at 25 °C (the table above).
+
+At 25 °C the four agree: 18.1, 16.6, 22.1 and 11.9 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 was v0.6.6's blind check; v0.6.7 added its hysteresis with those errors known. Its four checks are few: two of them are in the cold, where it fails, and one is a charge from empty. Its median says less than the others'.
 
 ## Known limits
 
@@ -371,7 +400,7 @@ At 25 °C the four agree: 18.1, 16.6, 22.1 and 8.2 mV. The blind check of v0.6.4
 - **The test rig.** The thermal checks need the rig's convection and, for drive cycles, the heat capacity its fixture adds. Both come from fitted tests, but they are the rig's, and a cell's peaks in a pack depend on the pack's own.
 - **One shape across currents.** Pulses from 0.5C to 6C share one non-linear charge-transfer shape; the 1C pulses at mid charge come out about 10% too deep at every temperature.
 - **One open-circuit curve without slow tests at other temperatures**, as for the Panasonic and PackTherm's hand-made library cells.
-- **Hysteresis is not modelled.** The curve follows the discharge, and the report gives the gap to the charge if the slow test has one. On the A123 (LFP) a C/30 charge runs 35–50 mV above the model.
+- **Hysteresis** is modelled from v0.6.7 where slow charges are given (LFP); otherwise the curve follows the discharge, and the report gives the gap to the charge if the slow test has one. Charging from empty is still about 200 mV low over its first 10% on the A123.
 - **LFP in the cold.** At −12 °C the A123 runs out well before the model (180–270 mV high below 25%), and its loss in the first part of a profile is over-predicted by about 120 mV. Charge lost with rate in the cold, and a near-empty rise too gentle for LFP's, are outside the model.
 - **Without a pulse test**, the kinetics come from the long tests' changes in current (v0.6.6). The voltage comes out as well; how it splits between the branches does not.
 - **Charge.** The near-empty rise applies on discharge only, as in PackTherm's runs.

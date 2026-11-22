@@ -535,6 +535,20 @@
     ],
     "default": null
    },
+   "T_min_charge_C": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null
+   },
+   "T_min_discharge_C": {
+    "type": [
+     "number",
+     "null"
+    ],
+    "default": null
+   },
    "cp_J_kgK": {
     "type": [
      "number",

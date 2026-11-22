@@ -75,3 +75,11 @@ def test_a123_is_its_fitted_cell_file():
     R = [dc_resistance(cell.ecm, T=273.15 + T, capacity_Ah=cell.capacity_Ah) for T in (45, 25, 5, -15)]
     assert all(b > a for a, b in pairwise(R))
     assert 3.2 < cell.ecm.ocv(0.5) < 3.4  # the LFP plateau
+
+
+def test_only_the_lfp_cell_has_hysteresis():
+    # v0.6.7: the A123's gap between its charge and discharge branches, from its slow charges.
+    a123 = CELLS["A123"].ecm
+    assert len(a123.hyst) == 7  # 15 degC takes 25 degC's: its slow charge is held out
+    assert 0.02 < a123.hyst_V(298.15) < 0.04
+    assert not CELLS["30T"].ecm.hyst and not CELLS["HG2"].ecm.hyst

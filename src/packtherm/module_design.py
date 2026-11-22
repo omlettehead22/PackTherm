@@ -287,7 +287,9 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         ("spread", not c2c_ok),
         ("short", share < MIN_DELIVERED),
     )
-    rating = [w for w in check_limits(cell, r.load, res) if "rating" in w] + check_fitted_range(cell, r.load, res)
+    # Current ratings, and the lower temperature limits (v0.6.7); the upper ones are the peak criterion.
+    rating = [w for w in check_limits(cell, r.load, res) if "rating" in w or "below the" in w]
+    rating += check_fitted_range(cell, r.load, res)
     if share < MIN_DELIVERED:
         rating.insert(0, shortfall_warning(share))
     show_gap = len(study.gaps_mm) > 1 or d.gap_mm not in study.gaps_mm

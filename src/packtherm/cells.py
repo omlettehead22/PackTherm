@@ -35,6 +35,9 @@ Sources
               IN21700-30T" (McMaster, April 2020, in [Kollmeyer2023]): Li-ion,
               3.6 V, 3.0 Ah, 166 Wh/kg, charge 1.5 A (4 A fast) to 4.2 V,
               discharge to 2.5 V, 35 A max continuous.
+[30T-DS]      Samsung SDI, "Specification of Product INR21700-30T" v2.0:
+              operating (surface) temperature, charge 0 to 50 degC, discharge
+              -20 to 80 degC.
 [Kollmeyer2020] P. Kollmeyer, M. Naguib and M. Skells, "LG 18650HG2 Li-ion
               Battery Data", Mendeley Data v2 (2020), doi:10.17632/b5mj79w5w9.2,
               CC BY 4.0. Tests at McMaster University at -20 to 40 degC.
@@ -43,6 +46,9 @@ Sources
               Li[NiMnCo]O2 / graphite + SiO, 3.6 V, 3.0 Ah, 240 Wh/kg, 18.3 x
               65.0 mm, charge 1.5 A (4 A fast) to 4.2 V, discharge to 2.0 V,
               20 A max continuous.
+[HG2-DS]      LG Chem, "Product Specification INR18650HG2" (BCY-PS-HG2):
+              operating (cell surface) temperature, charge 0 to 50 degC,
+              discharge -20 to 75 degC.
 [Souza2021]   M. Kawakita de Souza, "A123 26650 m1b LFP Cell Data", University
               of Colorado Colorado Springs, Mendeley Data v1,
               doi:10.17632/p8kf893yv3.1, CC BY 4.0. Plett-format OCV and
@@ -51,7 +57,8 @@ Sources
               graphite, 26 x 65 mm, 76 g, 2.5 Ah nominal (2.4 min), 3.3 V,
               charge 1C (fast 4C) to 3.6 V CC-CV, operating -30 to 55 degC; and
               Lithium Werks (A123's successor), "ANR26650m1B Power Cell": 50 A
-              (20C) max continuous discharge, 120 A 10 s pulse, discharge to 2.0 V.
+              (20C) max continuous discharge, 120 A 10 s pulse, discharge to 2.0 V;
+              charging 0 to 60 degC (under 250 mA below 0 degC for some uses).
 """
 
 from __future__ import annotations
@@ -227,6 +234,9 @@ class Cell:
     max_discharge_C: float | None = None
     T_max_charge_C: float | None = None  # degC, datasheet upper limit while charging
     T_max_discharge_C: float | None = None
+    # degC, datasheet lower limits (v0.6.7): most cells must not be charged below 0 degC (lithium plating).
+    T_min_charge_C: float | None = None
+    T_min_discharge_C: float | None = None
     sources: tuple[str, ...] = ()
     # Axial (along the winding) conductivity; defaults to the NMC811 jelly-roll value.
     k_axial: float = field(default_factory=lambda: nmc811_jellyroll_k_axial())
@@ -523,7 +533,11 @@ SAMSUNG_30T_LUMPED = Cell(
     dUdT=_zero_dUdT,
     max_charge_C=4.0 / 3.0,  # 4 A fast charge
     max_discharge_C=35.0 / 3.0,  # 35 A continuous
-    sources=("Kollmeyer2023", "30T-TI"),
+    T_max_charge_C=50.0,  # [30T-DS], surface
+    T_max_discharge_C=80.0,
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-20.0,
+    sources=("Kollmeyer2023", "30T-TI", "30T-DS"),
 )
 
 CELLS["30T-LUMPED"] = SAMSUNG_30T_LUMPED
@@ -544,7 +558,7 @@ def _packaged_fitted_cell(file: str, name: str, sources: tuple[str, ...]) -> Cel
 
 # v0.6.3: the 30T's circuit fitted by `packtherm fit` at -20 to 40 degC, from the tests in
 # [Kollmeyer2023] (docs/examples/fitting/samsung_30t_tests.yaml; the report beside it).
-SAMSUNG_30T = _packaged_fitted_cell("samsung_30t_fitted.yaml", "Samsung INR21700 30T", ("Kollmeyer2023", "30T-TI"))
+SAMSUNG_30T = _packaged_fitted_cell("samsung_30t_fitted.yaml", "Samsung INR21700 30T", ("Kollmeyer2023", "30T-TI", "30T-DS"))
 CELLS["30T"] = SAMSUNG_30T
 
 
@@ -575,7 +589,11 @@ LG_HG2_LUMPED = Cell(
     dUdT=_zero_dUdT,
     max_charge_C=4.0 / 3.0,  # 4 A fast charge
     max_discharge_C=20.0 / 3.0,  # 20 A continuous
-    sources=("Kollmeyer2020", "HG2-TI"),
+    T_max_charge_C=50.0,  # [HG2-DS], cell surface
+    T_max_discharge_C=75.0,
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-20.0,
+    sources=("Kollmeyer2020", "HG2-TI", "HG2-DS"),
 )
 
 CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
@@ -583,7 +601,7 @@ CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
 # v0.6.4: the HG2's circuit fitted by `packtherm fit` at -20 to 40 degC, from the tests in
 # [Kollmeyer2020] (docs/examples/fitting/lg_hg2_tests.yaml; the report beside it), with the
 # method of v0.6.3 unchanged.
-LG_HG2 = _packaged_fitted_cell("lg_hg2_fitted.yaml", "LG INR18650-HG2", ("Kollmeyer2020", "HG2-TI"))
+LG_HG2 = _packaged_fitted_cell("lg_hg2_fitted.yaml", "LG INR18650-HG2", ("Kollmeyer2020", "HG2-TI", "HG2-DS"))
 CELLS["HG2"] = LG_HG2
 
 
@@ -602,10 +620,10 @@ A123_26650_LUMPED = Cell(
     diameter=26.0e-3,
     height=65.0e-3,
     mass=0.076,
-    # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (A123 below); it
-    # rises 2x by 5 degC and 7x by -15 degC.
-    R0_25C=0.0169,
-    R0_range=(0.0152, 0.0186),
+    # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (A123 below; 16.9 mOhm
+    # without hysteresis, v0.6.6); it rises 2.4x by 5 degC and 8x by -15 degC.
+    R0_25C=0.0144,
+    R0_range=(0.0130, 0.0159),
     # Whole-cell LFP values, as for user-defined LFP cells (v0.5.4).
     cp=LFP_CP,
     k_radial=LFP_K_RADIAL,
@@ -613,6 +631,11 @@ A123_26650_LUMPED = Cell(
     dUdT=lfp_graphite_dUdT,
     max_charge_C=4.0,  # 4C fast charge
     max_discharge_C=20.0,  # 50 A continuous
+    # [A123-DS]: operating -30 to 55 degC; charging from 0 degC (Lithium Werks: up to 60, held at 55 here).
+    T_max_charge_C=55.0,
+    T_max_discharge_C=55.0,
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-30.0,
     sources=("Souza2021", "A123-DS"),
 )
 
@@ -620,8 +643,8 @@ CELLS["A123-LUMPED"] = A123_26650_LUMPED
 
 # v0.6.6: the A123's circuit fitted blind by `packtherm fit` at -15 to 45 degC, from the tests in
 # [Souza2021] (docs/examples/fitting/a123_26650_tests.yaml; the report beside it). There are no pulse
-# tests: the kinetics come from the drive profiles' changes in current. Good at 15-45 degC; in the
-# cold, and on charge (hysteresis, not modelled), much less so (docs/FITTING.md).
+# tests: the kinetics come from the drive profiles' changes in current. v0.6.7: refitted with LFP's
+# hysteresis, from its slow charges. Good at 5-45 degC; much less so in the cold (docs/FITTING.md).
 A123_26650 = _packaged_fitted_cell("a123_26650_fitted.yaml", "A123 ANR26650M1B", ("Souza2021", "A123-DS"))
 CELLS["A123"] = A123_26650
 

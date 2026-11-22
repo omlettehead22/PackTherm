@@ -1955,7 +1955,7 @@ valid_for:
   - -23.1
   - 44.0
   soc:
-  - 0.033
+  - 0.006
   - 1.034
   discharge_C:
   - 0.3
@@ -3246,85 +3246,83 @@ data_warnings:
 - the middle branch's time constant (tau_m) set by the long tests at 24, 39, 9 degC, where they fit better that
   way and the pulses still fit (elsewhere by the pulses)
 - '03-16-19_04.00 729_C20DisCh_25degC_IN21700_30T.mat: 2 rows with a repeated time were dropped'
-- '03-16-19_04.00 729_C20DisCh_25degC_IN21700_30T.mat: median time step 60 s is coarse for pulse tests (1 s or finer
-  is usual)'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 317 rows with a repeated time were dropped'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: the charge counter and the logged current disagree by +31% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 59 gaps in the record (longest 2 min 15 s at 25 h 26 min): no
+- '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 43 gaps in the record (longest 2 min 15 s at 25 h 26 min): no
   current is logged across them'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: the tester''s charge counter shows 1.753 Ah moved during 43 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 317 rows with a repeated time were dropped'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: the charge counter and the logged current disagree by +31% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 59 gaps in the record (longest 2 min 15 s at 25 h 26 min): no
+- '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: 43 gaps in the record (longest 2 min 15 s at 25 h 26 min): no
   current is logged across them'
 - '03-14-19_17.34 729_HPPC_25degC_IN21700_30T.mat: the tester''s charge counter shows 1.753 Ah moved during 43 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 333 rows with a repeated time were dropped'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: the charge counter and the logged current disagree by +63% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 208 gaps in the record (longest 2 min 15 s at 19 h 59 min): no
+- '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 50 gaps in the record (longest 2 min 15 s at 19 h 59 min): no
   current is logged across them'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: the tester''s charge counter shows 2.021 Ah moved during 50 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 333 rows with a repeated time were dropped'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: the charge counter and the logged current disagree by +63% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 208 gaps in the record (longest 2 min 15 s at 19 h 59 min): no
+- '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: 50 gaps in the record (longest 2 min 15 s at 19 h 59 min): no
   current is logged across them'
 - '03-01-19_19.23 705_HPPC_40degC_IN21700_30T.mat: the tester''s charge counter shows 2.021 Ah moved during 50 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 296 rows with a repeated time were dropped'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: the charge counter and the logged current disagree by +33% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 257 gaps in the record (longest 1 min 07 s at 27 h 35 min): no
+- '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 43 gaps in the record (longest 1 min 07 s at 27 h 35 min): no
   current is logged across them'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: the tester''s charge counter shows 1.601 Ah moved during 43 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 296 rows with a repeated time were dropped'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: the charge counter and the logged current disagree by +33% over
   the logged parts; the counter is used only across gaps and steps'
-- '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 257 gaps in the record (longest 1 min 07 s at 27 h 35 min): no
+- '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: 43 gaps in the record (longest 1 min 07 s at 27 h 35 min): no
   current is logged across them'
 - '03-22-19_15.28 746_HPPC_10degC_IN21700_30T.mat: the tester''s charge counter shows 1.601 Ah moved during 43 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 308 rows with a repeated time were dropped'
-- '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 97 gaps in the record (longest 1 min 00 s at 26 h 17 min): no
+- '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 33 gaps in the record (longest 1 min 00 s at 24 h 59 min): no
   current is logged across them'
 - '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: the tester''s charge counter shows 4.124 Ah moved during 33 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 308 rows with a repeated time were dropped'
-- '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 97 gaps in the record (longest 1 min 00 s at 26 h 17 min): no
+- '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: 33 gaps in the record (longest 1 min 00 s at 24 h 59 min): no
   current is logged across them'
 - '05-28-19_19.04 814_HPPC_0degC_IN21700_30T.mat: the tester''s charge counter shows 4.124 Ah moved during 33 of
   those gaps, current the record does not log: it is counted, as unlogged parts'
 - '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 268 rows with a repeated time were dropped'
-- '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 226 gaps in the record (longest 1 min 00 s at 29 h 30 min):
-  no current is logged across them'
+- '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 35 gaps in the record (longest 1 min 00 s at 29 h 30 min): no
+  current is logged across them'
 - '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: the tester''s charge counter shows 4.020 Ah moved during 34
   of those gaps, current the record does not log: it is counted, as unlogged parts'
 - '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 268 rows with a repeated time were dropped'
-- '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 226 gaps in the record (longest 1 min 00 s at 29 h 30 min):
-  no current is logged across them'
+- '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: 35 gaps in the record (longest 1 min 00 s at 29 h 30 min): no
+  current is logged across them'
 - '06-14-19_17.40 847_HPPC_-10degC_IN21700_30T.mat: the tester''s charge counter shows 4.020 Ah moved during 34
   of those gaps, current the record does not log: it is counted, as unlogged parts'
 - '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 262 rows with a repeated time were dropped'
-- '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 1992 gaps in the record (longest 1 min 00 s at 87 h 28 min):
-  no current is logged across them'
+- '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 31 gaps in the record (longest 1 min 00 s at 87 h 16 min): no
+  current is logged across them'
 - '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: the tester''s charge counter shows 3.823 Ah moved during 30
   of those gaps, current the record does not log: it is counted, as unlogged parts'
 - '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 262 rows with a repeated time were dropped'
-- '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 1992 gaps in the record (longest 1 min 00 s at 87 h 28 min):
-  no current is logged across them'
+- '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: 31 gaps in the record (longest 1 min 00 s at 87 h 16 min): no
+  current is logged across them'
 - '06-28-19_20.09 866_HPPC_-20degC_IN21700_30T.mat: the tester''s charge counter shows 3.823 Ah moved during 30
   of those gaps, current the record does not log: it is counted, as unlogged parts'
 - '40C_2C_discharge.csv.gz: could not tell the current''s sign from the voltage (no steps from rest, no long steady
   current); taken as + = discharge'
 provenance:
-  packtherm: 0.6.4
-  fitted_at: '2026-11-20T21:16:25+00:00'
+  packtherm: 0.6.7
+  fitted_at: '2026-11-22T22:46:16+00:00'
   settings:
     pulse window: 5 s before each pulse to 40 s after
     kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all

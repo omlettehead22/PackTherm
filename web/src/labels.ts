@@ -116,6 +116,8 @@ export const LABELS: Record<string, Label> = {
   },
   "cell.T_max_charge_C": { label: "Maximum charging temperature", unit: "°C", empty: "None given" },
   "cell.T_max_discharge_C": { label: "Maximum discharge temperature", unit: "°C", empty: "None given" },
+  "cell.T_min_charge_C": { label: "Minimum charging temperature", unit: "°C", empty: "None given" },
+  "cell.T_min_discharge_C": { label: "Minimum discharge temperature", unit: "°C", empty: "None given" },
   "cell.cp_J_kgK": { label: "Heat capacity", unit: "J/kg·K", empty: "Jelly-roll value for the chemistry" },
   "cell.k_radial_W_mK": { label: "Radial conductivity", unit: "W/m·K", empty: "Jelly-roll value for the chemistry" },
   "cell.k_axial_W_mK": { label: "Axial conductivity", unit: "W/m·K", empty: "Jelly-roll value for the chemistry" },

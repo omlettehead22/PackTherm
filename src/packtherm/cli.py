@@ -109,6 +109,8 @@ def _cell_file(path: str) -> None:
                     f"charge {c.max_charge_C * c.capacity_Ah:g} A ({c.max_charge_C:.2f}C)" if c.max_charge_C else "",
                     f"charge <= {c.T_max_charge_C:g} degC" if c.T_max_charge_C is not None else "",
                     f"discharge <= {c.T_max_discharge_C:g} degC" if c.T_max_discharge_C is not None else "",
+                    f"charge >= {c.T_min_charge_C:g} degC" if c.T_min_charge_C is not None else "",
+                    f"discharge >= {c.T_min_discharge_C:g} degC" if c.T_min_discharge_C is not None else "",
                 )
                 if x
             )

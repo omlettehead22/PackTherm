@@ -222,3 +222,39 @@ def test_electrical_substeps_follow_the_current_and_conserve_charge():
     # Drive and regen cancel in the mean current but not in the absolute throughput.
     assert np.sum(a_c["I_abs_A"]) * 10.0 == pytest.approx(np.sum(a_f["I_abs_A"]), rel=1e-9)
     assert np.sum(np.abs(a_c["current_A"])) * 10.0 < np.sum(a_f["I_abs_A"])
+
+
+def test_charging_in_the_cold_warns_below_the_datasheet_minimum():
+    # v0.6.7: the lower limits, on the coolest part of the cell while that current flows.
+    from packtherm.electrothermal import segments
+
+    cell = replace(LG_M50, T_min_charge_C=0.0, T_min_discharge_C=-20.0)
+    prof = segments(cell, [(600, 0.5), (600, -0.3)])
+    res, load = simulate_cell(
+        cell, prof, 1200, h=10.0, T_env=263.15, pcm_thickness=0, case_thickness=0, soc0=0.5, T_initial=263.15
+    )
+    w = " | ".join(check_limits(cell, load, res))
+    assert "Charging at -" in w and "below the 0 degC limit" in w
+    assert "Discharging at" not in w  # -10 degC is above the -20 degC discharge limit
+    res, load = simulate_cell(cell, prof, 1200, h=10.0, T_env=298.15, pcm_thickness=0, case_thickness=0, soc0=0.5)
+    assert not any("below the" in x for x in check_limits(cell, load, res))
+
+
+def test_library_cells_have_their_datasheet_temperature_limits():
+    from packtherm.cells import CELLS
+
+    for k, (lo_c, hi_c, lo_d) in {"30T": (0, 50, -20), "HG2": (0, 50, -20), "A123": (0, 55, -30)}.items():
+        c = CELLS[k]
+        assert (c.T_min_charge_C, c.T_max_charge_C, c.T_min_discharge_C) == (lo_c, hi_c, lo_d), k
+
+
+def test_a_run_below_the_fitted_state_of_charge_is_flagged():
+    from packtherm.electrothermal import check_fitted_range, segments
+
+    cell = replace(LG_M50, validity={"temperature_C": [0, 45], "soc": [0.3, 1.0], "discharge_C": [0, 5]})
+    prof = segments(cell, [(1800, 1.0)])
+    res, load = simulate_cell(cell, prof, 1800, h=10.0, T_env=298.15, soc0=0.6)
+    w = " | ".join(check_fitted_range(cell, load, res))
+    assert "state of charge" in w and "reached 30%" in w
+    res, load = simulate_cell(cell, prof, 600, h=10.0, T_env=298.15, soc0=0.9)
+    assert not any("state of charge" in x for x in check_fitted_range(cell, load, res))

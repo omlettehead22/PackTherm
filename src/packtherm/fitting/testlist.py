@@ -12,13 +12,15 @@ slow: c20.mat               # a slow full discharge: the open-circuit voltage an
 temperatures:               # one entry per test temperature (three or more for studies)
   - at: 25                  # the chamber setpoint (a label: the fit uses the measured cell temperature)
     pulses: hppc_25.mat     # a pulse (HPPC) test; optional with discharges or cycles (the kinetics
-                            # then come from the start of load after each rest of a minute or more)
+                            # then come from their sudden changes in current, v0.6.6)
     steps: steps_25.mat     # optional: steady steps with rests after them
     discharges: [dis1c.mat] # optional: full discharges at a working rate
     cycles: [cycle1.csv.gz] # optional: drive cycles to fit on
     start_soc: 1.0          # where the discharges and cycles start (default 1: full)
     slow: c20_0C.mat        # optional: a slow full discharge here too, starting full: the open-circuit
                             # voltage at this temperature, for a cell whose capacity moves with it
+    slow_charge: c20ch_0C.mat  # optional: a slow charge from empty here: the gap to the discharge is the
+                            # hysteresis (v0.6.7; LFP), which the model then has
 checks:                     # optional: tests the fit never sees, predicted afterwards
   - file: udds_25.csv.gz
     start_soc: 1.0
@@ -45,7 +47,7 @@ TOP_KEYS = {
     "packtherm_fit", "name", "like", "rated_capacity_Ah", "dataset", "slow", "temperatures", "checks",
     "compare", "chamber_h_W_m2K", "chamber_calibration", "output", "report",
 }  # fmt: skip
-SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc", "slow"}
+SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc", "slow", "slow_charge"}
 CHECK_KEYS = {"file", "start_soc", "ambient_C"}
 
 
@@ -80,6 +82,8 @@ class TestList:
                     out.setdefault(role, []).append(s[role])
             if s.get("slow") and s["slow"] != self.slow:
                 out["slow"].append(s["slow"])
+            if s.get("slow_charge"):
+                out.setdefault("slow_charge", []).append(s["slow_charge"])
             for role in ("discharges", "cycles"):
                 out.setdefault(role, []).extend(s.get(role, []))
         if self.checks:
@@ -165,6 +169,7 @@ def read_test_list(path: str | Path) -> TestList:
                 "cycles": files(s.get("cycles"), f"{w}.cycles"),
                 "start_soc": number(s.get("start_soc", 1.0), f"{w}.start_soc", 0, 1),
                 "slow": file(s["slow"], f"{w}.slow") if s.get("slow") else None,
+                "slow_charge": file(s["slow_charge"], f"{w}.slow_charge") if s.get("slow_charge") else None,
             }
         )
     ats = [s["at"] for s in sets if s["at"] is not None]
@@ -276,6 +281,7 @@ def run_test_list(tl: TestList, progress=print):
             cycles=[read(p) for p in s["cycles"]],
             discharge_soc0=s["start_soc"],
             slow=read(s["slow"]) if s.get("slow") and s["slow"] != tl.slow else None,
+            slow_charge=read(s["slow_charge"]) if s.get("slow_charge") else None,
         )
         for s in tl.sets
     ]

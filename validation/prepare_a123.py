@@ -49,7 +49,10 @@ for code, n in FIT_DYN.items():
     FILES.append((f"{code}_DYN{n}", f"DYNdata/A002_DYN/A002_DYN_{n}_{code}_S1.xlsx", "fit", "dynamic"))
 for code, n in CHECK_DYN:
     FILES.append((f"{code}_DYN{n}", f"DYNdata/A002_DYN/A002_DYN_{n}_{code}_S1.xlsx", "validation", "dynamic"))
-FILES.append(("P25_C30_charge", "OCVdata/A002_OCV_P25_S3.xlsx", "hysteresis", "slow_charge"))
+# The C/30 charge at each temperature (script 3, from empty at 25 degC): the gap to the discharge is the
+# hysteresis (v0.6.7). The 25 degC one is also a check.
+for code in TEMPS:
+    FILES.append((f"{code}_C30_charge", f"OCVdata/A002_OCV_{code}_S3.xlsx", "hysteresis", "slow_charge"))
 
 
 def read_arbin(path: Path) -> dict[str, np.ndarray]:

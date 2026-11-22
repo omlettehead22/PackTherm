@@ -107,6 +107,14 @@ def ecm_doc(ecm) -> dict:
             "columns": list(BY_T_COLUMNS),
             "rows": [[_r(x, 6) for x in row] for row in sorted(ecm.by_T)],
         }
+    if ecm.hyst:
+        # v0.6.7: the gap between the charge and discharge branches at each temperature, and how quickly
+        # a change of direction crosses it (packtherm.ecm.ECM).
+        out["hysteresis"] = {
+            "by_temperature": [
+                {"cell_C": _r(T - 273.15, 2), "gap_V": _r(g, 5), "rate_per_Ah": _r(k, 4)} for T, g, k in sorted(ecm.hyst)
+            ],
+        }
     return out
 
 
@@ -137,7 +145,18 @@ def ecm_from_doc(doc: dict):
         sources=("fitted by packtherm.fitting",),
         by_T=rows,
         ocv_by_T=curves,
+        **_hysteresis(m),
     )
+
+
+def _hysteresis(m: dict) -> dict:
+    h = m.get("hysteresis")
+    if not h:
+        return {}
+    rows = tuple(
+        (float(r["cell_C"]) + 273.15, float(r["gap_V"]), float(r["rate_per_Ah"])) for r in h["by_temperature"]
+    )
+    return {"hyst": rows}
 
 
 def dc_resistance(ecm, T: float = 298.15, soc: float = 0.5, c_rate: float = 1.5, capacity_Ah: float = 1.0) -> float:
@@ -224,7 +243,9 @@ def fitted_cell_doc(
                 "form": fit.model.form,
                 "description": "open-circuit voltage, instant resistance R0, a charge-transfer branch "
                 "(I0, gamma, tau_ct), a middle branch (Rm, tau_m), a slow branch (Rd, tau_d) and a rise near empty "
-                "(soc_a, soc_b): packtherm.ecm.ECM"
+                "(soc_a, soc_b)"
+                + ("; hysteresis between the charge and discharge branches" if fit.ecm.hyst else "")
+                + ": packtherm.ecm.ECM"
                 + (
                     "; values by temperature, interpolated between the fitted temperatures and carried beyond them "
                     "by the fitted laws"
@@ -275,6 +296,7 @@ def fitted_cell_doc(
                 "at_C": pt["at_C"],
                 "cell_C": pt["cell_C"],
                 "pulses": pt["pulses"],
+                **({"kinetics_from": pt["kinetics_from"]} if pt.get("kinetics_from", "pulses") != "pulses" else {}),
                 "tau_m_from": pt.get("tau_m_from", "pulses"),
                 **({"slow_capacity_Ah": _r(pt["slow_capacity_Ah"], 4)} if pt.get("slow_capacity_Ah") else {}),
                 "values": _values(pt["params"]),
@@ -377,5 +399,6 @@ def cell_from_doc(doc: dict, base: str | Path | None = None):
             "temperature_C": v.get("temperature_C"),
             "discharge_C": v.get("discharge_C"),
             "charge_C": v.get("charge_C"),
+            "soc": v.get("soc"),
         },
     )

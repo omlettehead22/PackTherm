@@ -334,7 +334,9 @@ def evaluate_design(
         rec_ok = recovered
     else:
         rec_ok = recovered and recovery_min <= req.recovery_max_min
-    rating = [w for w in check_limits(cell, load, res) if "rating" in w] + check_fitted_range(cell, load, res)
+    # Current ratings, and the lower temperature limits (v0.6.7); the upper ones are the peak criterion.
+    rating = [w for w in check_limits(cell, load, res) if "rating" in w or "below the" in w]
+    rating += check_fitted_range(cell, load, res)
     short = delivered_share(load, event) < MIN_DELIVERED
     if short:
         rating.insert(0, shortfall_warning(delivered_share(load, event)))
