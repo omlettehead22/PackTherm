@@ -104,6 +104,8 @@ CELL_KEYS = {
     "max_charge_A": (OPT_NUM, None, _opt_pos),
     "T_max_charge_C": (OPT_NUM, None, None),
     "T_max_discharge_C": (OPT_NUM, None, None),
+    "T_min_charge_C": (OPT_NUM, None, None),
+    "T_min_discharge_C": (OPT_NUM, None, None),
     # Optional overrides for anyone with better data
     "cp_J_kgK": (OPT_NUM, None, _opt_pos),
     "k_radial_W_mK": (OPT_NUM, None, _opt_pos),
@@ -204,6 +206,9 @@ def _plausibility(s: dict, where: str, errors: list[str]) -> list[str]:
     for k in ("T_max_charge_C", "T_max_discharge_C"):
         if s[k] is not None and not 20 <= s[k] <= 90:
             errors.append(f"{where}{k}: {s[k]:g} degC is outside 20-90 degC")
+    for k in ("T_min_charge_C", "T_min_discharge_C"):
+        if s[k] is not None and not -60 <= s[k] <= 20:
+            errors.append(f"{where}{k}: {s[k]:g} degC is outside -60-20 degC")
     if s["chemistry"] == "NCA" and s["entropic"]:
         warn.append(
             f"{where}chemistry: NCA has no entropic heat in PackTherm (published profiles disagree); "
@@ -276,6 +281,8 @@ def cell_from_spec(spec: dict, base: str | Path | None = None) -> Cell:
         max_discharge_C=None if spec["max_discharge_A"] is None else spec["max_discharge_A"] / cap,
         T_max_charge_C=spec["T_max_charge_C"],
         T_max_discharge_C=spec["T_max_discharge_C"],
+        T_min_charge_C=spec["T_min_charge_C"],
+        T_min_discharge_C=spec["T_min_discharge_C"],
         sources=(spec["source"] or "user datasheet",),
         model_label="user-defined, lumped DCIR",
         user_defined=True,

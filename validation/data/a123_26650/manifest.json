@@ -224,6 +224,58 @@
    "samples": 39370
   },
   {
+   "name": "N15_C30_charge",
+   "file": "N15_C30_charge.csv.gz",
+   "setpoint_C": -15,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_N15_S3.xlsx",
+   "ambient_C": -12.09,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 10729
+  },
+  {
+   "name": "N05_C30_charge",
+   "file": "N05_C30_charge.csv.gz",
+   "setpoint_C": -5,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_N05_S3.xlsx",
+   "ambient_C": -2.72,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 11611
+  },
+  {
+   "name": "P05_C30_charge",
+   "file": "P05_C30_charge.csv.gz",
+   "setpoint_C": 5,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_P05_S3.xlsx",
+   "ambient_C": 6.84,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 11525
+  },
+  {
+   "name": "P15_C30_charge",
+   "file": "P15_C30_charge.csv.gz",
+   "setpoint_C": 15,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_P15_S3.xlsx",
+   "ambient_C": 16.63,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 11679
+  },
+  {
    "name": "P25_C30_charge",
    "file": "P25_C30_charge.csv.gz",
    "setpoint_C": 25,
@@ -235,6 +287,32 @@
    "soc0": 0.0,
    "soc0_from": "empty: discharged to 2.0 V before it",
    "samples": 11796
+  },
+  {
+   "name": "P35_C30_charge",
+   "file": "P35_C30_charge.csv.gz",
+   "setpoint_C": 35,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_P35_S3.xlsx",
+   "ambient_C": 34.83,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 12008
+  },
+  {
+   "name": "P45_C30_charge",
+   "file": "P45_C30_charge.csv.gz",
+   "setpoint_C": 45,
+   "role": "hysteresis",
+   "kind": "slow_charge",
+   "source": "OCVdata/A002_OCV_P45_S3.xlsx",
+   "ambient_C": 44.63,
+   "ambient_from": "cell temperature over the last 600 s of the soak before the test",
+   "soc0": 0.0,
+   "soc0_from": "empty: discharged to 2.0 V before it",
+   "samples": 11906
   }
  ]
 }

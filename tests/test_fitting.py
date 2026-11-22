@@ -17,6 +17,7 @@ the test list; and fits across temperatures, against known laws.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from itertools import pairwise
 from pathlib import Path
 
@@ -25,7 +26,7 @@ import pandas as pd
 import pytest
 
 from packtherm.cells import PANASONIC_NCR18650PF as PF
-from packtherm.ecm import ECMState
+from packtherm.ecm import FULL_SOC, ECMState
 from packtherm.fitting import (
     CircuitModel,
     fit_cell,
@@ -90,7 +91,7 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0, 
     q = np.zeros(t.size)
     T = T_C + 273.15
     ecm = TRUE_ECM if ecm is None else ecm
-    st = ECMState()
+    st = ECMState(h=1.0 if soc0 >= FULL_SOC else 0.0)  # hysteresis from full: just charged
     soc = soc0
     V[0] = st.step(ecm, 0.0, soc, T, 0.0)[0]
     stopped = False
@@ -103,6 +104,7 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0, 
         soc -= I[k] * dt / 3600 / CAP
         q[k] = q[k - 1] + I[k] * dt / 3600
         V[k], st.eta_ct, st.V_d, st.V_m = st.step(ecm, I[k], soc, T, dt)
+        st.h = ecm.hyst_step(st.h, I[k], dt, T)
         if I[k] > 0 and V[k] < ecm.V_min:
             stopped = True  # the tester stops the discharge at its cut-off (from the next sample)
     return TestRecord(t=t, current_A=I, voltage_V=V, temperature_C=np.full(t.size, T_C), counter_Ah=q, source=name)
@@ -127,8 +129,8 @@ def steps_test(T_C: float = 25.0) -> TestRecord:
     return synth(parts, name="steps.csv", T_C=T_C)
 
 
-def discharge_test(T_C: float = 25.0) -> TestRecord:
-    return synth([(4000, CAP, 2), (1800, 0, 10)], name="dis1c.csv", T_C=T_C)
+def discharge_test(T_C: float = 25.0, ecm=None) -> TestRecord:
+    return synth([(4000, CAP, 2), (1800, 0, 10)], name="dis1c.csv", T_C=T_C, ecm=ecm)
 
 
 def drive_test(T_C: float = 25.0) -> TestRecord:
@@ -202,7 +204,7 @@ def test_too_few_pulses_is_an_error():
         fit_cell(slow_test(), few)
 
 
-def dyn_test(T_C: float = 25.0) -> TestRecord:
+def dyn_test(T_C: float = 25.0, ecm=None) -> TestRecord:
     """Plett's drive-profile test, as the A123 data has: a 1C step, a rest, then profile blocks with 5 min rests."""
     rng = np.random.default_rng(5)
     parts = [(2 * 3600, 0, 60), (720, CAP, 1), (900, 0, 1)]
@@ -211,7 +213,7 @@ def dyn_test(T_C: float = 25.0) -> TestRecord:
             cur = rng.choice([0.0, rng.uniform(-1.5, 4.5)], p=[0.15, 0.85])
             parts.append((float(rng.integers(3, 40)), float(cur), 1.0))
         parts.append((300, 0, 1))
-    return synth(parts, name="dyn.csv", T_C=T_C)
+    return synth(parts, name="dyn.csv", T_C=T_C, ecm=ecm)
 
 
 def test_without_a_pulse_test_the_kinetics_come_from_the_changes_in_current():
@@ -225,7 +227,41 @@ def test_without_a_pulse_test_the_kinetics_come_from_the_changes_in_current():
         assert got[name] == pytest.approx(value, rel=0.06), name
     mid = fit.errors["changes in current at 20-95% SOC"]
     assert mid["rmse_mV"] < 0.5 and mid["parts"] > 40
+    # The profile charges too (to 0.5C): the tested range says so, over 30 s as a study checks it.
+    assert fit.validity["charge_C"] is not None and 0.05 <= fit.validity["charge_C"][1] <= 0.5
+    assert fit.validity["discharge_C"][1] <= 1.5
     assert fit.checks[0]["rmse_mV"] < 1
+
+
+HYST_ECM = replace(TRUE_ECM, hyst=((298.15, 0.04, 20.0),))  # an LFP-like 40 mV gap
+
+
+def test_hysteresis_comes_from_a_slow_charge_and_the_profiles():
+    # v0.6.7: a cell with a 40 mV gap between its branches, crossed in about 1/20 Ah.
+    slow = synth([(3600, 0, 60), (25 * 3600, 0.15, 60), (3600, 0, 60)], name="slow.csv", ecm=HYST_ECM)
+    charge = synth([(3600, 0, 60), (0.9 * CAP / 0.15 * 3600, -0.15, 60)], soc0=0.0, name="charge.csv", ecm=HYST_ECM)
+    t = TestSet(None, discharges=[discharge_test(ecm=HYST_ECM)], cycles=[dyn_test(ecm=HYST_ECM)], slow_charge=charge)
+    fit = fit_cell(slow, sets=[t])
+    assert fit.ecm.hyst_V(298.15) == pytest.approx(0.04, rel=0.1)
+    # The rate is weakly pinned by a slow charge from empty (the curve's steep end is there too).
+    assert 10.0 < fit.ecm.hyst_rate(298.15) < 40.0
+    assert fit.errors["slow charge at 10-95% SOC"]["rmse_mV"] < 2
+    # Without the slow charge there's no hysteresis, and the charge runs about 40 mV low.
+    plain = fit_cell(slow, sets=[replace(t, slow_charge=None)])
+    assert not plain.ecm.hyst
+
+
+def test_hysteresis_heats_by_half_the_gap_per_unit_of_charge_each_way():
+    from packtherm.ecm import ECMState
+
+    st = ECMState(h=0.0)
+    T, dt = 298.15, 1.0
+    for current in (2.0, -2.0):
+        for _ in range(600):  # long enough to be on the branch
+            I, V = st.apply(HYST_ECM, current, 0.5, T, dt)
+        mid = HYST_ECM.ocv(0.5, T) + 0.5 * HYST_ECM.hyst_V(T)
+        # Heat both ways, half the gap's included: more than the drops alone (I^2 R, under 0.03 W here).
+        assert I * (mid - V) > abs(I) * 0.02
 
 
 def test_load_windows_are_the_sudden_changes_and_do_not_overlap():

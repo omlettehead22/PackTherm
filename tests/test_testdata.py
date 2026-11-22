@@ -395,3 +395,13 @@ def test_whole_panasonic_dataset():
             moved = sum(s.charge_Ah for s in rec.segments() if s.kind in ("dynamic", "pulse", "constant", "unlogged"))
             assert moved > 0, name
     assert (read, stubs) == (191, 7)
+
+
+def test_rests_logged_once_a_minute_are_not_gaps(tmp_path):
+    # v0.6.7: the A123's tester logs rests once a minute; nothing happens across them.
+    t, I = steps((60, 0), (600, 1.0), (1800, 0), (600, 1.0), dt=1.0)
+    s = simulate(t, I)
+    keep = (s["I"] != 0) | (np.round(s["t"]) % 60 == 0)
+    f = write_csv(tmp_path / "slow_rests.csv", {"Time": s["t"][keep], "Current": s["I"][keep], "Voltage": s["V"][keep]})
+    w = " | ".join(load_test_data(f).warnings)
+    assert "gap" not in w and "coarse" not in w

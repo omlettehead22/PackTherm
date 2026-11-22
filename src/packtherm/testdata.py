@@ -603,6 +603,15 @@ def _clean(arrays: dict[str, np.ndarray], cols: dict[str, str], conversions: lis
     med = float(np.median(dt))
     gaps = np.flatnonzero(dt > gap_threshold(t))
     counter = _counter(arrays, t, I, gaps, warnings)
+    # A rest logged more slowly (once a minute, say) is not a gap: up to 5 min, at rest on both sides, and
+    # with a charge counter that didn't move across it, or no counter and no jump in voltage (v0.6.7).
+    if gaps.size:
+        quiet = (dt[gaps] <= 300.0) & (np.maximum(np.abs(I[gaps]), np.abs(I[gaps + 1])) <= _threshold(I))
+        if counter is not None:
+            quiet &= np.abs(np.diff(counter)[gaps]) <= UNLOGGED_AH
+        else:
+            quiet &= np.abs(V[gaps + 1] - V[gaps]) <= 0.02
+        gaps = gaps[~quiet]
     if gaps.size:
         worst = float(dt[gaps].max())
         warnings.append(
@@ -626,7 +635,8 @@ def _clean(arrays: dict[str, np.ndarray], cols: dict[str, str], conversions: lis
                     "current probably flowed that the record does not log, and there is no charge counter "
                     "(Ah or capacity column) to count it"
                 )
-    if med > 10:
+    # Only where there are pulses to miss: a slow discharge logged every 10 s or minute is fine (v0.6.7).
+    if med > 10 and any(sg.kind == "pulse" for sg in label_segments(t, I, V, counter)):
         warnings.append(f"median time step {med:.0f} s is coarse for pulse tests (1 s or finer is usual)")
 
     rec = TestRecord(

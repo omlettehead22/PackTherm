@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.7
+
+LFP hysteresis, datasheet temperature limits, and the fixes from the audit after v0.6.6: the eighth v0.6 mini update.
+
+- **New: hysteresis** (LFP). The circuit can carry a state between its charge and discharge branches: charging moves it onto the charge branch, discharging off it, crossing most of the gap in 1/k Ah. The gap G and rate k are fitted at each temperature from a `slow_charge` (a slow charge from empty) in the test list, and written to the cell file. Heat counts the loop (half the gap per unit of charge). A cell with no slow charges has none: the 30T and HG2 refit to 26.5 and 36.6 mV on their checks, as before.
+- **The A123 refitted with hysteresis**, from its C/30 charges at six temperatures; the 15 °C one is held out.
+  - Held-out charge (10–95%): 8.2 mV, was 41.2 mV. The gap is 28 mV at 25 °C, 51 mV at −12 °C.
+  - Discharge profiles fitted on: 4.1–8.1 mV at 5 to 45 °C (was 4.2–6.6); the 4C-peak check 11.9 mV (was 8.2); the −12 °C checks 98 and 88 mV (were 104 and 93).
+  - Its branch values are less physical than before, and the rate sits at its 100 per Ah bound; its 10 s DC resistance at 25 °C is 14.4 mΩ (was 16.9; `A123-LUMPED` follows).
+  - Charging from empty still runs about 200 mV low over its first 10%.
+- **The cold is not fixed.** Two attempts, neither shipped (FITTING.md); BACKLOG item 7 has them.
+- **New: datasheet temperature limits** for the 30T (charge 0 to 50 °C, discharge −20 to 80 °C), HG2 (0 to 50, −20 to 75) and A123 (0 to 55, −30 to 55), and new `T_min_charge_C` / `T_min_discharge_C` for any cell (user cell files too). A study warns when the cell charges, or discharges, with any part colder than them: below 0 °C, charging can plate lithium. A drive cycle's regen counts: an A123 module on WLTC at −10 °C now warns.
+- **New: a warning below a fitted cell's tested state of charge.** The tested range now runs down to where the long tests end, not only the pulses.
+- **Fixed (v0.6.6):** a fit without pulse tests recorded no charge rate and an instantaneous discharge peak; it now records each window's 30 s mean peak each way. The A123 is tested to 0.97C discharge and 0.41C charge. Studies of it with regen no longer warn that its charge wasn't tested.
+- **Fixed:** wording for fits without pulses (`kinetics_from`, `tau_m_from`); rests logged once a minute are no longer reported as gaps; the "coarse for pulse tests" warning only where there are pulses.
+- **Data:** the A123's C/30 charges at every temperature (`validation/prepare_a123.py`).
+- **Tests:** hysteresis from a slow charge on a known cell; its heat; the lower temperature limits and the library's; the state-of-charge warning; slow-logged rests.
+
 ## 0.6.6
 
 An LFP cell, and fitting without a pulse test: the seventh v0.6 mini update.

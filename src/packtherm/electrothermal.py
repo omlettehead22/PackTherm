@@ -92,13 +92,14 @@ class ElectroThermalLoad:
     log: dict[str, list[float]] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        from .ecm import ECMState
+        from .ecm import FULL_SOC, ECMState
 
         lo, hi = self.soc_limits
         if not (0.0 <= lo < hi <= 1.0) or not (lo <= self.soc0 <= hi):
             raise ValueError("Require 0 <= soc_min < soc_max <= 1 and soc0 inside the window.")
         self.soc = self.soc0
-        self.ecm_state = ECMState() if self.cell.ecm is not None else None
+        # Hysteresis starts on the charge branch from full (just charged), otherwise on the discharge's.
+        self.ecm_state = ECMState(h=1.0 if self.soc0 >= FULL_SOC else 0.0) if self.cell.ecm is not None else None
         self.log = {
             k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A", "I_req_A")
         }
@@ -174,14 +175,16 @@ class ElectroThermalLoad:
         soc_mid = self.soc - 0.5 * current * dt / cap_As
         current, V = self.ecm_state.apply(ecm, current, soc_mid, T_cell, dt)
         soc_mid = self.soc - 0.5 * current * dt / cap_As
-        q_irr = current * (ecm.ocv(soc_mid, T_cell) - V)
+        # With hysteresis, the open-circuit voltage midway between the branches (ecm.py).
+        ocv_mid = ecm.ocv(soc_mid, T_cell) + 0.5 * ecm.hyst_V(T_cell)
+        q_irr = current * (ocv_mid - V)
         q_rev = -current * T_cell * self.cell.dUdT(soc_mid) if self.entropic else 0.0
         self.soc = self.soc - current * dt / cap_As
         if lo > 0.0:
             self.soc = max(self.soc, lo)
         if hi < 1.0:
             self.soc = min(self.soc, hi)
-        R_app = (ecm.ocv(soc_mid, T_cell) - V) / current if current else np.nan
+        R_app = (ocv_mid - V) / current if current else np.nan
         for k, v in zip(self.log, (t, current, self.soc, R_app, q_irr, q_rev, V, abs(current), self._requested)):
             self.log[k].append(v)
         return q_irr + q_rev
@@ -329,6 +332,12 @@ def check_fitted_range(cell: Cell, load: ElectroThermalLoad, res, window_s: floa
                 f"The cell reaches {float(T.max()):.0f} degC, warmer than its fitted model's warmest test "
                 f"({rng[1]:.0f} degC): the result rests on its fitted temperature laws, not on tests."
             )
+    soc_rng = v.get("soc")
+    if soc_rng and a["soc"].size and float(a["soc"].min()) < soc_rng[0] - 0.02:
+        out.append(
+            f"The run goes down to {float(a['soc'].min()):.0%} state of charge; its fitted model's tests reached "
+            f"{soc_rng[0]:.0%}: below that, the rise near empty is extrapolation."
+        )
     dt = float(np.median(np.diff(a["t"]))) if current.size > 1 else 1.0
     n = max(1, min(current.size, round(window_s / dt)))
     rolling = np.convolve(current, np.ones(n) / n, mode="valid")
@@ -378,5 +387,18 @@ def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30
     if cell.T_max_discharge_C is not None and T_peak_dis > cell.T_max_discharge_C:
         warnings.append(
             f"Peak {T_peak_dis:.1f} degC while discharging exceeds the {cell.T_max_discharge_C:.0f} degC limit."
+        )
+    # The lower limits (v0.6.7), on the coolest part of the cell while that kind of current flows.
+    T_cold = np.asarray(getattr(res, "T_min", res.T_max))[-current.size :] - KELVIN
+    T_low_chg = float(T_cold[current < 0].min()) if charging else np.inf
+    T_low_dis = float(T_cold[current > 0].min()) if discharging else np.inf
+    if cell.T_min_charge_C is not None and T_low_chg < cell.T_min_charge_C:
+        warnings.append(
+            f"Charging at {T_low_chg:.1f} degC, below the {cell.T_min_charge_C:.0f} degC limit "
+            "(below it, charging can plate lithium)."
+        )
+    if cell.T_min_discharge_C is not None and T_low_dis < cell.T_min_discharge_C:
+        warnings.append(
+            f"Discharging at {T_low_dis:.1f} degC, below the {cell.T_min_discharge_C:.0f} degC limit."
         )
     return warnings
