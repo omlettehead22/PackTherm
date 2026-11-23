@@ -43,7 +43,7 @@ RUNS = {"run_A": "1 5 C G K O S W", "run_B": "Y 3 A E I M Q U", "run_C": "Z 4 B 
 
 def read_run(f, keys: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     k = keys.split()
-    col = lambda name: f["#refs#/" + name][0, :]  # noqa: E731
+    col = lambda name: f["#refs#/" + name][0, :]
     I_mA, t, V = col(k[0]), col(k[4]), col(k[7])
     assert 7000 < -I_mA.min() < 7500 and 2000 < I_mA.max() < 3000, "not the current in mA"
     assert np.all(np.diff(t) >= 0) and t[-1] > 40000, "not the time"
