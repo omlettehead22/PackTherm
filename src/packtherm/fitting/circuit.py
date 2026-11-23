@@ -519,6 +519,10 @@ LONG_DT_S = 1.0  # long tests logged faster than this are thinned to it for the 
 KNEE_SHARE = 0.4
 
 KNEE_HOLD_S = 60.0  # the knee is where the voltage stays below it this long (v0.6.8)
+# The slow branch is fitted on long tests down to here at least (v0.6.8); below, the rise near empty is,
+# on the tests run to their end. Without it, a drive cycle fitted to 20% let the low charge the model
+# handles worst set the 25 degC middle branch (the HG2's checks 36.6 -> 39.0 mV).
+KNEE_SOC_FLOOR = 0.3
 
 
 def _knee_index(tr: Trace, knee: float) -> int:
@@ -569,9 +573,9 @@ def discharge_windows(
         tr = _trace(rec, I, soc, T, 0, len(rec))
     rate = float(np.max(np.abs(rec.current_A))) / cap
     knee = ocv.V_min + KNEE_SHARE * (ocv.V_top - ocv.V_min)
-    # Or where the charge counted reaches the knee's state of charge on the open-circuit curve, if sooner:
-    # a drive cycle that ends at its cut-off comes back above the knee between its peaks right to the end.
-    soc_knee = ocv.soc_at(knee, float(np.median(tr.T_K)))
+    # Or where the charge counted reaches the knee's state of charge on the open-circuit curve (and 30% at
+    # least), if sooner: a drive cycle that ends at its cut-off comes back above the knee between its peaks.
+    soc_knee = max(ocv.soc_at(knee, float(np.median(tr.T_K))), KNEE_SOC_FLOOR)
     by_soc = np.flatnonzero(tr.soc <= soc_knee)
     k1 = min(_knee_index(tr, knee), int(by_soc[0]) if by_soc.size else tr.t.size)
     return Window(kind, tr, 0, max(k1, 2), rate, soc0, relative=False, end=tr.t.size), how

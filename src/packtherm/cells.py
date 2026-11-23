@@ -623,9 +623,9 @@ A123_26650_LUMPED = Cell(
     height=65.0e-3,
     mass=0.076,
     # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (A123 below; 16.9 mOhm
-    # in v0.6.6, 14.4 in v0.6.7); it rises 2.3x by 5 degC and 8x by -15 degC.
-    R0_25C=0.0135,
-    R0_range=(0.0121, 0.0148),
+    # in v0.6.6, 14.4 in v0.6.7); it rises 2.2x by 5 degC and 8x by -15 degC.
+    R0_25C=0.0134,
+    R0_range=(0.0121, 0.0147),
     # Whole-cell LFP values, as for user-defined LFP cells (v0.5.4).
     cp=LFP_CP,
     k_radial=LFP_K_RADIAL,

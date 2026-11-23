@@ -12,21 +12,21 @@ model:
     and discharge branches: packtherm.ecm.ECM; values by temperature, interpolated between the fitted temperatures
     and carried beyond them by the fitted laws'
   ecm:
-    R0_25C: 0.00764352
-    Ea_R0: 28987.4
-    I0_25C: 469.231
-    Ea_I0: 19305.0
-    gamma: 25.4872
-    tau_ct: 0.912719
-    Rm_25C: 0.0078525
-    tau_m: 19.8138
-    Ea_Rm: 26662.2
-    Rd_25C: 0.11104
+    R0_25C: 0.00764061
+    Ea_R0: 28827.1
+    I0_25C: 470.425
+    Ea_I0: 39335.6
+    gamma: 25.3401
+    tau_ct: 0.891311
+    Rm_25C: 0.00778876
+    tau_m: 19.7709
+    Ea_Rm: 24515.9
+    Rd_25C: 0.101106
     tau_d: 10000.0
-    Ea_Rd: 23908.6
-    soc_a: 0.411972
-    soc_b: 0.345814
-    Ea_soc: -4369.21
+    Ea_Rd: 26298.8
+    soc_a: 0.419711
+    soc_b: 0.332472
+    Ea_soc: -6028.5
     V_max: 3.6
     V_min: 1.9999
     cv_cutoff_A: 0.05
@@ -45,163 +45,164 @@ model:
       - soc_b
       rows:
       - - 260.83
-        - 0.0476337
-        - 37.8941
-        - 29.9997
-        - 2.64036
-        - 0.10667
-        - 35.1835
-        - 0.5
+        - 0.0477938
+        - 2.62985
+        - 1.71872
+        - 1.03848
+        - 0.081691
+        - 21.39
+        - 0.402789
         - 10000.0
-        - 0.382015
-        - 0.359726
+        - 0.31146
+        - 0.287894
       - - 270.57
-        - 0.0253809
-        - 84.4784
-        - 30.0
-        - 3.11727
-        - 0.0329887
-        - 24.3139
-        - 0.265299
+        - 0.0240517
+        - 173.285
+        - 29.9999
+        - 0.1
+        - 0.0335979
+        - 16.539
+        - 0.203024
         - 10000.0
-        - 1.81831
-        - 0.170513
+        - 1.79841
+        - 0.172923
       - - 280.12
-        - 0.0126862
-        - 94.1373
-        - 30.0
-        - 7.05155
-        - 0.0238395
-        - 119.996
-        - 0.114814
-        - 10000.0
-        - 0.828941
+        - 0.0130003
+        - 500.0
+        - 0.1
+        - 0.1
+        - 0.0115998
+        - 11.8153
+        - 0.123779
+        - 9509.18
+        - 0.828602
         - 0.5
       - - 290.73
-        - 0.00833604
-        - 135.676
-        - 27.6204
-        - 7.12936
-        - 0.0187052
-        - 118.198
-        - 0.0969941
+        - 0.00796396
+        - 142.965
+        - 27.6629
+        - 7.04985
+        - 0.0188224
+        - 120.0
+        - 0.0751161
         - 10000.0
-        - 0.756014
+        - 0.930741
         - 0.5
       - - 298.54
-        - 0.00760967
-        - 500.0
-        - 25.3825
-        - 0.821567
-        - 0.00751127
-        - 18.0828
-        - 0.111811
+        - 0.00762442
+        - 499.996
+        - 25.2266
+        - 0.801783
+        - 0.00744481
+        - 18.0277
+        - 0.102655
         - 10000.0
-        - 0.399367
-        - 0.345814
+        - 0.402946
+        - 0.332472
       - - 307.84
-        - 0.00528332
-        - 170.571
-        - 17.3904
-        - 6.97631
-        - 0.0127497
-        - 113.846
-        - 0.0520864
+        - 0.00527859
+        - 172.996
+        - 17.5296
+        - 6.96697
+        - 0.0114776
+        - 102.292
+        - 0.0462822
         - 10000.0
-        - 0.831948
+        - 0.809145
         - 0.5
       - - 317.61
-        - 0.00422266
-        - 228.81
-        - 14.1002
-        - 6.70915
-        - 0.0107702
-        - 119.994
-        - 0.0474933
-        - 9999.99
-        - 1.42924
+        - 0.00421989
+        - 228.464
+        - 13.9031
+        - 6.69872
+        - 0.00927052
+        - 103.607
+        - 0.0421161
+        - 10000.0
+        - 1.40284
         - 0.5
     hysteresis:
       by_temperature:
       - cell_C: -12.0
-        gap_V: 0.036113
-        rate_per_Ah: 100.0
-        instant_share: 0.75
-      - cell_C: -2.6
-        gap_V: 0.034591
+        gap_V: 0.061723
         rate_per_Ah: 100.0
         instant_share: 0.5
+      - cell_C: -2.6
+        gap_V: 0.045417
+        rate_per_Ah: 100.0
+        instant_share: 0.25
       - cell_C: 7.0
-        gap_V: 0.038583
+        gap_V: 0.04065
         rate_per_Ah: 100.0
         instant_share: 0.25
       - cell_C: 18.0
-        gap_V: 0.026852
+        gap_V: 0.028254
         rate_per_Ah: 100.0
         instant_share: 0.25
       - cell_C: 25.0
-        gap_V: 0.026852
+        gap_V: 0.028254
         rate_per_Ah: 100.0
         instant_share: 0.25
       - cell_C: 35.0
-        gap_V: 0.02874
+        gap_V: 0.029723
         rate_per_Ah: 100.0
         instant_share: 0.25
       - cell_C: 44.0
-        gap_V: 0.028234
+        gap_V: 0.029223
         rate_per_Ah: 100.0
         instant_share: 0.25
-  dc_resistance_mOhm: 13.48
+  dc_resistance_mOhm: 13.39
 values:
   Ea_R0:
-    value: 28987.0
+    value: 28827.0
     unit: J/mol
     source: fitted
     what: how the instant resistance grows in the cold (through the temperatures' own values; used beyond the coldest
       and warmest)
     range_95:
-    - 23010.0
-    - 34970.0
+    - 22660.0
+    - 34990.0
+    note: 'the temperatures'' own values sit up to 1.3x off this law: the table follows them'
   Ea_I0:
-    value: 19305.0
+    value: 39336.0
     unit: J/mol
     source: fitted
     what: how the charge-transfer branch's exchange current falls in the cold (through the temperatures' own values;
       used beyond the coldest and warmest)
     range_95:
-    - 11860.0
-    - 26750.0
-    note: 'the temperatures'' own values sit up to 1.3x off this law: the table follows them'
+    - -29030.0
+    - 107700.0
+    note: 'the temperatures'' own values sit up to 6.5x off this law: the table follows them'
   Ea_Rm:
-    value: 26662.0
+    value: 24516.0
     unit: J/mol
     source: fitted
     what: how the middle branch's resistance grows in the cold (through the temperatures' own values; used beyond
       the coldest and warmest)
     range_95:
-    - 11490.0
-    - 41830.0
-    note: 'the temperatures'' own values sit up to 1.9x off this law: the table follows them'
+    - 7506.0
+    - 41530.0
+    note: 'the temperatures'' own values sit up to 2x off this law: the table follows them'
   Ea_Rd:
-    value: 23909.0
+    value: 26299.0
     unit: J/mol
     source: fitted
     what: how the slow branch's resistance grows in the cold (through the temperatures' own values; used beyond
       the coldest and warmest)
     range_95:
-    - 11160.0
-    - 36660.0
+    - 18000.0
+    - 34600.0
     note: 'the temperatures'' own values sit up to 1.4x off this law: the table follows them'
   Ea_soc:
-    value: -4369.2
+    value: -6028.5
     unit: J/mol
     source: fitted
     what: how the rise near empty grows in the cold (through the temperatures' own values; used beyond the coldest
       and warmest)
     range_95:
-    - -26550.0
-    - 17810.0
-    note: 'the temperatures'' own values sit up to 2.6x off this law: the table follows them'
+    - -29430.0
+    - 17370.0
+    note: 'the temperatures'' own values sit up to 2.7x off this law: the table follows them'
   capacity_Ah:
     value: 2.5777
     unit: Ah
@@ -225,13 +226,13 @@ by_temperature:
   tau_m_from: changes in current
   values:
     R0_25C:
-      value: 0.0076097
+      value: 0.0076244
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.007185
-      - 0.00806
+      - 0.007186
+      - 0.00809
     I0_25C:
       value: 500.0
       unit: A
@@ -239,68 +240,68 @@ by_temperature:
       what: exchange current of the charge-transfer branch
       note: 'at the edge of its allowed range: not determined by these tests'
     gamma:
-      value: 25.383
+      value: 25.227
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       note: 'not determined by these tests: no usable range'
     tau_ct:
-      value: 0.82157
+      value: 0.80178
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 0.2912
-      - 2.318
+      - 0.2743
+      - 2.344
       note: poorly determined by these tests
     Rm_25C:
-      value: 0.0075113
+      value: 0.0074448
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.006429
-      - 0.008776
+      - 0.006339
+      - 0.008743
     tau_m:
-      value: 18.083
+      value: 18.028
       unit: s
       source: fitted
       what: time constant of the middle branch (tens of seconds)
       range_95:
-      - 14.03
-      - 23.31
+      - 13.89
+      - 23.4
     soc_a:
-      value: 0.39937
+      value: 0.40295
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - 0.1918
-      - 0.607
+      - 0.1943
+      - 0.6116
     soc_b:
-      value: 0.34581
+      value: 0.33247
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.1879
-      - 0.6364
+      - 0.1846
+      - 0.5989
     Rd_25C:
-      value: 0.11181
+      value: 0.10266
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.0874
-      - 0.143
+      - 0.07989
+      - 0.1319
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 3963.0
-      - 25230.0
+      - 4649.0
+      - 21510.0
       note: 'at the edge of its allowed range: not determined by these tests'
 - at_C: 35.0
   cell_C: 34.7
@@ -310,49 +311,49 @@ by_temperature:
   slow_capacity_Ah: 2.549
   values:
     R0_25C:
-      value: 0.0052833
+      value: 0.0052786
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.004929
-      - 0.005664
+      - 0.004922
+      - 0.005662
     I0_25C:
-      value: 170.57
+      value: 173.0
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       note: 'not determined by these tests: no usable range'
     gamma:
-      value: 17.39
+      value: 17.53
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       note: 'not determined by these tests: no usable range'
     tau_ct:
-      value: 6.9763
+      value: 6.967
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 4.121
-      - 11.81
+      - 3.988
+      - 12.17
     Rm_25C:
-      value: 0.01275
+      value: 0.011478
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.007476
-      - 0.02174
+      - 0.006379
+      - 0.02065
     soc_a:
-      value: 0.83195
+      value: 0.80914
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -1.024
-      - 2.688
+      - -0.999
+      - 2.617
       note: poorly determined by these tests
     soc_b:
       value: 0.5
@@ -360,34 +361,34 @@ by_temperature:
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.01643
-      - 15.22
+      - 0.01639
+      - 15.25
       note: 'at the edge of its allowed range: not determined by these tests'
     Rd_25C:
-      value: 0.052086
+      value: 0.046282
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.0312
-      - 0.08696
+      - 0.02422
+      - 0.08845
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 1422.0
-      - 70330.0
+      - 1367.0
+      - 73150.0
       note: 'at the edge of its allowed range: not determined by these tests'
     tau_m:
-      value: 113.85
+      value: 102.29
       unit: s
       source: fitted
       what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 82.15
-      - 157.8
+      - 75.99
+      - 137.7
 - at_C: 45.0
   cell_C: 44.5
   pulses: 138
@@ -396,49 +397,49 @@ by_temperature:
   slow_capacity_Ah: 2.524
   values:
     R0_25C:
-      value: 0.0042227
+      value: 0.0042199
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.003903
-      - 0.004569
+      - 0.003898
+      - 0.004568
     I0_25C:
-      value: 228.81
+      value: 228.46
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       note: 'not determined by these tests: no usable range'
     gamma:
-      value: 14.1
+      value: 13.903
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       note: 'not determined by these tests: no usable range'
     tau_ct:
-      value: 6.7092
+      value: 6.6987
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 3.025
-      - 14.88
+      - 2.877
+      - 15.6
     Rm_25C:
-      value: 0.01077
+      value: 0.0092705
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.006255
-      - 0.01855
+      - 0.004977
+      - 0.01727
     soc_a:
-      value: 1.4292
+      value: 1.4028
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -3.088
-      - 5.947
+      - -3.044
+      - 5.85
       note: poorly determined by these tests
     soc_b:
       value: 0.5
@@ -446,35 +447,34 @@ by_temperature:
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.003914
-      - 63.87
+      - 0.003857
+      - 64.82
       note: 'at the edge of its allowed range: not determined by these tests'
     Rd_25C:
-      value: 0.047493
+      value: 0.042116
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.02908
-      - 0.07756
+      - 0.02292
+      - 0.07738
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 1579.0
-      - 63340.0
+      - 1561.0
+      - 64050.0
       note: 'at the edge of its allowed range: not determined by these tests'
     tau_m:
-      value: 119.99
+      value: 103.61
       unit: s
       source: fitted
       what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 86.32
-      - 166.8
-      note: 'at the edge of its allowed range: not determined by these tests'
+      - 77.26
+      - 138.9
 - at_C: 15.0
   cell_C: 17.6
   pulses: 138
@@ -483,49 +483,49 @@ by_temperature:
   slow_capacity_Ah: 2.551
   values:
     R0_25C:
-      value: 0.008336
+      value: 0.007964
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.007992
-      - 0.008695
+      - 0.007627
+      - 0.008316
     I0_25C:
-      value: 135.68
+      value: 142.96
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
       note: 'not determined by these tests: no usable range'
     gamma:
-      value: 27.62
+      value: 27.663
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       note: 'not determined by these tests: no usable range'
     tau_ct:
-      value: 7.1294
+      value: 7.0498
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 5.733
-      - 8.867
+      - 5.668
+      - 8.769
     Rm_25C:
-      value: 0.018705
+      value: 0.018822
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.01371
-      - 0.02552
+      - 0.01409
+      - 0.02515
     soc_a:
-      value: 0.75601
+      value: 0.93074
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - -0.8101
-      - 2.322
+      - -0.7634
+      - 2.625
       note: poorly determined by these tests
     soc_b:
       value: 0.5
@@ -533,111 +533,25 @@ by_temperature:
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.02094
-      - 11.94
+      - 0.03056
+      - 8.18
       note: 'at the edge of its allowed range: not determined by these tests'
     Rd_25C:
-      value: 0.096994
+      value: 0.075116
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.06906
-      - 0.1362
+      - 0.05667
+      - 0.09957
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 2740.0
-      - 36490.0
-      note: 'at the edge of its allowed range: not determined by these tests'
-    tau_m:
-      value: 118.2
-      unit: s
-      source: fitted
-      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
-      range_95:
-      - 88.99
-      - 157.0
-- at_C: 5.0
-  cell_C: 7.0
-  pulses: 138
-  kinetics_from: changes in current
-  tau_m_from: long tests
-  slow_capacity_Ah: 2.519
-  values:
-    R0_25C:
-      value: 0.012686
-      unit: Ohm
-      source: fitted
-      what: instant (ohmic) resistance
-      range_95:
-      - 0.01225
-      - 0.01314
-    I0_25C:
-      value: 94.137
-      unit: A
-      source: fitted
-      what: exchange current of the charge-transfer branch
-      note: 'not determined by these tests: no usable range'
-    gamma:
-      value: 30.0
-      unit: '-'
-      source: fitted
-      what: shape of the charge-transfer branch (multiplies 2RT/F)
-      note: 'at the edge of its allowed range: not determined by these tests'
-    tau_ct:
-      value: 7.0515
-      unit: s
-      source: fitted
-      what: time constant of the charge-transfer branch (seconds)
-      range_95:
-      - 5.728
-      - 8.681
-    Rm_25C:
-      value: 0.02384
-      unit: Ohm
-      source: fitted
-      what: resistance of the middle branch
-      range_95:
-      - 0.01636
-      - 0.03475
-    soc_a:
-      value: 0.82894
-      unit: '-'
-      source: fitted
-      what: size of the rise near empty
-      range_95:
-      - -0.3614
-      - 2.019
-      note: poorly determined by these tests
-    soc_b:
-      value: 0.5
-      unit: '-'
-      source: fitted
-      what: how far up from empty the rise reaches (SOC)
-      range_95:
-      - 0.05647
-      - 4.427
-      note: 'at the edge of its allowed range: not determined by these tests'
-    Rd_25C:
-      value: 0.11481
-      unit: Ohm
-      source: fitted
-      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
-      range_95:
-      - 0.0856
-      - 0.154
-    tau_d:
-      value: 10000.0
-      unit: s
-      source: fitted
-      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
-      range_95:
-      - 3277.0
-      - 30510.0
+      - 4215.0
+      - 23730.0
       note: 'at the edge of its allowed range: not determined by these tests'
     tau_m:
       value: 120.0
@@ -645,26 +559,109 @@ by_temperature:
       source: fitted
       what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 93.65
-      - 153.8
+      - 97.72
+      - 147.4
       note: 'at the edge of its allowed range: not determined by these tests'
+- at_C: 5.0
+  cell_C: 7.0
+  pulses: 138
+  kinetics_from: changes in current
+  tau_m_from: changes in current
+  slow_capacity_Ah: 2.519
+  values:
+    R0_25C:
+      value: 0.013
+      unit: Ohm
+      source: fitted
+      what: instant (ohmic) resistance
+      range_95:
+      - 0.01184
+      - 0.01428
+    I0_25C:
+      value: 500.0
+      unit: A
+      source: fitted
+      what: exchange current of the charge-transfer branch
+      note: 'at the edge of its allowed range: not determined by these tests'
+    gamma:
+      value: 0.1
+      unit: '-'
+      source: fitted
+      what: shape of the charge-transfer branch (multiplies 2RT/F)
+      note: 'at the edge of its allowed range: not determined by these tests'
+    tau_ct:
+      value: 0.1
+      unit: s
+      source: fitted
+      what: time constant of the charge-transfer branch (seconds)
+      note: 'at the edge of its allowed range: not determined by these tests'
+    Rm_25C:
+      value: 0.0116
+      unit: Ohm
+      source: fitted
+      what: resistance of the middle branch
+      range_95:
+      - 0.00849
+      - 0.01585
+    tau_m:
+      value: 11.815
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 7.673
+      - 18.19
+    soc_a:
+      value: 0.8286
+      unit: '-'
+      source: fitted
+      what: size of the rise near empty
+      range_95:
+      - -0.5623
+      - 2.219
+      note: poorly determined by these tests
+    soc_b:
+      value: 0.5
+      unit: '-'
+      source: fitted
+      what: how far up from empty the rise reaches (SOC)
+      range_95:
+      - 0.03847
+      - 6.499
+      note: 'at the edge of its allowed range: not determined by these tests'
+    Rd_25C:
+      value: 0.12378
+      unit: Ohm
+      source: fitted
+      what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 0.1235
+      - 0.124
+    tau_d:
+      value: 9509.2
+      unit: s
+      source: fitted
+      what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
+      range_95:
+      - 9451.0
+      - 9568.0
 - at_C: -5.0
   cell_C: -2.6
   pulses: 240
   kinetics_from: changes in current
-  tau_m_from: long tests
+  tau_m_from: changes in current
   slow_capacity_Ah: 2.539
   values:
     R0_25C:
-      value: 0.025381
+      value: 0.024052
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.02457
-      - 0.02622
+      - 0.02298
+      - 0.02517
     I0_25C:
-      value: 84.478
+      value: 173.28
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
@@ -676,150 +673,153 @@ by_temperature:
       what: shape of the charge-transfer branch (multiplies 2RT/F)
       note: 'at the edge of its allowed range: not determined by these tests'
     tau_ct:
-      value: 3.1173
+      value: 0.1
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
-      range_95:
-      - 2.308
-      - 4.21
+      note: 'at the edge of its allowed range: not determined by these tests'
     Rm_25C:
-      value: 0.032989
+      value: 0.033598
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.02786
-      - 0.03906
+      - 0.02955
+      - 0.03819
+    tau_m:
+      value: 16.539
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 14.23
+      - 19.23
     soc_a:
-      value: 1.8183
+      value: 1.7984
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - 1.065
-      - 2.572
+      - 1.022
+      - 2.575
     soc_b:
-      value: 0.17051
+      value: 0.17292
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.1368
-      - 0.2126
+      - 0.1373
+      - 0.2178
     Rd_25C:
-      value: 0.2653
+      value: 0.20302
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.1924
-      - 0.3659
+      - 0.1755
+      - 0.2349
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 3091.0
-      - 32350.0
+      - 6410.0
+      - 15600.0
       note: 'at the edge of its allowed range: not determined by these tests'
-    tau_m:
-      value: 24.314
-      unit: s
-      source: fitted
-      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
-      range_95:
-      - 22.85
-      - 25.87
 - at_C: -15.0
   cell_C: -12.3
   pulses: 289
   kinetics_from: changes in current
-  tau_m_from: long tests
+  tau_m_from: changes in current
   slow_capacity_Ah: 2.493
   values:
     R0_25C:
-      value: 0.047634
+      value: 0.047794
       unit: Ohm
       source: fitted
       what: instant (ohmic) resistance
       range_95:
-      - 0.04619
-      - 0.04913
+      - 0.04598
+      - 0.04968
     I0_25C:
-      value: 37.894
+      value: 2.6299
       unit: A
       source: fitted
       what: exchange current of the charge-transfer branch
-      note: 'not determined by these tests: no usable range'
+      range_95:
+      - 0.55
+      - 12.58
+      note: poorly determined by these tests
     gamma:
-      value: 30.0
+      value: 1.7187
       unit: '-'
       source: fitted
       what: shape of the charge-transfer branch (multiplies 2RT/F)
-      note: 'at the edge of its allowed range: not determined by these tests'
+      range_95:
+      - 0.4181
+      - 7.066
+      note: poorly determined by these tests
     tau_ct:
-      value: 2.6404
+      value: 1.0385
       unit: s
       source: fitted
       what: time constant of the charge-transfer branch (seconds)
       range_95:
-      - 1.969
-      - 3.54
+      - 0.6618
+      - 1.63
     Rm_25C:
-      value: 0.10667
+      value: 0.081691
       unit: Ohm
       source: fitted
       what: resistance of the middle branch
       range_95:
-      - 0.08772
-      - 0.1297
+      - 0.06642
+      - 0.1005
+    tau_m:
+      value: 21.39
+      unit: s
+      source: fitted
+      what: time constant of the middle branch (tens of seconds)
+      range_95:
+      - 17.44
+      - 26.23
     soc_a:
-      value: 0.38202
+      value: 0.31146
       unit: '-'
       source: fitted
       what: size of the rise near empty
       range_95:
-      - 0.1377
-      - 0.6263
+      - 0.0439
+      - 0.579
     soc_b:
-      value: 0.35973
+      value: 0.28789
       unit: '-'
       source: fitted
       what: how far up from empty the rise reaches (SOC)
       range_95:
-      - 0.2047
-      - 0.632
+      - 0.1515
+      - 0.5469
     Rd_25C:
-      value: 0.5
+      value: 0.40279
       unit: Ohm
       source: fitted
       what: 'resistance of the slow (diffusion) branch (fitted on the long tests: steps and discharges)'
       range_95:
-      - 0.1443
-      - 1.732
-      note: 'at the edge of its allowed range: not determined by these tests'
+      - 0.2242
+      - 0.7237
     tau_d:
       value: 10000.0
       unit: s
       source: fitted
       what: 'time constant of the slow branch (minutes) (fitted on the long tests: steps and discharges)'
       range_95:
-      - 358.0
-      - 279300.0
+      - 1650.0
+      - 60610.0
       note: 'at the edge of its allowed range: not determined by these tests'
-    tau_m:
-      value: 35.183
-      unit: s
-      source: fitted
-      what: 'time constant of the middle branch (tens of seconds) (fitted on the long tests: steps and discharges)'
-      range_95:
-      - 31.11
-      - 39.79
 capacity:
   measured_Ah: 2.5777
-  how: 'slow discharge at 0.0827 A over 31.2 h, plus its own drop (10.4 mV: 0.0827 A x 125.8 mOhm, the fitted model''s
+  how: 'slow discharge at 0.0827 A over 31.2 h, plus its own drop (9.6 mV: 0.0827 A x 116.6 mOhm, the fitted model''s
     steady resistance, rising near empty as the model''s does)'
   rated_Ah: 2.5
   measured_vs_rated: +3.1%
@@ -927,108 +927,108 @@ open_circuit_voltage:
   - 0.99
   - 1.0
   V:
-  - 2.0145
-  - 2.6785
-  - 2.8445
-  - 2.9367
-  - 3.0026
-  - 3.0539
-  - 3.0963
-  - 3.1323
-  - 3.1628
-  - 3.1834
-  - 3.191
-  - 3.1948
-  - 3.197
-  - 3.1986
-  - 3.2
-  - 3.2015
-  - 3.2038
-  - 3.2101
-  - 3.2165
-  - 3.2214
-  - 3.2253
-  - 3.2291
-  - 3.233
-  - 3.2373
-  - 3.2412
-  - 3.245
-  - 3.2479
-  - 3.2508
-  - 3.2532
-  - 3.2554
-  - 3.2579
-  - 3.2607
-  - 3.264
-  - 3.2672
-  - 3.2701
-  - 3.2728
-  - 3.2754
-  - 3.278
-  - 3.2805
-  - 3.2823
+  - 2.0135
+  - 2.6774
+  - 2.8435
+  - 2.9357
+  - 3.0016
+  - 3.0528
+  - 3.0953
+  - 3.1312
+  - 3.1618
+  - 3.1824
+  - 3.19
+  - 3.1938
+  - 3.196
+  - 3.1976
+  - 3.1991
+  - 3.2005
+  - 3.2028
+  - 3.2091
+  - 3.2156
+  - 3.2204
+  - 3.2243
+  - 3.2282
+  - 3.232
+  - 3.2363
+  - 3.2403
+  - 3.244
+  - 3.247
+  - 3.2498
+  - 3.2523
+  - 3.2544
+  - 3.257
+  - 3.2598
+  - 3.2631
+  - 3.2662
+  - 3.2692
+  - 3.2718
+  - 3.2745
+  - 3.2771
+  - 3.2796
+  - 3.2814
+  - 3.2827
   - 3.2836
-  - 3.2845
-  - 3.2851
+  - 3.2842
+  - 3.2847
+  - 3.2852
   - 3.2856
   - 3.2861
-  - 3.2865
-  - 3.2869
-  - 3.2872
-  - 3.2875
-  - 3.2877
-  - 3.2879
-  - 3.2882
+  - 3.2863
+  - 3.2866
+  - 3.2868
+  - 3.2871
+  - 3.2873
+  - 3.2876
+  - 3.288
+  - 3.2881
   - 3.2885
-  - 3.2888
-  - 3.2889
-  - 3.2894
-  - 3.2896
-  - 3.2898
-  - 3.2901
-  - 3.2904
-  - 3.2909
-  - 3.2913
-  - 3.2918
-  - 3.2923
-  - 3.2929
+  - 3.2887
+  - 3.289
+  - 3.2893
+  - 3.2895
+  - 3.29
+  - 3.2905
+  - 3.291
+  - 3.2915
+  - 3.292
+  - 3.2928
   - 3.2937
-  - 3.2945
-  - 3.2956
-  - 3.2969
-  - 3.2984
-  - 3.3006
-  - 3.3037
-  - 3.3078
-  - 3.3128
-  - 3.3177
-  - 3.3209
-  - 3.3232
-  - 3.3246
-  - 3.3256
-  - 3.3261
-  - 3.327
-  - 3.3274
-  - 3.3281
-  - 3.3284
-  - 3.3287
-  - 3.3291
-  - 3.3294
-  - 3.3299
+  - 3.2948
+  - 3.2961
+  - 3.2976
+  - 3.2997
+  - 3.3028
+  - 3.307
+  - 3.312
+  - 3.3168
+  - 3.3201
+  - 3.3224
+  - 3.3237
+  - 3.3247
+  - 3.3253
+  - 3.3262
+  - 3.3266
+  - 3.3273
+  - 3.3276
+  - 3.3279
+  - 3.3283
+  - 3.3286
+  - 3.329
+  - 3.3293
+  - 3.3295
+  - 3.3298
   - 3.3301
-  - 3.3303
   - 3.3306
-  - 3.3309
+  - 3.3308
   - 3.3314
-  - 3.3316
-  - 3.3322
+  - 3.3319
   - 3.3327
-  - 3.3335
-  - 3.3358
-  - 3.3444
-  - 3.3766
-  - 3.5234
-  how: 'slow discharge at 0.0827 A over 31.2 h, plus its own drop (10.4 mV: 0.0827 A x 125.8 mOhm, the fitted model''s
+  - 3.335
+  - 3.3436
+  - 3.3757
+  - 3.5213
+  how: 'slow discharge at 0.0827 A over 31.2 h, plus its own drop (9.6 mV: 0.0827 A x 116.6 mOhm, the fitted model''s
     steady resistance, rising near empty as the model''s does)'
   cell_C: 26.0
   by_temperature:
@@ -1137,108 +1137,108 @@ open_circuit_voltage:
     - 0.9903
     - 1.0
     V:
-    - 2.0739
-    - 2.2835
-    - 2.4242
-    - 2.5336
-    - 2.6246
-    - 2.701
-    - 2.7648
-    - 2.819
-    - 2.8656
-    - 2.9069
-    - 2.9433
-    - 2.9761
-    - 3.0056
-    - 3.0324
-    - 3.0569
-    - 3.0794
-    - 3.1004
-    - 3.1189
-    - 3.1359
-    - 3.1513
-    - 3.1654
-    - 3.1781
-    - 3.1895
-    - 3.1994
-    - 3.2087
-    - 3.2171
-    - 3.2244
-    - 3.2311
-    - 3.2373
-    - 3.2427
-    - 3.2478
-    - 3.2523
-    - 3.2564
-    - 3.2602
-    - 3.2636
-    - 3.2666
-    - 3.2695
-    - 3.2721
-    - 3.2744
-    - 3.2766
-    - 3.2784
-    - 3.2802
+    - 2.0569
+    - 2.2666
+    - 2.4074
+    - 2.5169
+    - 2.608
+    - 2.6845
+    - 2.7484
+    - 2.8027
+    - 2.8494
+    - 2.8909
+    - 2.9273
+    - 2.9603
+    - 2.9899
+    - 3.0168
+    - 3.0413
+    - 3.064
+    - 3.085
+    - 3.1037
+    - 3.1207
+    - 3.1363
+    - 3.1504
+    - 3.1632
+    - 3.1747
+    - 3.1847
+    - 3.1941
+    - 3.2025
+    - 3.2099
+    - 3.2167
+    - 3.223
+    - 3.2285
+    - 3.2337
+    - 3.2382
+    - 3.2424
+    - 3.2463
+    - 3.2498
+    - 3.2528
+    - 3.2559
+    - 3.2585
+    - 3.2608
+    - 3.2632
+    - 3.265
+    - 3.2669
+    - 3.2685
+    - 3.2701
+    - 3.2716
+    - 3.2729
+    - 3.274
+    - 3.2752
+    - 3.2764
+    - 3.2774
+    - 3.2783
+    - 3.2791
+    - 3.2799
+    - 3.2808
     - 3.2817
-    - 3.2833
-    - 3.2847
-    - 3.2859
-    - 3.287
-    - 3.2881
+    - 3.2827
+    - 3.2834
+    - 3.2841
+    - 3.2849
+    - 3.2858
+    - 3.2867
+    - 3.2874
+    - 3.2883
     - 3.2893
-    - 3.2902
-    - 3.2911
-    - 3.2917
+    - 3.2903
+    - 3.2913
     - 3.2925
-    - 3.2934
-    - 3.2943
+    - 3.2936
     - 3.2951
-    - 3.2958
-    - 3.2965
-    - 3.2972
+    - 3.2964
     - 3.2981
-    - 3.2989
     - 3.2996
-    - 3.3005
-    - 3.3014
-    - 3.3024
-    - 3.3033
-    - 3.3045
+    - 3.3015
+    - 3.3035
     - 3.3055
-    - 3.3069
-    - 3.3082
-    - 3.3099
-    - 3.3114
-    - 3.3132
-    - 3.3151
-    - 3.3172
-    - 3.3195
-    - 3.3217
-    - 3.3243
-    - 3.3269
-    - 3.3296
-    - 3.332
-    - 3.3345
-    - 3.3366
-    - 3.3387
-    - 3.3404
-    - 3.3422
-    - 3.3436
-    - 3.3449
-    - 3.3461
-    - 3.3473
-    - 3.3482
-    - 3.3494
-    - 3.3504
-    - 3.3514
-    - 3.3525
-    - 3.3537
-    - 3.3551
-    - 3.3576
-    - 3.3646
-    - 3.3921
-    - 3.5696
-    how: 'slow discharge at 0.0827 A over 30.1 h, plus its own drop (54.1 mV: 0.0827 A x 653.8 mOhm, the fitted
+    - 3.3079
+    - 3.3102
+    - 3.3128
+    - 3.3154
+    - 3.3182
+    - 3.3206
+    - 3.3231
+    - 3.3253
+    - 3.3273
+    - 3.3291
+    - 3.3309
+    - 3.3323
+    - 3.3337
+    - 3.3349
+    - 3.3361
+    - 3.3371
+    - 3.3383
+    - 3.3393
+    - 3.3403
+    - 3.3414
+    - 3.3427
+    - 3.3441
+    - 3.3466
+    - 3.3534
+    - 3.3791
+    - 3.5336
+    how: 'slow discharge at 0.0827 A over 30.1 h, plus its own drop (44.0 mV: 0.0827 A x 531.9 mOhm, the fitted
       model''s steady resistance, rising near empty as the model''s does)'
   - cell_C: -2.7
     capacity_Ah: 2.539
@@ -1345,108 +1345,108 @@ open_circuit_voltage:
     - 0.9901
     - 1.0
     V:
-    - 2.0728
-    - 2.5864
-    - 2.7573
-    - 2.869
-    - 2.9535
-    - 3.0197
-    - 3.0727
-    - 3.115
-    - 3.1448
-    - 3.1633
-    - 3.1748
-    - 3.1824
-    - 3.1881
-    - 3.1928
-    - 3.1966
-    - 3.2007
-    - 3.206
-    - 3.2131
-    - 3.2195
-    - 3.2248
-    - 3.2292
-    - 3.2334
-    - 3.2376
-    - 3.2417
-    - 3.2458
-    - 3.2498
-    - 3.2533
-    - 3.2563
-    - 3.2588
+    - 2.0576
+    - 2.5718
+    - 2.7431
+    - 2.8553
+    - 2.9403
+    - 3.007
+    - 3.0603
+    - 3.1031
+    - 3.1332
+    - 3.1521
+    - 3.1638
+    - 3.1718
+    - 3.1778
+    - 3.1828
+    - 3.1869
+    - 3.1912
+    - 3.1967
+    - 3.204
+    - 3.2106
+    - 3.2161
+    - 3.2207
+    - 3.225
+    - 3.2294
+    - 3.2337
+    - 3.2379
+    - 3.242
+    - 3.2456
+    - 3.2488
+    - 3.2513
+    - 3.2541
+    - 3.2567
+    - 3.2591
     - 3.2614
-    - 3.264
-    - 3.2662
-    - 3.2685
-    - 3.2706
-    - 3.2725
-    - 3.274
-    - 3.2753
+    - 3.2636
+    - 3.2656
+    - 3.2672
+    - 3.2686
+    - 3.2698
+    - 3.2707
+    - 3.2715
+    - 3.2723
+    - 3.2729
+    - 3.2736
+    - 3.2742
+    - 3.2747
+    - 3.2752
+    - 3.2758
+    - 3.2762
     - 3.2765
-    - 3.2773
-    - 3.278
-    - 3.2788
-    - 3.2794
-    - 3.28
+    - 3.2771
+    - 3.2774
+    - 3.2778
+    - 3.2783
+    - 3.2787
+    - 3.2791
+    - 3.2796
+    - 3.2801
     - 3.2805
     - 3.281
-    - 3.2815
+    - 3.2816
     - 3.282
-    - 3.2824
-    - 3.2827
-    - 3.2832
-    - 3.2835
-    - 3.2839
-    - 3.2843
-    - 3.2847
-    - 3.2851
-    - 3.2856
-    - 3.2861
-    - 3.2864
-    - 3.2869
-    - 3.2875
+    - 3.2826
+    - 3.2833
+    - 3.284
+    - 3.2849
+    - 3.2857
+    - 3.2865
     - 3.2879
-    - 3.2884
-    - 3.2891
-    - 3.2899
-    - 3.2907
-    - 3.2915
-    - 3.2923
-    - 3.2937
-    - 3.2952
-    - 3.2967
-    - 3.2985
-    - 3.3005
-    - 3.3027
-    - 3.3054
-    - 3.3083
-    - 3.3113
-    - 3.3145
-    - 3.3174
-    - 3.3201
-    - 3.3223
-    - 3.3243
-    - 3.3259
-    - 3.3271
-    - 3.3284
-    - 3.3292
-    - 3.3303
-    - 3.3311
-    - 3.3317
-    - 3.3325
-    - 3.3331
-    - 3.334
-    - 3.3344
-    - 3.3351
-    - 3.336
-    - 3.3366
-    - 3.3376
-    - 3.3389
-    - 3.3411
-    - 3.3494
-    - 3.3823
-    - 3.5594
-    how: 'slow discharge at 0.0827 A over 30.7 h, plus its own drop (27.7 mV: 0.0827 A x 335.4 mOhm, the fitted
+    - 3.2894
+    - 3.2909
+    - 3.2927
+    - 3.2948
+    - 3.2969
+    - 3.2996
+    - 3.3026
+    - 3.3056
+    - 3.3088
+    - 3.3117
+    - 3.3144
+    - 3.3166
+    - 3.3186
+    - 3.3202
+    - 3.3215
+    - 3.3227
+    - 3.3235
+    - 3.3246
+    - 3.3254
+    - 3.3261
+    - 3.3269
+    - 3.3275
+    - 3.3283
+    - 3.3287
+    - 3.3294
+    - 3.3304
+    - 3.331
+    - 3.332
+    - 3.3333
+    - 3.3355
+    - 3.3437
+    - 3.3758
+    - 3.5427
+    how: 'slow discharge at 0.0827 A over 30.7 h, plus its own drop (22.1 mV: 0.0827 A x 267.6 mOhm, the fitted
       model''s steady resistance, rising near empty as the model''s does)'
   - cell_C: 7.1
     capacity_Ah: 2.519
@@ -1553,108 +1553,108 @@ open_circuit_voltage:
     - 0.9902
     - 1.0
     V:
-    - 2.0234
-    - 2.6983
-    - 2.8473
-    - 2.9371
-    - 3.0033
-    - 3.0555
-    - 3.0985
-    - 3.1344
-    - 3.1633
-    - 3.1785
-    - 3.1852
-    - 3.189
-    - 3.1916
-    - 3.1937
-    - 3.1957
-    - 3.1978
-    - 3.2012
-    - 3.2076
-    - 3.2139
-    - 3.2192
-    - 3.2236
-    - 3.2275
-    - 3.2313
-    - 3.2355
-    - 3.2397
-    - 3.2439
-    - 3.2472
-    - 3.2502
-    - 3.2527
-    - 3.255
-    - 3.2577
-    - 3.2603
-    - 3.2635
-    - 3.2664
-    - 3.2692
-    - 3.2714
-    - 3.2731
-    - 3.2745
-    - 3.2753
-    - 3.2764
+    - 2.0218
+    - 2.6967
+    - 2.8457
+    - 2.9355
+    - 3.0018
+    - 3.054
+    - 3.097
+    - 3.1329
+    - 3.1618
+    - 3.177
+    - 3.1837
+    - 3.1875
+    - 3.1902
+    - 3.1922
+    - 3.1943
+    - 3.1964
+    - 3.1998
+    - 3.2062
+    - 3.2125
+    - 3.2178
+    - 3.2222
+    - 3.2261
+    - 3.2299
+    - 3.2342
+    - 3.2384
+    - 3.2426
+    - 3.2458
+    - 3.2489
+    - 3.2514
+    - 3.2537
+    - 3.2564
+    - 3.259
+    - 3.2622
+    - 3.2651
+    - 3.2679
+    - 3.2701
+    - 3.2718
+    - 3.2732
+    - 3.274
+    - 3.2751
+    - 3.2758
+    - 3.2766
     - 3.2771
-    - 3.2778
-    - 3.2783
-    - 3.2789
-    - 3.2794
-    - 3.2798
-    - 3.2803
-    - 3.2807
-    - 3.2809
-    - 3.2813
+    - 3.2777
+    - 3.2782
+    - 3.2786
+    - 3.2791
+    - 3.2795
+    - 3.2797
+    - 3.2801
+    - 3.2806
+    - 3.2808
+    - 3.2812
+    - 3.2815
     - 3.2817
     - 3.282
     - 3.2824
-    - 3.2826
-    - 3.2829
-    - 3.2832
+    - 3.2828
+    - 3.283
     - 3.2835
-    - 3.2839
-    - 3.2842
-    - 3.2846
-    - 3.285
-    - 3.2855
-    - 3.2859
-    - 3.2864
-    - 3.2871
-    - 3.2876
-    - 3.2886
-    - 3.2895
-    - 3.2908
-    - 3.292
-    - 3.2936
-    - 3.2956
-    - 3.298
-    - 3.3012
-    - 3.3049
-    - 3.3085
-    - 3.3121
-    - 3.315
-    - 3.3176
-    - 3.3195
-    - 3.3209
-    - 3.3221
-    - 3.3229
-    - 3.3237
-    - 3.3245
+    - 3.2838
+    - 3.2844
+    - 3.2848
+    - 3.2853
+    - 3.286
+    - 3.2865
+    - 3.2875
+    - 3.2884
+    - 3.2897
+    - 3.2909
+    - 3.2925
+    - 3.2945
+    - 3.2969
+    - 3.3001
+    - 3.3038
+    - 3.3074
+    - 3.311
+    - 3.314
+    - 3.3165
+    - 3.3185
+    - 3.3198
+    - 3.321
+    - 3.3219
+    - 3.3226
+    - 3.3235
+    - 3.3241
+    - 3.3247
     - 3.3251
-    - 3.3258
+    - 3.3256
     - 3.3261
-    - 3.3266
-    - 3.3271
-    - 3.3275
-    - 3.328
-    - 3.3284
-    - 3.3289
-    - 3.3297
-    - 3.33
-    - 3.3313
-    - 3.3333
-    - 3.3413
-    - 3.3745
-    - 3.5267
-    how: 'slow discharge at 0.0827 A over 30.5 h, plus its own drop (13.1 mV: 0.0827 A x 158.7 mOhm, the fitted
+    - 3.3265
+    - 3.327
+    - 3.3274
+    - 3.3279
+    - 3.3287
+    - 3.329
+    - 3.3302
+    - 3.3322
+    - 3.3403
+    - 3.3733
+    - 3.5237
+    how: 'slow discharge at 0.0827 A over 30.5 h, plus its own drop (12.2 mV: 0.0827 A x 147.8 mOhm, the fitted
       model''s steady resistance, rising near empty as the model''s does)'
   - cell_C: 17.0
     capacity_Ah: 2.551
@@ -1761,109 +1761,109 @@ open_circuit_voltage:
     - 0.9901
     - 1.0
     V:
-    - 2.0303
-    - 2.7385
-    - 2.8763
-    - 2.9602
-    - 3.0218
-    - 3.0708
-    - 3.1116
-    - 3.1463
-    - 3.1738
-    - 3.1873
-    - 3.1926
-    - 3.1953
-    - 3.1972
-    - 3.1989
-    - 3.2004
-    - 3.2022
-    - 3.2062
-    - 3.2128
-    - 3.2188
-    - 3.2234
-    - 3.2272
-    - 3.2308
-    - 3.235
-    - 3.2392
-    - 3.2433
-    - 3.247
-    - 3.2499
-    - 3.2526
-    - 3.2549
-    - 3.2574
-    - 3.2597
-    - 3.2629
-    - 3.2659
-    - 3.2692
-    - 3.2721
+    - 2.0282
+    - 2.7364
+    - 2.8743
+    - 2.9581
+    - 3.0197
+    - 3.0688
+    - 3.1095
+    - 3.1442
+    - 3.1718
+    - 3.1853
+    - 3.1906
+    - 3.1932
+    - 3.1952
+    - 3.1969
+    - 3.1984
+    - 3.2001
+    - 3.2041
+    - 3.2108
+    - 3.2168
+    - 3.2214
+    - 3.2252
+    - 3.2288
+    - 3.233
+    - 3.2372
+    - 3.2413
+    - 3.245
+    - 3.2479
+    - 3.2506
+    - 3.2529
+    - 3.2554
+    - 3.2577
+    - 3.2609
+    - 3.2638
+    - 3.2671
+    - 3.2701
+    - 3.2729
     - 3.2749
-    - 3.2769
-    - 3.2787
-    - 3.28
-    - 3.2812
-    - 3.2821
+    - 3.2766
+    - 3.278
+    - 3.2792
+    - 3.2801
+    - 3.281
+    - 3.2816
+    - 3.282
+    - 3.2824
+    - 3.2829
     - 3.2831
+    - 3.2834
     - 3.2836
     - 3.284
+    - 3.2842
     - 3.2844
-    - 3.2849
-    - 3.2851
-    - 3.2854
+    - 3.2847
+    - 3.285
+    - 3.2853
+    - 3.2853
     - 3.2856
     - 3.286
-    - 3.2862
-    - 3.2864
-    - 3.2867
+    - 3.2863
+    - 3.2868
     - 3.287
-    - 3.2873
-    - 3.2873
-    - 3.2876
-    - 3.288
-    - 3.2883
-    - 3.2888
-    - 3.289
-    - 3.2895
-    - 3.2899
-    - 3.2907
-    - 3.2912
-    - 3.292
-    - 3.2928
-    - 3.2939
-    - 3.2953
-    - 3.297
-    - 3.2991
-    - 3.3022
-    - 3.3065
-    - 3.3113
-    - 3.3159
-    - 3.3193
-    - 3.3217
-    - 3.3234
-    - 3.3247
+    - 3.2875
+    - 3.2879
+    - 3.2887
+    - 3.2892
+    - 3.29
+    - 3.2908
+    - 3.2919
+    - 3.2933
+    - 3.295
+    - 3.2971
+    - 3.3002
+    - 3.3045
+    - 3.3093
+    - 3.3139
+    - 3.3173
+    - 3.3197
+    - 3.3214
+    - 3.3227
+    - 3.3237
+    - 3.3242
+    - 3.3249
+    - 3.3255
     - 3.3257
-    - 3.3262
+    - 3.3257
+    - 3.3266
     - 3.3269
-    - 3.3275
-    - 3.3277
-    - 3.3277
-    - 3.3286
-    - 3.3289
-    - 3.3294
-    - 3.3298
+    - 3.3274
+    - 3.3278
+    - 3.3281
+    - 3.3283
+    - 3.3288
+    - 3.3293
+    - 3.3297
     - 3.3301
-    - 3.3303
-    - 3.3308
-    - 3.3313
-    - 3.3317
+    - 3.3309
     - 3.3321
-    - 3.3329
     - 3.3341
-    - 3.3361
-    - 3.3453
-    - 3.3838
-    - 3.5588
-    how: 'slow discharge at 0.0827 A over 30.9 h, plus its own drop (10.9 mV: 0.0827 A x 131.3 mOhm, the fitted
-      model''s steady resistance, rising near empty as the model''s does)'
+    - 3.3433
+    - 3.3817
+    - 3.5554
+    how: 'slow discharge at 0.0827 A over 30.9 h, plus its own drop (8.9 mV: 0.0827 A x 107.4 mOhm, the fitted model''s
+      steady resistance, rising near empty as the model''s does)'
   - cell_C: 35.0
     capacity_Ah: 2.549
     soc:
@@ -1969,108 +1969,108 @@ open_circuit_voltage:
     - 0.9901
     - 1.0
     V:
-    - 2.0206
-    - 2.7342
-    - 2.8754
-    - 2.9609
-    - 3.0225
-    - 3.07
-    - 3.1088
-    - 3.1423
-    - 3.1703
-    - 3.1864
-    - 3.1919
-    - 3.1947
-    - 3.1965
-    - 3.1977
-    - 3.1991
-    - 3.2005
-    - 3.2041
-    - 3.2107
-    - 3.2164
-    - 3.2206
-    - 3.2244
-    - 3.2283
-    - 3.2324
-    - 3.2369
-    - 3.2407
-    - 3.2439
-    - 3.2466
-    - 3.249
-    - 3.2513
-    - 3.2537
-    - 3.2562
-    - 3.2593
-    - 3.2623
-    - 3.2655
-    - 3.2682
-    - 3.2709
-    - 3.274
-    - 3.2784
-    - 3.282
-    - 3.2841
-    - 3.2853
-    - 3.2858
-    - 3.2865
+    - 2.0194
+    - 2.7331
+    - 2.8743
+    - 2.9598
+    - 3.0214
+    - 3.0689
+    - 3.1077
+    - 3.1412
+    - 3.1692
+    - 3.1853
+    - 3.1909
+    - 3.1936
+    - 3.1954
+    - 3.1967
+    - 3.198
+    - 3.1994
+    - 3.2031
+    - 3.2097
+    - 3.2154
+    - 3.2196
+    - 3.2234
+    - 3.2273
+    - 3.2314
+    - 3.236
+    - 3.2397
+    - 3.243
+    - 3.2456
+    - 3.2481
+    - 3.2504
+    - 3.2528
+    - 3.2553
+    - 3.2584
+    - 3.2614
+    - 3.2646
+    - 3.2673
+    - 3.27
+    - 3.2731
+    - 3.2775
+    - 3.2812
+    - 3.2832
+    - 3.2845
+    - 3.285
+    - 3.2856
+    - 3.2861
+    - 3.2862
+    - 3.2864
     - 3.2869
     - 3.287
-    - 3.2872
+    - 3.2873
+    - 3.2875
     - 3.2877
     - 3.2879
-    - 3.2881
-    - 3.2883
-    - 3.2885
+    - 3.2882
+    - 3.2884
+    - 3.2884
     - 3.2887
-    - 3.289
     - 3.2892
-    - 3.2892
-    - 3.2895
+    - 3.2893
+    - 3.2896
     - 3.2899
-    - 3.2901
-    - 3.2904
-    - 3.2907
-    - 3.2911
-    - 3.2914
-    - 3.2918
-    - 3.2923
-    - 3.2928
-    - 3.2934
-    - 3.2943
-    - 3.2953
-    - 3.2964
-    - 3.2982
-    - 3.3004
-    - 3.3041
-    - 3.3098
-    - 3.3159
-    - 3.3204
-    - 3.3224
-    - 3.3241
-    - 3.3249
-    - 3.3257
-    - 3.3261
-    - 3.3266
-    - 3.3269
-    - 3.3274
-    - 3.3277
-    - 3.328
+    - 3.2903
+    - 3.2906
+    - 3.291
+    - 3.2916
+    - 3.292
+    - 3.2926
+    - 3.2935
+    - 3.2946
+    - 3.2957
+    - 3.2974
+    - 3.2997
+    - 3.3034
+    - 3.3091
+    - 3.3151
+    - 3.3196
+    - 3.3217
+    - 3.3234
+    - 3.3242
+    - 3.325
+    - 3.3254
+    - 3.3259
+    - 3.3262
+    - 3.3267
+    - 3.327
+    - 3.3273
+    - 3.3275
+    - 3.3279
     - 3.3282
-    - 3.3286
-    - 3.3289
+    - 3.3285
+    - 3.3288
     - 3.3292
     - 3.3295
-    - 3.3298
-    - 3.3302
-    - 3.3307
-    - 3.3311
-    - 3.3317
-    - 3.3323
-    - 3.3334
-    - 3.3355
-    - 3.3449
-    - 3.3827
-    - 3.5403
-    how: 'slow discharge at 0.0827 A over 30.8 h, plus its own drop (6.0 mV: 0.0827 A x 72.7 mOhm, the fitted model''s
+    - 3.33
+    - 3.3304
+    - 3.331
+    - 3.3316
+    - 3.3328
+    - 3.3348
+    - 3.3442
+    - 3.382
+    - 3.5386
+    how: 'slow discharge at 0.0827 A over 30.8 h, plus its own drop (5.4 mV: 0.0827 A x 65.6 mOhm, the fitted model''s
       steady resistance, rising near empty as the model''s does)'
   - cell_C: 45.0
     capacity_Ah: 2.524
@@ -2177,108 +2177,108 @@ open_circuit_voltage:
     - 0.9902
     - 1.0
     V:
-    - 2.0169
-    - 2.6986
-    - 2.8529
-    - 2.9428
-    - 3.0066
-    - 3.0558
-    - 3.0963
-    - 3.1307
-    - 3.1605
-    - 3.1827
-    - 3.192
-    - 3.1958
-    - 3.1978
-    - 3.1993
-    - 3.2003
-    - 3.2015
-    - 3.2034
-    - 3.2086
-    - 3.2146
-    - 3.2193
-    - 3.2233
-    - 3.227
-    - 3.2311
-    - 3.2352
-    - 3.2392
-    - 3.2422
-    - 3.2453
-    - 3.248
-    - 3.2502
-    - 3.2522
-    - 3.2545
-    - 3.2574
-    - 3.2604
-    - 3.2634
-    - 3.2662
-    - 3.269
-    - 3.2718
-    - 3.2756
-    - 3.2806
-    - 3.2854
-    - 3.2877
+    - 2.0154
+    - 2.6971
+    - 2.8514
+    - 2.9414
+    - 3.0052
+    - 3.0544
+    - 3.0949
+    - 3.1293
+    - 3.1592
+    - 3.1814
+    - 3.1906
+    - 3.1945
+    - 3.1965
+    - 3.198
+    - 3.1991
+    - 3.2002
+    - 3.2021
+    - 3.2074
+    - 3.2134
+    - 3.2181
+    - 3.2221
+    - 3.2258
+    - 3.2299
+    - 3.2341
+    - 3.2381
+    - 3.2411
+    - 3.2442
+    - 3.2469
+    - 3.2491
+    - 3.2511
+    - 3.2534
+    - 3.2564
+    - 3.2594
+    - 3.2623
+    - 3.2652
+    - 3.268
+    - 3.2707
+    - 3.2746
+    - 3.2796
+    - 3.2844
+    - 3.2867
+    - 3.2878
+    - 3.2884
     - 3.2887
-    - 3.2894
-    - 3.2897
-    - 3.2901
-    - 3.2905
+    - 3.2891
+    - 3.2895
+    - 3.2896
+    - 3.2899
+    - 3.29
+    - 3.2903
     - 3.2906
+    - 3.2907
     - 3.2908
-    - 3.291
+    - 3.2911
     - 3.2912
     - 3.2915
     - 3.2916
-    - 3.2917
-    - 3.292
-    - 3.2921
+    - 3.2919
+    - 3.2922
     - 3.2924
-    - 3.2924
+    - 3.2927
     - 3.2928
-    - 3.293
     - 3.2933
-    - 3.2935
-    - 3.2937
-    - 3.2941
-    - 3.2944
-    - 3.2949
-    - 3.2954
-    - 3.2961
-    - 3.2965
-    - 3.2975
-    - 3.2987
-    - 3.2999
-    - 3.3019
-    - 3.3052
-    - 3.3104
-    - 3.317
-    - 3.3216
-    - 3.324
-    - 3.3253
-    - 3.326
+    - 3.2936
+    - 3.294
+    - 3.2946
+    - 3.2953
+    - 3.2957
+    - 3.2967
+    - 3.2979
+    - 3.2991
+    - 3.3011
+    - 3.3045
+    - 3.3096
+    - 3.3162
+    - 3.3209
+    - 3.3232
+    - 3.3245
+    - 3.3252
+    - 3.3258
+    - 3.3262
     - 3.3265
-    - 3.327
+    - 3.3269
     - 3.3273
     - 3.3276
-    - 3.328
-    - 3.3284
-    - 3.3287
+    - 3.3279
+    - 3.3282
+    - 3.3285
     - 3.3289
     - 3.3292
-    - 3.3296
-    - 3.33
+    - 3.3294
+    - 3.3301
     - 3.3302
-    - 3.3308
-    - 3.3309
-    - 3.3314
-    - 3.3319
-    - 3.3323
-    - 3.3332
-    - 3.335
-    - 3.3423
-    - 3.3729
-    - 3.4968
-    how: 'slow discharge at 0.0827 A over 30.5 h, plus its own drop (5.3 mV: 0.0827 A x 63.9 mOhm, the fitted model''s
+    - 3.3306
+    - 3.3312
+    - 3.3316
+    - 3.3325
+    - 3.3343
+    - 3.3416
+    - 3.3721
+    - 3.4951
+    how: 'slow discharge at 0.0827 A over 30.5 h, plus its own drop (4.7 mV: 0.0827 A x 57.0 mOhm, the fitted model''s
       steady resistance, rising near empty as the model''s does)'
 valid_for:
   temperature_C:
@@ -2308,192 +2308,192 @@ identifiability:
 errors:
   fitted_on:
     changes in current at 20-95% SOC, 25 degC:
-      rmse_mV: 3.03
-      max_mV: 11.95
+      rmse_mV: 3.16
+      max_mV: 11.92
       samples: 16444
       parts: 261
     changes in current below 20% SOC, 25 degC:
-      rmse_mV: 3.58
-      max_mV: 14.04
+      rmse_mV: 3.63
+      max_mV: 14.08
       samples: 1323
       parts: 21
     drive cycles fitted on, 25 degC:
-      rmse_mV: 4.66
-      max_mV: 54.69
-      samples: 36979
+      rmse_mV: 4.42
+      max_mV: 53.56
+      samples: 28800
       parts: 1
     slow charge at 10-95% SOC, 25 degC:
-      rmse_mV: 6.8
-      max_mV: 14.66
+      rmse_mV: 6.82
+      max_mV: 14.95
       samples: 9793
       parts: 1
     changes in current at 20-95% SOC, 35 degC:
-      rmse_mV: 3.06
-      max_mV: 13.22
+      rmse_mV: 3.19
+      max_mV: 13.57
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 35 degC:
-      rmse_mV: 2.67
-      max_mV: 9.46
+      rmse_mV: 2.79
+      max_mV: 9.9
       samples: 630
       parts: 10
     drive cycles fitted on, 35 degC:
-      rmse_mV: 3.98
-      max_mV: 52.1
-      samples: 37005
+      rmse_mV: 3.94
+      max_mV: 51.22
+      samples: 28864
       parts: 1
     slow charge at 10-95% SOC, 35 degC:
-      rmse_mV: 8.39
-      max_mV: 16.54
+      rmse_mV: 8.48
+      max_mV: 17.06
       samples: 10155
       parts: 1
     changes in current at 20-95% SOC, 45 degC:
-      rmse_mV: 3.03
-      max_mV: 14.27
+      rmse_mV: 3.15
+      max_mV: 14.72
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 45 degC:
-      rmse_mV: 2.75
-      max_mV: 9.23
+      rmse_mV: 2.86
+      max_mV: 9.68
       samples: 630
       parts: 10
     drive cycles fitted on, 45 degC:
-      rmse_mV: 5.31
-      max_mV: 65.49
-      samples: 37008
+      rmse_mV: 5.53
+      max_mV: 66.19
+      samples: 28823
       parts: 1
     slow charge at 10-95% SOC, 45 degC:
-      rmse_mV: 10.1
-      max_mV: 29.82
+      rmse_mV: 10.27
+      max_mV: 30.6
       samples: 10099
       parts: 1
     changes in current at 20-95% SOC, 15 degC:
-      rmse_mV: 2.51
-      max_mV: 8.71
+      rmse_mV: 2.6
+      max_mV: 9.0
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 15 degC:
-      rmse_mV: 2.2
-      max_mV: 6.46
+      rmse_mV: 2.21
+      max_mV: 6.71
       samples: 630
       parts: 10
     drive cycles fitted on, 15 degC:
-      rmse_mV: 5.07
-      max_mV: 78.29
-      samples: 37004
+      rmse_mV: 4.5
+      max_mV: 76.73
+      samples: 28779
       parts: 1
     changes in current at 20-95% SOC, 5 degC:
-      rmse_mV: 3.79
-      max_mV: 12.78
+      rmse_mV: 4.28
+      max_mV: 18.9
       samples: 8065
       parts: 128
     changes in current below 20% SOC, 5 degC:
-      rmse_mV: 5.28
-      max_mV: 21.34
+      rmse_mV: 5.72
+      max_mV: 23.57
       samples: 567
       parts: 9
     drive cycles fitted on, 5 degC:
-      rmse_mV: 5.23
-      max_mV: 80.55
-      samples: 37280
+      rmse_mV: 7.22
+      max_mV: 81.02
+      samples: 29223
       parts: 1
     slow charge at 10-95% SOC, 5 degC:
-      rmse_mV: 10.44
-      max_mV: 63.39
+      rmse_mV: 10.49
+      max_mV: 63.25
       samples: 9919
       parts: 1
     changes in current at 20-95% SOC, -5 degC:
-      rmse_mV: 9.74
-      max_mV: 49.59
+      rmse_mV: 7.91
+      max_mV: 48.1
       samples: 13987
       parts: 222
     changes in current below 20% SOC, -5 degC:
-      rmse_mV: 28.28
-      max_mV: 70.61
+      rmse_mV: 26.6
+      max_mV: 68.75
       samples: 1071
       parts: 17
     drive cycles fitted on, -5 degC:
-      rmse_mV: 20.35
-      max_mV: 142.98
-      samples: 37272
+      rmse_mV: 7.39
+      max_mV: 89.78
+      samples: 29220
       parts: 1
     slow charge at 10-95% SOC, -5 degC:
-      rmse_mV: 22.43
-      max_mV: 189.76
+      rmse_mV: 22.51
+      max_mV: 190.08
       samples: 10171
       parts: 1
     changes in current at 20-95% SOC, -15 degC:
-      rmse_mV: 24.31
-      max_mV: 162.83
+      rmse_mV: 25.45
+      max_mV: 173.42
       samples: 16823
       parts: 267
     changes in current below 20% SOC, -15 degC:
-      rmse_mV: 44.01
-      max_mV: 159.17
+      rmse_mV: 46.96
+      max_mV: 175.08
       samples: 1323
       parts: 21
     drive cycles fitted on, -15 degC:
-      rmse_mV: 73.14
-      max_mV: 329.16
-      samples: 36155
+      rmse_mV: 29.6
+      max_mV: 143.34
+      samples: 29231
       parts: 1
     slow charge at 10-95% SOC, -15 degC:
-      rmse_mV: 83.07
-      max_mV: 359.02
+      rmse_mV: 82.61
+      max_mV: 357.65
       samples: 9291
       parts: 1
   held_out:
   - file: N15_DYN05.csv.gz
-    rmse_mV: 88.79
-    max_mV: 354.44
-    rmse_whole_mV: 106.95
+    rmse_mV: 95.88
+    max_mV: 383.67
+    rmse_whole_mV: 115.02
     cell_C: -12.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: N15_DYN15.csv.gz
-    rmse_mV: 77.76
-    max_mV: 337.64
-    rmse_whole_mV: 87.13
+    rmse_mV: 84.37
+    max_mV: 370.55
+    rmse_whole_mV: 94.65
     cell_C: -12.4
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: P25_DYN50.csv.gz
-    rmse_mV: 11.53
-    max_mV: 47.61
-    rmse_whole_mV: 11.53
+    rmse_mV: 12.86
+    max_mV: 48.4
+    rmse_whole_mV: 12.86
     cell_C: 26.0
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: P15_C30_charge.csv.gz
-    rmse_mV: 95.35
-    max_mV: 800.91
-    rmse_whole_mV: 118.44
+    rmse_mV: 95.71
+    max_mV: 802.21
+    rmse_whole_mV: 118.86
     cell_C: 16.6
     soc_start: 0.0
     anchored: 0.0% at the start, as given
   held_out_electrothermal:
   - file: N15_DYN05.csv.gz
     ambient_C: -12.14
-    V_rmse_mV: 92.94441023192473
-    T_rmse_K: 0.10861845894726965
-    peak_error_K: -0.028743286235350496
+    V_rmse_mV: 102.06721581974458
+    T_rmse_K: 0.10678386654882335
+    peak_error_K: -0.1343381731429183
     rise_meas_K: 0.963981848926462
   - file: N15_DYN15.csv.gz
     ambient_C: -12.51
-    V_rmse_mV: 82.23006657590089
-    T_rmse_K: 0.7115765632085718
+    V_rmse_mV: 91.29446723369458
+    T_rmse_K: 0.7117784859209825
     peak_error_K: -1.8207657603852567e-14
     rise_meas_K: 15.53
   - file: P25_DYN50.csv.gz
     ambient_C: 25.94
-    V_rmse_mV: 10.389172069550686
-    T_rmse_K: 0.09598632771229486
-    peak_error_K: -0.0240813579590764
+    V_rmse_mV: 11.62239981193981
+    T_rmse_K: 0.09587478832824207
+    peak_error_K: -0.02538685854257494
     rise_meas_K: 0.1999999999999993
   - file: P15_C30_charge.csv.gz
     ambient_C: 16.63
-    V_rmse_mV: 95.5649474435991
-    T_rmse_K: 0.13495187061985098
+    V_rmse_mV: 95.90725642148813
+    T_rmse_K: 0.13494082141136737
     peak_error_K: 3.552713678800501e-15
     rise_meas_K: 3.4299999999999997
 state_of_charge_anchors:
@@ -2505,16 +2505,16 @@ state_of_charge_anchors:
   cycle 1 at -5 degC: 100.0% at the start, as given
   cycle 1 at -15 degC: 100.0% at the start, as given
 data_warnings:
-- the middle branch's time constant (tau_m) set by the long tests at 35, 44, 18, 7, -3, -12 degC, where they fit
-  better that way and the kinetic windows (pulses, or changes in current) still fit (elsewhere by the kinetic windows
-  (pulses, or changes in current))
-- 'the split between the branches is not pinned by these tests at 25 degC (I0_25C, tau_d); 44 degC (tau_m, tau_d);
-  7 degC (gamma, tau_m, tau_d); -3 degC (gamma, tau_d); -12 degC (gamma, Rd_25C, tau_d): those values sit at the
-  edge of their ranges. The voltage and the 10 s DC resistance are fitted; take the branch values one by one with
-  care (a pulse test pins them)'
+- the middle branch's time constant (tau_m) set by the long tests at 35, 44, 18 degC, where they fit better that
+  way and the kinetic windows (pulses, or changes in current) still fit (elsewhere by the kinetic windows (pulses,
+  or changes in current))
+- 'the split between the branches is not pinned by these tests at 25 degC (I0_25C, tau_d); 18 degC (tau_m, tau_d);
+  7 degC (I0_25C, gamma, tau_ct); -3 degC (gamma, tau_ct, tau_d): those values sit at the edge of their ranges.
+  The voltage and the 10 s DC resistance are fitted; take the branch values one by one with care (a pulse test pins
+  them)'
 provenance:
-  packtherm: 0.6.7
-  fitted_at: '2026-11-23T02:14:16+00:00'
+  packtherm: 0.6.8
+  fitted_at: '2026-11-23T11:24:40+00:00'
   settings:
     pulse window: 5 s before each pulse to 40 s after
     kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all; with no pulse test (at 25 degC,
