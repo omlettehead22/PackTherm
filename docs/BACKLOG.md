@@ -73,3 +73,4 @@ Open items as of v0.6.9, ranked within each group by how much they could change 
 | v0.6.4 | The LG HG2 fitted blind and in the library; one data-preparation script for the McMaster datasets (item 7 added: capacity by temperature; item 5 updated) |
 | v0.6.5 | Open-circuit curves by temperature from slow tests at each; the middle branch capped at 120 s, below the slow branch (item 7 rewritten) |
 | v0.6.9 | LG M50 against measured data: resistance scaled to measured pulses, the core checked against a thermocouple inside the cell (item 1 narrowed, item 5 checked on one cell) |
+| v0.6.10 | Lower temperature limits for the PF and MJ1; no warning for a dip of hundredths of a kelvin below a limit |

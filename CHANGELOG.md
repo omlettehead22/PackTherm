@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.10
+
+A small patch from a check of every library cell after v0.6.9 (discharges at 0.2–2C from −20 to 40 °C, charges at 0.3–0.7C from 0 to 40 °C, and fast studies of every duty type at −10, 0, 25 and 40 °C: no errors, results as expected).
+
+- **Fixed: the Panasonic NCR18650PF and LG MJ1 had no lower temperature limits,** so a study charging them in the cold gave no warning. Both now warn below 0 °C on charge and −20 °C on discharge (Panasonic's PF sheet; the MJ1 specification the library already cites). Some later copies of the PF sheet give charging from +10 °C.
+- **Fixed: a cell charging at exactly its lower limit was reported as below it** ("Charging at −0.0 degC, below the 0 degC limit"; the A123 at a 0 °C ambient dips a few hundredths of a kelvin). Dips under 0.05 K are no longer reported.
+- **Tests:** every library cell with a circuit or a datasheet carries its lower limits.
+
 ## 0.6.9
 
 The LG M50 against measured data, with a thermocouple inside the cell (Warwick, Gulsoy et al., Mendeley bf6fksxpp2 v2, CC BY 4.0).
