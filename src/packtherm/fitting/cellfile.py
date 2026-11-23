@@ -112,7 +112,14 @@ def ecm_doc(ecm) -> dict:
         # a change of direction crosses it (packtherm.ecm.ECM).
         out["hysteresis"] = {
             "by_temperature": [
-                {"cell_C": _r(T - 273.15, 2), "gap_V": _r(g, 5), "rate_per_Ah": _r(k, 4)} for T, g, k in sorted(ecm.hyst)
+                {
+                    "cell_C": _r(row[0] - 273.15, 2),
+                    "gap_V": _r(row[1], 5),
+                    "rate_per_Ah": _r(row[2], 4),
+                    # v0.6.8: the share of the gap that follows the current's sign at once
+                    **({"instant_share": _r(row[3], 3)} if len(row) > 3 else {}),
+                }
+                for row in sorted(ecm.hyst)
             ],
         }
     return out
@@ -154,7 +161,8 @@ def _hysteresis(m: dict) -> dict:
     if not h:
         return {}
     rows = tuple(
-        (float(r["cell_C"]) + 273.15, float(r["gap_V"]), float(r["rate_per_Ah"])) for r in h["by_temperature"]
+        (float(r["cell_C"]) + 273.15, float(r["gap_V"]), float(r["rate_per_Ah"]), float(r.get("instant_share", 0.0)))
+        for r in h["by_temperature"]
     )
     return {"hyst": rows}
 

@@ -78,7 +78,7 @@ DCIR_mOhm: 22
 | `DCIR_max_mOhm` | `DCIR_mOhm` | Datasheet maximum; the worst-case re-check uses it plus `options.r_margin` |
 | `max_discharge_A`, `max_charge_A` | none | Datasheet current limits, checked against the duty. Without `max_charge_A`, charging is unchecked (a study note says so) and the road trip's rapid charge runs at 1C |
 | `T_max_charge_C`, `T_max_discharge_C` | none | Datasheet temperature limits. The default peak limit is the lower of 45 °C and the charging limit (for a duty that charges) or the discharge limit |
-| `T_min_charge_C`, `T_min_discharge_C` | none | Datasheet lower limits (v0.6.7). A run that charges, or discharges, with any part of the cell colder than these gets a warning (most cells must not be charged below 0 °C) |
+| `T_min_charge_C`, `T_min_discharge_C` | none | Datasheet lower limits (v0.6.7). A run that charges, or discharges, at 0.05C or more over 30 s (v0.6.8: not a moment's regen) with any part of the cell colder than these gets a warning (most cells must not be charged below 0 °C) |
 | `cp_J_kgK`, `k_radial_W_mK`, `k_axial_W_mK` | jelly roll | Heat capacity and conductivities, if you have measured values |
 | `Ea_kJ_mol` | 20 | How fast resistance rises in the cold (20 kJ/mol: about ×2.1 from 25 to 0 °C) |
 | `entropic` | true | Entropic heat (NMC and LFP; NCA has none) |
@@ -128,7 +128,7 @@ Unusual but possible values are warnings, shown by `packtherm cells` and written
 |---|---|---|
 | `T_max_C` | null | Peak limit for the hottest cell; null: the lower of 45 °C and the cell's datasheet limit |
 | `dT_cell_max_C` | 5 | In-cell spread limit (> 0) |
-| `recovery_max_min` | null | Ready again (near ambient, PCM re-frozen) within this time; null: within the rest window |
+| `recovery_max_min` | null | Ready again (within 1 K of ambient, PCM re-frozen) within this time; null: within the rest window. From v0.6.8 a cell no warmer than 25 °C is also ready if it is above ambient by no more than the event's headroom to its peak limit: in the cold, a little warmth is no harm |
 | `cell_to_cell_max_K` | null | Hottest-to-coolest cell limit; null: reported but not limited |
 
 ## `design_space`

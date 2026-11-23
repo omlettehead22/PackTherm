@@ -601,6 +601,8 @@ CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
 # v0.6.4: the HG2's circuit fitted by `packtherm fit` at -20 to 40 degC, from the tests in
 # [Kollmeyer2020] (docs/examples/fitting/lg_hg2_tests.yaml; the report beside it), with the
 # method of v0.6.3 unchanged.
+# Its capacity is the dataset's C/20 at 25 degC to its 2.8 V cut-off, 2.78 Ah: below the rated 3.0 Ah
+# (to 2.0 V), so a pack sized on it has about 8% more cells than the rating needs (v0.6.8 note).
 LG_HG2 = _packaged_fitted_cell("lg_hg2_fitted.yaml", "LG INR18650-HG2", ("Kollmeyer2020", "HG2-TI", "HG2-DS"))
 CELLS["HG2"] = LG_HG2
 
@@ -621,9 +623,9 @@ A123_26650_LUMPED = Cell(
     height=65.0e-3,
     mass=0.076,
     # The fitted circuit's 10 s DC resistance at mid charge, 1.5C and 25 degC (A123 below; 16.9 mOhm
-    # without hysteresis, v0.6.6); it rises 2.4x by 5 degC and 8x by -15 degC.
-    R0_25C=0.0144,
-    R0_range=(0.0130, 0.0159),
+    # in v0.6.6, 14.4 in v0.6.7); it rises 2.3x by 5 degC and 8x by -15 degC.
+    R0_25C=0.0135,
+    R0_range=(0.0121, 0.0148),
     # Whole-cell LFP values, as for user-defined LFP cells (v0.5.4).
     cp=LFP_CP,
     k_radial=LFP_K_RADIAL,

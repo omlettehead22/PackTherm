@@ -43,7 +43,10 @@ branch). Charging moves h towards 1 and discharging towards 0, by
 dh = (target - h)(1 - exp(-k |I| dt / 3600)): about 1/k Ah of charge in one
 direction crosses most of the way. The voltage is raised by G h, G the gap
 between the two branches. Rows (T_K, G, k) by temperature, interpolated
-linearly in T and held beyond the ends; off when there are none.
+linearly in T and held beyond the ends; off when there are none. A fourth
+column (v0.6.8), the instant share f: that share of the gap follows the sign of
+the last current at once (Plett's instantaneous hysteresis), the rest by h, so
+V is raised by G ((1 - f) h + f s), s 1 after a charge and 0 after a discharge.
 
 Irreversible heat is I (OCV - V), so every loss term heats the cell; with
 hysteresis, OCV is taken midway between the branches (the curve plus G/2), so
@@ -96,7 +99,7 @@ class ECM:
     ocv_by_T: tuple[tuple[float, tuple[float, ...], tuple[float, ...]], ...] = ()
     # Hysteresis (v0.6.7): (T_K, G, k) rows: the gap between the charge and discharge branches (V), and how
     # quickly a change of direction crosses it (1/Ah). Off when empty.
-    hyst: tuple[tuple[float, float, float], ...] = ()
+    hyst: tuple[tuple[float, ...], ...] = ()
 
     def __post_init__(self):
         if self.by_T:
@@ -129,6 +132,28 @@ class ECM:
     def hyst_rate(self, T: float) -> float:
         """How quickly a change of direction crosses the gap at T (K), 1/Ah."""
         return self._hyst_at(2, T) if self.hyst else 0.0
+
+    def hyst_share(self, T: float) -> float:
+        """The share of the gap that changes branch at once with the current's sign (v0.6.8)."""
+        if not self.hyst or len(self.hyst[0]) < 4:
+            return 0.0
+        return self._hyst_at(3, T)
+
+    def hyst_offset(self, h: float, s: float, T: float) -> float:
+        """The voltage the hysteresis adds: G ((1 - f) h + f s)."""
+        if not self.hyst:
+            return 0.0
+        f = self.hyst_share(T)
+        return self.hyst_V(T) * ((1.0 - f) * h + f * s)
+
+    def factor(self, soc: float, current: float, T: float = T_REF) -> float:
+        """The rise near empty: identified on discharge, so applied on discharge only."""
+        return self.soc_factor(soc, T) if current > 0 else 1.0
+
+    @staticmethod
+    def hyst_sign(s: float, current: float) -> float:
+        """The last direction: 1 after a charge, 0 after a discharge (held at rest)."""
+        return 1.0 if current < 0 else (0.0 if current > 0 else s)
 
     def hyst_step(self, h: float, current: float, dt: float, T: float = T_REF) -> float:
         """The hysteresis state after dt at current (+ = discharge): towards 1 on charge, 0 on discharge."""
@@ -259,6 +284,7 @@ class ECMState:
     V_d: float = 0.0
     V_m: float = 0.0
     h: float = 0.0  # hysteresis: 0 on the discharge branch, 1 on the charge branch
+    s: float = 0.0  # the last direction (v0.6.8): 1 after a charge, 0 after a discharge
     cutoff: bool = False  # discharge hit V_min
     charge_done: bool = False  # CV phase ended
 
@@ -267,7 +293,7 @@ class ECMState:
         e1 = math.exp(-dt / ecm.tau_ct_at(T))
         e2 = math.exp(-dt / ecm.tau_d_at(T))
         # The low-SOC rise was identified on discharge pulses; apply it on discharge only.
-        f = ecm.soc_factor(soc, T) if current > 0 else 1.0
+        f = ecm.factor(soc, current, T)
         eta = self.eta_ct * e1 + f * ecm.eta_ss(current, T) * (1.0 - e1)
         vd = self.V_d * e2 + f * ecm.Rd(T) * current * (1.0 - e2)
         vm = 0.0
@@ -277,7 +303,7 @@ class ECMState:
             vm = self.V_m * e3 + f * Rm * current * (1.0 - e3)
         V = ecm.ocv(soc, T) - current * f * ecm.R0(T) - eta - vm - vd
         if ecm.hyst:
-            V += ecm.hyst_V(T) * ecm.hyst_step(self.h, current, dt, T)
+            V += ecm.hyst_offset(ecm.hyst_step(self.h, current, dt, T), ecm.hyst_sign(self.s, current), T)
         return V, eta, vd, vm
 
     def apply(self, ecm: ECM, current: float, soc: float, T: float, dt: float) -> tuple[float, float]:
@@ -316,4 +342,5 @@ class ECMState:
             V, eta, vd, vm = self.step(ecm, current, soc, T, dt)
         self.eta_ct, self.V_d, self.V_m = eta, vd, vm
         self.h = ecm.hyst_step(self.h, current, dt, T)
+        self.s = ecm.hyst_sign(self.s, current)
         return current, V

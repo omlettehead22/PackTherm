@@ -99,7 +99,8 @@ class ElectroThermalLoad:
             raise ValueError("Require 0 <= soc_min < soc_max <= 1 and soc0 inside the window.")
         self.soc = self.soc0
         # Hysteresis starts on the charge branch from full (just charged), otherwise on the discharge's.
-        self.ecm_state = ECMState(h=1.0 if self.soc0 >= FULL_SOC else 0.0) if self.cell.ecm is not None else None
+        h0 = 1.0 if self.soc0 >= FULL_SOC else 0.0
+        self.ecm_state = ECMState(h=h0, s=h0) if self.cell.ecm is not None else None
         self.log = {
             k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A", "I_req_A")
         }
@@ -352,6 +353,9 @@ def check_fitted_range(cell: Cell, load: ElectroThermalLoad, res, window_s: floa
     return out
 
 
+LOW_T_C_RATE = 0.05  # C, held over the window: below it, current in the cold isn't checked against the lower limits
+
+
 def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30.0) -> list[str]:
     """Datasheet-limit warnings for a finished run (empty list = within limits).
 
@@ -388,10 +392,13 @@ def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30
         warnings.append(
             f"Peak {T_peak_dis:.1f} degC while discharging exceeds the {cell.T_max_discharge_C:.0f} degC limit."
         )
-    # The lower limits (v0.6.7), on the coolest part of the cell while that kind of current flows.
+    # The lower limits (v0.6.7), on the coolest part of the cell while that kind of current flows, held
+    # for the window: 0.05C or more over 30 s (v0.6.8), so a moment's regen in the cold is not a breach.
     T_cold = np.asarray(getattr(res, "T_min", res.T_max))[-current.size :] - KELVIN
-    T_low_chg = float(T_cold[current < 0].min()) if charging else np.inf
-    T_low_dis = float(T_cold[current > 0].min()) if discharging else np.inf
+    held = np.convolve(current, np.ones(n) / n, mode="same") / cell.capacity_Ah
+    chg, dis = held <= -LOW_T_C_RATE, held >= LOW_T_C_RATE
+    T_low_chg = float(T_cold[chg].min()) if chg.any() else np.inf
+    T_low_dis = float(T_cold[dis].min()) if dis.any() else np.inf
     if cell.T_min_charge_C is not None and T_low_chg < cell.T_min_charge_C:
         warnings.append(
             f"Charging at {T_low_chg:.1f} degC, below the {cell.T_min_charge_C:.0f} degC limit "

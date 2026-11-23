@@ -125,7 +125,11 @@ class CircuitModel(CellModel):
     ) -> ECM:
         # Hysteresis (v0.6.7): rows (T_K, gap, rate) for several temperatures, else one from the values.
         if hyst is None:
-            hyst = ((T_REF, values["hyst_G"], values.get("hyst_rate", 20.0)),) if values.get("hyst_G") else ()
+            hyst = (
+                ((T_REF, values["hyst_G"], values.get("hyst_rate", 20.0), values.get("hyst_share", 0.0)),)
+                if values.get("hyst_G")
+                else ()
+            )
         return ECM(
             ocv_soc=tuple(float(x) for x in ocv.soc),
             ocv_V=tuple(float(x) for x in ocv.V),
@@ -175,9 +179,10 @@ class CircuitModel(CellModel):
         R0, Rd, Rm = ecm.R0, ecm.Rd, ecm.Rm
         eta = vd = vm = 0.0
         h = (1.0 if float(soc[0]) >= FULL_SOC else 0.0) if h0 is None else h0
+        sgn = h
         if steady_start:
             I0, T0 = float(now[0]), float(T_K[0])
-            f0 = ecm.soc_factor(float(soc[0]), T0) if I0 > 0 else 1.0
+            f0 = ecm.factor(float(soc[0]), I0, T0)
             eta, vd, vm = f0 * ecm.eta_ss(I0, T0), f0 * Rd(T0) * I0, f0 * Rm(T0) * I0
         for k in range(t.size):
             Tk = float(T_K[k])
@@ -185,17 +190,18 @@ class CircuitModel(CellModel):
                 Im = float(current[k])
                 dt = float(t[k] - t[k - 1])
                 e1, e2 = math.exp(-dt / ecm.tau_ct_at(Tk)), math.exp(-dt / ecm.tau_d_at(Tk))
-                f = ecm.soc_factor(float(soc[k]), Tk) if Im > 0 else 1.0
+                f = ecm.factor(float(soc[k]), Im, Tk)
                 eta = eta * e1 + f * ecm.eta_ss(Im, Tk) * (1.0 - e1)
                 vd = vd * e2 + f * Rd(Tk) * Im * (1.0 - e2)
                 e3 = math.exp(-dt / ecm.tau_m_at(Tk))
                 vm = vm * e3 + f * Rm(Tk) * Im * (1.0 - e3)
                 h = ecm.hyst_step(h, Im, dt, Tk)
+                sgn = ecm.hyst_sign(sgn, Im)
             In = float(now[k])
-            fn = ecm.soc_factor(float(soc[k]), Tk) if In > 0 else 1.0
+            fn = ecm.factor(float(soc[k]), In, Tk)
             out[k] = ecm.ocv(float(soc[k]), Tk) - In * fn * R0(Tk) - eta - vm - vd
             if ecm.hyst:
-                out[k] += ecm.hyst_V(Tk) * h
+                out[k] += ecm.hyst_offset(h, sgn, Tk)
         return out
 
 
@@ -512,6 +518,31 @@ LONG_DT_S = 1.0  # long tests logged faster than this are thinned to it for the 
 # would decide the whole fit (the rise near empty comes from the pulses and steps instead).
 KNEE_SHARE = 0.4
 
+KNEE_HOLD_S = 60.0  # the knee is where the voltage stays below it this long (v0.6.8)
+
+
+def _knee_index(tr: Trace, knee: float) -> int:
+    """Where a long test reaches its knee: the first sample from which the voltage stays below it for KNEE_HOLD_S.
+
+    Not the first sample below it: in the cold a drive cycle's peaks dip
+    under the knee within seconds and the voltage comes back up between them
+    (v0.6.8: the 30T's and the HG2's -20 degC Mixed1 were cut to their first
+    15 s, and the HG2's 0 and -10 degC ones to a quarter of their charge). A
+    discharge's end, from the knee to its cut-off, takes minutes.
+    """
+    below = tr.V < knee
+    if not below.any():
+        return tr.t.size
+    # For each sample: the time to the next sample at or above the knee (inf if none).
+    nxt = np.full(tr.t.size, np.inf)
+    t_next = np.inf
+    for k in range(tr.t.size - 1, -1, -1):
+        if not below[k]:
+            t_next = tr.t[k]
+        nxt[k] = t_next
+    held = np.flatnonzero(below & (nxt - tr.t >= KNEE_HOLD_S))
+    return int(held[0]) if held.size else tr.t.size
+
 
 def discharge_windows(
     rec: TestRecord, soc0: float, ocv: OCVCurve, cap: float, kind: str = "discharge"
@@ -538,8 +569,11 @@ def discharge_windows(
         tr = _trace(rec, I, soc, T, 0, len(rec))
     rate = float(np.max(np.abs(rec.current_A))) / cap
     knee = ocv.V_min + KNEE_SHARE * (ocv.V_top - ocv.V_min)
-    below = np.flatnonzero(tr.V < knee)
-    k1 = int(below[0]) if below.size else tr.t.size
+    # Or where the charge counted reaches the knee's state of charge on the open-circuit curve, if sooner:
+    # a drive cycle that ends at its cut-off comes back above the knee between its peaks right to the end.
+    soc_knee = ocv.soc_at(knee, float(np.median(tr.T_K)))
+    by_soc = np.flatnonzero(tr.soc <= soc_knee)
+    k1 = min(_knee_index(tr, knee), int(by_soc[0]) if by_soc.size else tr.t.size)
     return Window(kind, tr, 0, max(k1, 2), rate, soc0, relative=False, end=tr.t.size), how
 
 
@@ -723,25 +757,26 @@ def _hysteresis_gap(
     empty, the charge climbs onto its branch (fitted on its first 40%, with the
     gap held). Tests that start full can't give the rate: the curve's top and
     the test's start come down the gap together.
-    """
-    from scipy.optimize import minimize_scalar
 
+    Returns (gap, rate).
+    """
     tr = _charge_trace(test, cap)
-    v = {k: x for k, x in values.items() if k not in ("hyst_G", "hyst_rate")}
+    v = {k: x for k, x in values.items() if k not in HYST_KEYS}
     V = tr.simulate(model, model.ecm(v, ocv, V_max))
     m = (tr.soc >= HYST_SOC[0]) & (tr.soc <= HYST_SOC[1]) & (tr.now < 0)
     if not m.any():
         return 0.0, model.param("hyst_rate").start
     G = max(float(np.median(tr.V[m] - V[m])), 0.0)
-    early = (tr.soc >= 0.02) & (tr.soc <= 0.4) & (tr.now < 0)
+    early = np.flatnonzero((tr.soc >= EMPTY_CHARGE_SOC[0]) & (tr.soc <= 0.4) & (tr.now < 0))
+    early = early[:: max(1, early.size // 400)]
 
-    def cost(x: float) -> float:
-        Vh = tr.simulate(model, model.ecm({**v, "hyst_G": G, "hyst_rate": math.exp(x)}, ocv, V_max))
-        return float(np.mean((Vh[early] - tr.V[early]) ** 2))
+    def resid(x) -> np.ndarray:
+        e = model.ecm({**v, "hyst_G": G, "hyst_rate": math.exp(x[0])}, ocv, V_max)
+        return tr.simulate(model, e)[early] - tr.V[early]
 
     lo, hi = (math.log(x) for x in HYST_RATE)
-    rate = math.exp(float(minimize_scalar(cost, bounds=(lo, hi), method="bounded", options={"xatol": 0.05}).x))
-    return G, rate
+    x = least_squares(resid, [math.log(20.0)], bounds=([lo], [hi])).x
+    return G, math.exp(float(x[0]))
 
 
 def _fit_hysteresis(model, ocv, fits, cap, V_max) -> None:
@@ -750,10 +785,38 @@ def _fit_hysteresis(model, ocv, fits, cap, V_max) -> None:
     A temperature without a slow charge takes the nearest one's.
     """
     with_charge = [f for f in fits if f.test.slow_charge is not None]
-    found = {id(f): _hysteresis_gap(model, ocv, f.values, f.test, cap, V_max) for f in with_charge}
+    found = {}
+    for f in with_charge:
+        G, rate = _hysteresis_gap(model, ocv, f.values, f.test, cap, V_max)
+        v = {**f.values, "hyst_G": G, "hyst_rate": rate}
+        v["hyst_share"] = _hyst_share(model, ocv, v, f.step_wins, V_max)
+        found[id(f)] = {k: v[k] for k in HYST_KEYS}
     for f in fits:
         near = min(with_charge, key=lambda g: abs(g.T_C - f.T_C))
-        f.values["hyst_G"], f.values["hyst_rate"] = found[id(near)]
+        f.values.update(found[id(near)])
+
+
+HYST_KEYS = ("hyst_G", "hyst_rate", "hyst_share")
+HYST_SHARES = (0.0, 0.25, 0.5, 0.75, 1.0)
+EMPTY_CHARGE_SOC = (0.01, 0.15)  # where a slow charge from empty sets the rise near empty on charge
+
+
+def _hyst_share(model, ocv, v: dict, step_wins: list[Window], V_max: float) -> float:
+    """The share of the gap that changes branch at once (v0.6.8), from the drive cycles' changes of direction.
+
+    A slow charge can't tell it: its one change of direction is at its start.
+    The drive cycles' regen pulses can. The best of a few shares, on the
+    cycles fitted on (with the rest held); 0, all gradual, without cycles.
+    """
+    cyc = [w for w in step_wins if w.kind == "cycle"]
+    if not cyc:
+        return 0.0
+
+    def cost(share: float) -> float:
+        e = model.ecm({**v, "hyst_share": share}, ocv, V_max)
+        return float(sum(np.mean((w.simulate(model, e) - w.V) ** 2) for w in cyc))
+
+    return min(HYST_SHARES, key=cost)
 
 
 def _rms(r: np.ndarray) -> float:
@@ -952,7 +1015,7 @@ def fit_cell(
             values = {**min(fits, key=lambda f: abs(f.T_C - 25.0)).values, **{p.name: p.value for p in laws}}
             rows = tuple(_row(f) for f in fits)
             hyst = tuple(
-                (f.T_C + 273.15, f.values["hyst_G"], f.values.get("hyst_rate", 20.0))
+                (f.T_C + 273.15, f.values["hyst_G"], f.values.get("hyst_rate", 20.0), f.values.get("hyst_share", 0.0))
                 for f in fits
                 if f.values.get("hyst_G")
             )
@@ -1065,6 +1128,20 @@ def fit_cell(
         notes.append(
             f"the middle branch's time constant (tau_m) set by the long tests at {at} degC, where they fit "
             f"better that way and the {kin} still fit (elsewhere by the {kin})"
+        )
+    # v0.6.8: say plainly where the tests don't pin the split between the branches (two or more of a
+    # temperature's branch values at the edge of their ranges); the total they give is still fitted.
+    branch = ["I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m", "Rd_25C", "tau_d"]
+    loose = [
+        (f, [n for n in branch if _at_edge(f.values[n], model.param(n))]) for f in fits
+    ]
+    loose = [(f, ns) for f, ns in loose if len(ns) >= 2]
+    if loose:
+        at = "; ".join(f"{round(f.T_C) + 0:d} degC ({', '.join(ns)})" for f, ns in loose)
+        notes.append(
+            f"the split between the branches is not pinned by these tests at {at}: those values sit at the edge "
+            "of their ranges. The voltage and the 10 s DC resistance are fitted; take the branch values one by "
+            "one with care (a pulse test pins them)"
         )
     for rec in (*records, *(checks or [])):
         for w in rec.warnings:

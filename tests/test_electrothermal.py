@@ -236,6 +236,12 @@ def test_charging_in_the_cold_warns_below_the_datasheet_minimum():
     w = " | ".join(check_limits(cell, load, res))
     assert "Charging at -" in w and "below the 0 degC limit" in w
     assert "Discharging at" not in w  # -10 degC is above the -20 degC discharge limit
+    # v0.6.8: a moment's regen (a 5 s pulse at 0.3C) in the cold is not a breach.
+    blip = segments(cell, [(600, 0.5), (5, -0.3), (600, 0.5)])
+    res, load = simulate_cell(
+        cell, blip, 1205, h=10.0, T_env=263.15, pcm_thickness=0, case_thickness=0, soc0=0.9, T_initial=263.15
+    )
+    assert not any("Charging at" in x for x in check_limits(cell, load, res))
     res, load = simulate_cell(cell, prof, 1200, h=10.0, T_env=298.15, pcm_thickness=0, case_thickness=0, soc0=0.5)
     assert not any("below the" in x for x in check_limits(cell, load, res))
 
