@@ -57,7 +57,7 @@ print(results["summary"]["text"])
 | `GET /studies/{id}/results` | The results JSON (409 until the study is done) |
 | `GET /studies/{id}/designs.csv`, `/chart.png` | The designs table and the trade-off chart |
 | `DELETE /studies/{id}` | Cancels a queued or running study; deletes a finished one and its results |
-| `GET /cells` | The cell library |
+| `GET /cells` | The cell library; each cell's `group` is `design`, or `comparison` for earlier and lumped versions kept to compare against (v0.6.9) |
 | `POST /cells/check` | Checks a [user-defined cell](STUDY_FILES.md#user-defined-cells): the cell with defaults, what PackTherm derives from it (energy density, density, cold resistance rise, thermal properties), and warnings. 422 with field errors |
 | `GET /schema` | The study format as data: every key's type, default, allowed values and bounds, which duty keys each duty type uses, the user-defined cell keys, and the cells and fillers names may refer to |
 | `GET /template` | The commented study template (YAML) |

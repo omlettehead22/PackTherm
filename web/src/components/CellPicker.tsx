@@ -57,17 +57,32 @@ export function CellPicker({ schema, cells, form, update, checkCell }: Props) {
           <div className="field">
             <label htmlFor={`${id}-lib`}>Library cell</label>
             <select id={`${id}-lib`} value={form.libraryCell} onChange={(e) => update({ libraryCell: e.target.value })}>
-              {Object.entries(cells).map(([k, c]) => (
-                <option key={k} value={k}>
-                  {k}: {c.name}
-                </option>
-              ))}
+              {Object.entries(cells)
+                .filter(([, c]) => c.group !== "comparison")
+                .map(([k, c]) => (
+                  <option key={k} value={k}>
+                    {k}: {c.name}
+                  </option>
+                ))}
+              {Object.values(cells).some((c) => c.group === "comparison") && (
+                <optgroup label="For comparison only (not for design)">
+                  {Object.entries(cells)
+                    .filter(([, c]) => c.group === "comparison")
+                    .map(([k, c]) => (
+                      <option key={k} value={k}>
+                        {k}: {c.name}
+                      </option>
+                    ))}
+                </optgroup>
+              )}
             </select>
           </div>
           {lib && (
             <p className="muted">
               {lib.format}, {lib.capacity_Ah} Ah, {lib.V_nominal} V, {lib.mass_g.toFixed(1)} g, DC resistance{" "}
               {lib.DCIR_25C_mOhm.toFixed(0)} mΩ. Model: {lib.model}.
+              {lib.group === "comparison" &&
+                " For comparison only: an earlier or simpler model of a library cell, which understates its heat. Design with the cell above it."}
             </p>
           )}
         </>

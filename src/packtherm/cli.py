@@ -288,6 +288,8 @@ def _cells(args) -> None:
     if args.file:
         _cell_file(args.file)
         return
+    from .cells import COMPARISON
+
     rows = [
         {
             "key": k,
@@ -301,7 +303,11 @@ def _cells(args) -> None:
         }
         for k, c in CELLS.items()
     ]
-    print(pd.DataFrame(rows).to_string(index=False))
+    table = pd.DataFrame(rows)
+    print("Cells to design with:")
+    print(table[~table.key.isin(COMPARISON)].to_string(index=False))
+    print("\nFor comparison only (an earlier or simpler model of a cell above; lumped models make about half the heat):")
+    print(table[table.key.isin(COMPARISON)].to_string(index=False))
     print(
         "DCIR_25C is the lumped reference; it sets the worst-case re-check. Circuit cells compute "
         "losses from their own R0, charge transfer and slow branch."

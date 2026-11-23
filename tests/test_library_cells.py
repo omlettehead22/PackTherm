@@ -83,3 +83,22 @@ def test_only_the_lfp_cell_has_hysteresis():
     assert len(a123.hyst) == 7  # 15 degC takes 25 degC's: its slow charge is held out
     assert 0.02 < a123.hyst_V(298.15) < 0.04
     assert not CELLS["30T"].ecm.hyst and not CELLS["HG2"].ecm.hyst
+
+
+@pytest.mark.parametrize("key", ["M50", "30T", "HG2", "A123"])
+def test_library_circuit_cells_carry_their_cold_limits(key):
+    """Without them a study charging in the cold gives no warning (the M50 had none before v0.6.9)."""
+    cell = CELLS[key]
+    assert cell.T_min_charge_C == 0.0
+    assert cell.T_min_discharge_C is not None and cell.T_min_discharge_C <= -20.0
+
+
+def test_the_m50_is_its_derived_circuit_scaled_to_the_measured_pulses():
+    from packtherm.cells import LG_M50_ECM_DERIVED, M50_R_SCALE
+
+    m50, old = CELLS["M50"].ecm, CELLS["M50-DERIVED"].ecm
+    assert old is LG_M50_ECM_DERIVED
+    for T in (263.15, 298.15, 313.15):
+        assert m50.R0(T) == pytest.approx(M50_R_SCALE * old.R0(T))
+        assert m50.Rd(T) == pytest.approx(M50_R_SCALE * old.Rd(T))
+    assert m50.ocv(0.5) == old.ocv(0.5)

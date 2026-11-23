@@ -60,6 +60,7 @@ export interface Limits {
 
 export interface LibraryCell {
   name: string;
+  group?: string; // v0.6.9: "comparison" models are listed apart from the cells to design with
   model: string;
   format: string;
   capacity_Ah: number;

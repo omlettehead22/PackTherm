@@ -15,7 +15,7 @@ from packtherm.cells import CELLS, LG_M50_ECM_DERIVED, M50_R_SCALE
 
 VALIDATION = Path(__file__).parent.parent / "validation"
 pytestmark = pytest.mark.skipif(
-    not (VALIDATION / "data" / "lg_m50_rpt").exists() or not (VALIDATION / "data" / "lg_m50_core").exists(),
+    not all((VALIDATION / "data" / d).exists() for d in ("lg_m50_rpt", "lg_m50_core", "lg_m50_drive")),
     reason="M50 data not present",
 )
 H = 43.8  # check_m50_core.py's calibration on VP010 cycle 2
@@ -73,3 +73,14 @@ def test_the_core_runs_a_few_kelvin_above_the_surface(core):
     assert r["core_rmse_K"] < 1.0
     assert 1.0 < r["core_minus_surface_model_K"] < 4.0
     assert 1.0 < r["core_minus_surface_meas_K"] < 4.0
+
+
+def test_drive_cycles_it_never_saw():
+    """8 h of drive cycles with regen and top-ups: within 40 mV RMS (the derived circuit: 44 mV)."""
+    m = _script("check_m50_drive")
+    t, I, V = m.load("run_A")
+    lib = m.score(t, I, V, m.predict("M50", t, I))
+    old = m.score(t, I, V, m.predict("M50-DERIVED", t, I))
+    assert lib["rms_mV_under_current"] < 40.0 < old["rms_mV_under_current"]
+    # Most of what is left is the open-circuit curve: the circuit sits 15-35 mV low at rest.
+    assert all(-40.0 < e < -10.0 for e in lib["rest_end_errors_mV"])

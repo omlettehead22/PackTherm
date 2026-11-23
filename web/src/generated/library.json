@@ -1,6 +1,7 @@
 {
  "M50": {
   "name": "LG INR21700 M50",
+  "group": "design",
   "model": "circuit (derived, measured resistance)",
   "format": "21700",
   "capacity_Ah": 5.0,
@@ -10,6 +11,7 @@
  },
  "M50-DERIVED": {
   "name": "LG INR21700 M50 (derived circuit, v0.6.8)",
+  "group": "comparison",
   "model": "circuit (derived)",
   "format": "21700",
   "capacity_Ah": 5.0,
@@ -19,6 +21,7 @@
  },
  "M50-LUMPED": {
   "name": "LG INR21700 M50 (lumped DCIR)",
+  "group": "comparison",
   "model": "lumped DCIR",
   "format": "21700",
   "capacity_Ah": 5.0,
@@ -28,6 +31,7 @@
  },
  "MJ1": {
   "name": "LG INR18650 MJ1",
+  "group": "design",
   "model": "lumped DCIR",
   "format": "18650",
   "capacity_Ah": 3.5,
@@ -37,6 +41,7 @@
  },
  "PF": {
   "name": "Panasonic NCR18650PF",
+  "group": "design",
   "model": "circuit (measured)",
   "format": "18650",
   "capacity_Ah": 2.99491,
@@ -46,6 +51,7 @@
  },
  "30T-LUMPED": {
   "name": "Samsung INR21700 30T (lumped DCIR)",
+  "group": "comparison",
   "model": "lumped DCIR",
   "format": "21700",
   "capacity_Ah": 3.0,
@@ -55,6 +61,7 @@
  },
  "30T": {
   "name": "Samsung INR21700 30T",
+  "group": "design",
   "model": "circuit (fitted)",
   "format": "21700",
   "capacity_Ah": 3.0326,
@@ -64,6 +71,7 @@
  },
  "HG2-LUMPED": {
   "name": "LG INR18650-HG2 (lumped DCIR)",
+  "group": "comparison",
   "model": "lumped DCIR",
   "format": "18650",
   "capacity_Ah": 3.0,
@@ -73,6 +81,7 @@
  },
  "HG2": {
   "name": "LG INR18650-HG2",
+  "group": "design",
   "model": "circuit (fitted)",
   "format": "18650",
   "capacity_Ah": 2.7788,
@@ -82,6 +91,7 @@
  },
  "A123-LUMPED": {
   "name": "A123 ANR26650M1B (lumped DCIR)",
+  "group": "comparison",
   "model": "lumped DCIR",
   "format": "26650",
   "capacity_Ah": 2.5,
@@ -91,6 +101,7 @@
  },
  "A123": {
   "name": "A123 ANR26650M1B",
+  "group": "design",
   "model": "circuit (fitted)",
   "format": "26650",
   "capacity_Ah": 2.5777,

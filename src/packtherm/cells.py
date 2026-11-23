@@ -24,6 +24,10 @@ Sources
               ageing", Mendeley Data v2, doi:10.17632/bf6fksxpp2.2, CC BY 4.0.
               LG INR21700-M50 cells at 25 degC: 2C pulses of fresh cells and
               1C discharges with a core thermocouple (v0.6.9).
+[M50-DS]      LG Chem, "Product specification, rechargeable lithium ion battery,
+              model INR21700 M50 18.2Wh" (2017, tentative): charge 0-45 degC
+              (0.3C at 0-25 degC), discharge -20-55 degC; DCIR 30 +/- 6 mOhm
+              (0.5C for 30 s at 50 % SOC, 25 degC).
 [BD-MJ1]      batterydesign.net, "LG INR 18650 MJ1": NMC811 / graphite-Si,
               3.5 Ah, 46.8 g measured, DCIR 33 mOhm (summary) and 60 mOhm
               (Heenan et al., J. Electrochem. Soc. 167 (2020)), -20 to 60 degC.
@@ -359,7 +363,11 @@ LG_M50 = Cell(
     max_discharge_C=1.5,
     T_max_charge_C=50.0,
     T_max_discharge_C=60.0,
-    sources=("BD-M50", "ORegan2022", "Chen2020", "Gulsoy-M50"),
+    # v0.6.9: the lower limits (no charging below 0 degC, discharge down to -20 degC),
+    # as in [M50-DS] and [BD-M50] (0.3C from 0 degC); without them studies gave no cold warnings.
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-20.0,
+    sources=("BD-M50", "M50-DS", "ORegan2022", "Chen2020", "Gulsoy-M50"),
     ecm=LG_M50_ECM,
     model_label="circuit (derived, measured resistance)",
 )
@@ -672,11 +680,18 @@ A123_26650 = _packaged_fitted_cell("a123_26650_fitted.yaml", "A123 ANR26650M1B",
 CELLS["A123"] = A123_26650
 
 
+# Kept to compare against, not to design with (v0.6.9): the M50's circuit before its
+# resistance was measured, and the lumped-resistance versions of the circuit cells.
+# On a constant discharge a lumped cell makes 22-64 % of its circuit's heat (BACKLOG item 2).
+COMPARISON = frozenset({"M50-DERIVED", "M50-LUMPED", "30T-LUMPED", "HG2-LUMPED", "A123-LUMPED"})
+
+
 def library_summary() -> dict[str, dict]:
     """The cell library in brief, as the API's GET /cells and the web app show it."""
     return {
         k: {
             "name": c.name,
+            "group": "comparison" if k in COMPARISON else "design",
             "model": c.model_label,
             "format": c.form_factor,
             "capacity_Ah": c.capacity_Ah,
