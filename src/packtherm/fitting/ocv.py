@@ -154,8 +154,14 @@ def ocv_from_slow_test(rec: TestRecord, R_ohm: float = 0.0, factor=None, referen
     if ch:
         c = max(ch, key=lambda s: -s.charge_Ah)
         qc = rec.charge_Ah()[c.start : c.stop]
-        # The charge starts where the discharge ended (empty) if it follows it.
-        soc_c = (qc[0] - qc) / ref + soc[-1]
+        # The charge starts where the discharge ended (empty) if it follows it. It is stretched onto the
+        # discharge's range when it puts back more or less than came out (v0.6.8: the HG2's C/20 charge
+        # counts 2.97 Ah in against 2.78 Ah out, and unstretched its curve ran below the discharge's at 80%).
+        moved = qc[0] - qc
+        span = float(soc[0] - soc[-1])
+        total = float(moved[-1])
+        scale = span * ref / total if total > 0 and abs(total / (span * ref) - 1.0) > 0.01 else 1.0
+        soc_c = moved * scale / ref + soc[-1]
         curve.charge = (soc_c, rec.voltage_V[c.start : c.stop])
     return curve
 

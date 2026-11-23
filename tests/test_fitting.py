@@ -91,7 +91,8 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0, 
     q = np.zeros(t.size)
     T = T_C + 273.15
     ecm = TRUE_ECM if ecm is None else ecm
-    st = ECMState(h=1.0 if soc0 >= FULL_SOC else 0.0)  # hysteresis from full: just charged
+    h0 = 1.0 if soc0 >= FULL_SOC else 0.0  # hysteresis from full: just charged
+    st = ECMState(h=h0, s=h0)
     soc = soc0
     V[0] = st.step(ecm, 0.0, soc, T, 0.0)[0]
     stopped = False
@@ -104,7 +105,7 @@ def synth(parts, soc0: float = 1.0, name: str = "synthetic", T_C: float = 25.0, 
         soc -= I[k] * dt / 3600 / CAP
         q[k] = q[k - 1] + I[k] * dt / 3600
         V[k], st.eta_ct, st.V_d, st.V_m = st.step(ecm, I[k], soc, T, dt)
-        st.h = ecm.hyst_step(st.h, I[k], dt, T)
+        st.h, st.s = ecm.hyst_step(st.h, I[k], dt, T), ecm.hyst_sign(st.s, I[k])
         if I[k] > 0 and V[k] < ecm.V_min:
             stopped = True  # the tester stops the discharge at its cut-off (from the next sample)
     return TestRecord(t=t, current_A=I, voltage_V=V, temperature_C=np.full(t.size, T_C), counter_Ah=q, source=name)
@@ -234,6 +235,8 @@ def test_without_a_pulse_test_the_kinetics_come_from_the_changes_in_current():
 
 
 HYST_ECM = replace(TRUE_ECM, hyst=((298.15, 0.04, 20.0),))  # an LFP-like 40 mV gap
+# v0.6.8: half the gap at once with the current's sign.
+HYST2_ECM = replace(TRUE_ECM, hyst=((298.15, 0.04, 20.0, 0.5),))
 
 
 def test_hysteresis_comes_from_a_slow_charge_and_the_profiles():
@@ -249,6 +252,20 @@ def test_hysteresis_comes_from_a_slow_charge_and_the_profiles():
     # Without the slow charge there's no hysteresis, and the charge runs about 40 mV low.
     plain = fit_cell(slow, sets=[replace(t, slow_charge=None)])
     assert not plain.ecm.hyst
+
+
+def test_an_instant_share_comes_from_the_cycles():
+    e = HYST2_ECM
+    slow = synth([(3600, 0, 60), (25 * 3600, 0.15, 60), (3600, 0, 60)], name="slow.csv", ecm=e)
+    charge = synth([(3600, 0, 60), (0.9 * CAP / 0.15 * 3600, -0.15, 60)], soc0=0.0, name="charge.csv", ecm=e)
+    t = TestSet(None, discharges=[discharge_test(ecm=e)], cycles=[dyn_test(ecm=e)], slow_charge=charge)
+    fit = fit_cell(slow, sets=[t])
+    assert fit.ecm.hyst_V(298.15) == pytest.approx(0.04, rel=0.15)
+    assert fit.ecm.hyst_share(298.15) == 0.5
+    # Without the share, a regen pulse moves the voltage by the gradual part alone.
+    st = ECMState(h=0.0, s=0.0)
+    st.apply(e, -1.0, 0.5, 298.15, 1.0)
+    assert st.s == 1.0 and st.h < 0.01
 
 
 def test_hysteresis_heats_by_half_the_gap_per_unit_of_charge_each_way():
@@ -708,3 +725,16 @@ def test_curves_by_temperature_round_trip_through_the_cell_file(capacity_by_temp
     ecm = ecm_from_doc(doc)
     for T in (268.15, 273.15, 278.15, 290.0, 298.15):
         assert ecm.ocv(0.4, T) == pytest.approx(capacity_by_temperature.ecm.ocv(0.4, T), abs=2e-4)
+
+
+def test_the_knee_is_where_the_voltage_stays_below_it_not_a_dip():
+    # v0.6.8: a cold drive cycle's peaks dip under the knee within seconds; the fit had ended there.
+    from packtherm.fitting.circuit import Trace, _knee_index
+
+    t = np.arange(0.0, 3600.0, 1.0)
+    V = np.full(t.size, 3.7)
+    V[5:8] = 3.0  # a peak of current, 3 s under a 3.2 V knee
+    V[3000:] = 3.1  # the real knee: stays under from 3000 s
+    I = np.ones(t.size)
+    tr = Trace(t, I, np.linspace(1, 0.05, t.size), np.full(t.size, 263.15), V, I)
+    assert _knee_index(tr, 3.2) == 3000

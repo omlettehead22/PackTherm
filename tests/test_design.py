@@ -233,3 +233,16 @@ def test_cli_version(capsys):
     with pytest.raises(SystemExit) as e:
         main(["--version"])
     assert e.value.code == 0 and capsys.readouterr().out.strip() == f"packtherm {__version__}"
+
+
+def test_a_little_warmth_in_the_cold_is_ready_again():
+    # v0.6.8: within 1 K of ambient as before; or no warmer than 25 degC and within the event's headroom.
+    from packtherm.design import ready_again
+
+    K = 273.15
+    T = np.array([-8.4, -9.5, 26.0, 36.5]) + K
+    cold = ready_again(T[:2], -10 + K, T_peak_C=-8.4, T_limit_C=45.0)
+    assert cold.all()  # 1.6 K warm at -10 degC: ready
+    hot = ready_again(T[2:], 35 + K, T_peak_C=43.0, T_limit_C=45.0)
+    assert list(hot) == [True, False]  # at 35 degC ambient, the 1 K rule as before (26 is below ambient)
+    assert not ready_again(np.array([20.0 + K]), 15 + K, T_peak_C=44.0, T_limit_C=45.0)[0]  # 5 K over, 1 K headroom

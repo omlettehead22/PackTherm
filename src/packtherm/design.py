@@ -197,6 +197,24 @@ class DutyCycle:
         return 3600.0 * window / self.c_rate * 1.05
 
 
+
+READY_K = 1.0  # within this of ambient, a cell is ready again
+READY_WARM_C = 25.0  # in a cooler ambient, warmth up to this is no harm (v0.6.8)
+
+
+def ready_again(T_K, T_amb_K: float, T_peak_C: float, T_limit_C: float) -> np.ndarray:
+    """Where a cell is ready for an identical event: within 1 K of ambient, or (v0.6.8) no warmer than
+    25 degC and warmer than ambient by no more than the event's headroom to its limit.
+
+    The second covers a cool ambient: a cell a little warm at -10 degC is not
+    a slow recovery, since the same event from there still peaks under its
+    limit, and warmth below room temperature does it no harm.
+    """
+    T_K = np.asarray(T_K)
+    excess = T_K - T_amb_K
+    warm_ok = (T_K - 273.15 <= READY_WARM_C) & (excess <= max(T_limit_C - T_peak_C, 0.0))
+    return (excess < READY_K) | warm_ok
+
 @dataclass(frozen=True)
 class Requirements:
     """Design limits. ``T_max_C=None`` means min(45 degC, datasheet limit).
@@ -301,12 +319,14 @@ def evaluate_design(
     dt = np.diff(res.t)
     throughput_Wh = float(np.sum(a["I_abs_A"] * dt)) * cell.V_nominal / 3600.0
 
-    # Recovery: first time after the current stops with T_max within 1 K of
-    # ambient and the PCM (almost) fully solid.
+    # Recovery: first time after the current stops with the cell ready for an
+    # identical event (ready_again) and the PCM (almost) fully solid.
     active = np.flatnonzero(a["I_abs_A"] > 0)
     t_stop = float(a["t"][active[-1]] + study.dt) if active.size else 0.0
     after = res.t >= t_stop - 1e-9
-    ready = after & (res.T_max - T_amb < 1.0) & (res.pcm_fraction < 0.01)
+    T_limit = req.T_limit(study.cell, duty.is_charge)
+    T_peak = float(res.T_max.max() - KELVIN)
+    ready = after & ready_again(res.T_max, T_amb, T_peak, T_limit) & (res.pcm_fraction < 0.01)
     recovered = bool(ready.any()) and not duty.repeat
     recovery_min = float((res.t[ready][0] - t_stop) / 60.0) if recovered else np.nan
     t_ready = t_stop + recovery_min * 60.0 if recovered else float(res.t[-1])
@@ -325,8 +345,6 @@ def evaluate_design(
     m_hw = cooling.hardware_kg_per_kWh * cell_kWh
     m_over = m_pcm + m_case + m_hw
 
-    T_limit = req.T_limit(study.cell, duty.is_charge)
-    T_peak = float(res.T_max.max() - KELVIN)
     dT = float(res.dT_cell.max())
     if duty.repeat or req.recovery_max_min == math.inf:
         rec_ok = True

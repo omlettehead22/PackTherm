@@ -52,6 +52,7 @@ from .design import (
     Requirements,
     StudyResult,
     _map,
+    ready_again,
     select_front,
 )
 from .electrothermal import MIN_DELIVERED, check_fitted_range, check_limits, delivered_share, shortfall_warning
@@ -237,7 +238,8 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
     active = np.flatnonzero(a["I_abs_A"] > 0)
     t_stop = float(a["t"][active[-1]] + study.time_step) if active.size else 0.0
     after = res.t >= t_stop - 1e-9
-    ready = after & (r.T_top - T_amb < 1.0) & (res.pcm_fraction < 0.01)
+    T_limit = req.T_limit(study.cell, duty.is_charge)
+    ready = after & ready_again(r.T_top, T_amb, r.T_peak_C, T_limit) & (res.pcm_fraction < 0.01)
     recovered = bool(ready.any()) and not duty.repeat
     recovery_min = float((res.t[ready][0] - t_stop) / 60.0) if recovered else np.nan
     t_ready = t_stop + recovery_min * 60.0 if recovered else float(res.t[-1])
@@ -254,7 +256,6 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
     pitch_area = module.layout.area_per_cell(cell)
     vol_over_pct = 100.0 * (pitch_area / (math.pi * cell.radius**2) - 1.0)
 
-    T_limit = req.T_limit(study.cell, duty.is_charge)
     T_interior = r.T_peak_C
     dT = r.dT_cell_max
     sim = lambda pos, edge: simulate_module(

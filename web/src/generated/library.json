@@ -50,7 +50,7 @@
   "format": "21700",
   "capacity_Ah": 3.0326,
   "V_nominal": 3.6,
-  "DCIR_25C_mOhm": 14.267777900596615,
+  "DCIR_25C_mOhm": 14.270161459424344,
   "mass_g": 65.0
  },
  "HG2-LUMPED": {
@@ -68,7 +68,7 @@
   "format": "18650",
   "capacity_Ah": 2.7788,
   "V_nominal": 3.6,
-  "DCIR_25C_mOhm": 28.47121153849018,
+  "DCIR_25C_mOhm": 28.493699120231618,
   "mass_g": 45.0
  },
  "A123-LUMPED": {
@@ -77,7 +77,7 @@
   "format": "26650",
   "capacity_Ah": 2.5,
   "V_nominal": 3.3,
-  "DCIR_25C_mOhm": 14.4,
+  "DCIR_25C_mOhm": 13.4,
   "mass_g": 76.0
  },
  "A123": {
@@ -86,7 +86,7 @@
   "format": "26650",
   "capacity_Ah": 2.5777,
   "V_nominal": 3.3,
-  "DCIR_25C_mOhm": 14.434644465727152,
+  "DCIR_25C_mOhm": 13.391504976484407,
   "mass_g": 76.0
  }
 }

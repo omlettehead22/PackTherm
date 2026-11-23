@@ -286,7 +286,7 @@ v0.6.5 added the two fixes the blind check pointed to, and refitted the HG2. It 
 
 | Value | Fitted |
 |---|---|
-| Capacity (C/20 to 2.8 V) | 2.78 Ah (rated 3.0 Ah, to 2.0 V) |
+| Capacity (C/20 to 2.8 V) | 2.78 Ah (rated 3.0 Ah, to 2.0 V). The library's `HG2` uses it, so a pack sized on it has about 8% more cells than the rating needs; `HG2-LUMPED` has the rating |
 | R0 | 19.3 mΩ (67 mΩ at −20 °C; law 16.4 kJ/mol) |
 | Charge-transfer time constant | 7.7 s (its limit is 10 s) |
 | Middle branch | 26.7 mΩ over 97 s (from the long tests) |
@@ -376,6 +376,47 @@ LFP's charge and discharge sit on two branches. On the A123 the gap is about 28 
 - **The whole-test error on the held-out charge is still 96.5 mV,** because the first 10% of a charge from empty runs about 200 mV low. Charging from empty (the steep end of the curve, and the rise near empty, which is only applied on discharge) is not right yet.
 - **The cold is not fixed.** Two attempts, neither shipped. A "surface" state of charge (the bulk less the charge held in the slow branch), so the cell runs out sooner at rate and in the cold, improved the −12 °C profiles by about 5% on the v0.6.6 fit. Fitting the rise near empty on the long tests only (not their changes in current) brought the −12 °C checks to 70 and 54 mV, but sent the −5 and 5 °C values to their bounds (the −5 °C profile to 148 mV). The cold needs a better model of charge lost with rate, not a tweak of the rise.
 
+## Fixes after v0.6.7 (v0.6.8)
+
+**The fit cut cold drive cycles short.** A long test's fitted part ended where the voltage first fell below its knee (40% of the way from the cut-off to the top of the curve). In the cold a drive cycle's peaks of current cross that within seconds and the voltage comes back between them. So the 30T's and HG2's −20 °C Mixed1 were fitted on their first 15 s, the 30T's −20 °C error of 180 mV without pulses (v0.6.6) was over those 15 s, and the HG2's 0 and −10 °C cycles stopped after a fifth of their charge. Now the knee is where the voltage stays below it under load for a minute, or where the charge counted reaches the knee on the open-circuit curve, and the slow branch is fitted on long tests down to 30% state of charge at least (the rise near empty below that, on the tests run to their end).
+
+The 30% came from a first try without it, which fitted the drive cycles down to about 20%: the HG2's checks went from 36.6 to 39.0 mV. The low charge the model handles worst (BACKLOG item 7) then set its 25 °C middle branch, and its 25 °C checks moved by 4 mV. With the 30% the warm cycles end about where the old rule happened to end them (31–32%) and the cold ones are fitted on most of their run. The 30% was chosen with those checks in view, so on the HG2 and the 30T they are no longer fully blind to it.
+
+| Chamber | 30T, v0.6.7 | 30T, v0.6.8 | HG2, v0.6.7 | HG2, v0.6.8 |
+|---|---|---|---|---|
+| 40 °C | 10.3 mV | 12.0 mV | 37.6 mV | 37.7 mV |
+| 25 °C | 16.6 mV | 17.2 mV | 22.1 mV | 23.0 mV |
+| 10 °C | 19.2 mV | 20.6 mV | 20.5 mV | 20.5 mV |
+| 0 °C | 27.3 mV | 29.8 mV | 27.7 mV | 27.7 mV |
+| −10 °C | 50.0 mV | 49.7 mV | 61.0 mV | 56.5 mV |
+| −20 °C | 79.8 mV | 73.7 mV | 69.0 mV | 75.8 mV |
+| **All (median)** | **26.5 mV** | **25.7 mV** | **36.6 mV** | **36.6 mV** |
+| Within 1 K | 66% | 68% | 93% | 93% |
+
+Better in the cold where the fit now sees the cycles (the 30T at −20 °C, the HG2 at −10 °C), except the HG2 at −20 °C (6.8 mV worse); 1–3 mV worse at 25–40 °C on the 30T.
+
+**Hysteresis in two parts (LFP).** Part of the gap now follows the sign of the current at once (Plett's instantaneous hysteresis), the rest by the gradual state; the share (0, ¼, ½, ¾ or 1) is chosen per temperature on the drive cycles fitted on, whose regen pulses show it; a slow charge can't. On the A123 it is ¼ from −3 to 44 °C and ½ at −12 °C, and it gives back what v0.6.7 lost on discharge:
+
+| A123 | v0.6.6 | v0.6.7 | v0.6.8 |
+|---|---|---|---|
+| Drive profiles fitted on, 5–45 °C | 4.2–6.6 mV | 4.1–8.1 mV | 3.9–7.2 mV |
+| Check: 25 °C profile at 4C peaks | 8.2 mV | 11.9 mV | 11.6 mV |
+| Checks: two −12 °C profiles | 104 / 93 mV | 98 / 88 mV | 102 / 91 mV |
+| Held-out 15 °C charge (10–95%) | 41.2 mV | 8.2 mV | 8.1 mV |
+| Drive profiles fitted on, −5 / −15 °C | 21.8 / 48.4 mV | 22.3 / 44.6 mV | 7.4 / 29.6 mV |
+| 10 s DC resistance, 25 °C | 16.9 mΩ | 14.4 mΩ | 13.4 mΩ |
+
+The cold profiles fitted on are much better (fitted to 30%), but the −12 °C checks, which run to about 15%, are back to v0.6.6's: below 30% the cell still runs out before the model. The gap is wider in the cold than v0.6.7 found (62 mV at −12 °C, 45 at −3 °C).
+
+**The HG2's hysteresis estimate had the wrong sign** (−12 mV). Its C/20 charge counts 2.97 Ah in against 2.78 Ah out, so on a state of charge counted from empty the charge curve was stretched past the discharge's and crossed below it near the top. The charge is now stretched onto the discharge's range when the two differ by more than 1%: 14 mV on the HG2, 21 mV on the 30T.
+
+**Where the branches aren't pinned, the file says so.** Where two or more of a temperature's branch values sit at the edge of their ranges, the fitted cell's notes say which, and that the voltage and the 10 s DC resistance are fitted but the values one by one aren't. On the A123 that is five of its seven temperatures; on the HG2, 9 and 0 °C (its middle branch at its cap with no slow branch, as since v0.6.5); on the 30T, none.
+
+**Tried and not shipped:**
+
+- **Charge lost with rate** (a third try at the cold): the open-circuit voltage and the rise near empty read at a surface state of charge, the bulk's less what a sustained current holds back (filtered by the slow branch). On a known cell it was recovered within 25%. On the 30T and the HG2 the fit set it to zero at most temperatures, including the cold, and the checks didn't move (26.3 and 39.5 mV, tried before the 30% floor above). The cold needs more than this.
+- **The rise near empty on charge**, for the A123's charge from empty (about 200 mV low over its first 10%): its share ran to its bound (all of the discharge's) and the error didn't move. The error is the open-circuit curve below about 7% state of charge, which the slow discharge gives badly (it ends at the cut-off with the largest drop of the test). Charging from below about 7% is still not right.
+
 ## The cells side by side
 
 The checks are the tests never fitted to, predicted from their current alone, as a study runs the cell. The figures are medians.
@@ -383,13 +424,13 @@ The checks are the tests never fitted to, predicted from their current alone, as
 | Cell | Temperatures | Checks | Voltage RMS, first fit | Voltage RMS, now | Within 1 K, now | How blind |
 |---|---|---|---|---|---|---|
 | Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV (v0.6.4) | 26.4 mV | 81% | method compared on these checks (v0.6.2 to v0.6.5) |
-| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV (v0.6.4) | 26.5 mV | 66% | method fixed with these checks in view (v0.6.3, v0.6.5) |
+| Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV (v0.6.4) | 25.7 mV | 68% | method fixed with these checks in view (v0.6.3, v0.6.5) |
 | LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV (v0.6.4, blind) | 36.6 mV | 93% | blind in v0.6.4; fixed with it in view (v0.6.5) |
-| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | 76.5 mV (v0.6.6, blind) | 92.3 mV* | 100% | blind in v0.6.6; hysteresis with its errors known (v0.6.7); no pulse tests |
+| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | 76.5 mV (v0.6.6, blind) | 93.6 mV* | 100% | blind in v0.6.6; hysteresis with its errors known (v0.6.7); no pulse tests |
 
-\* Not the same four checks: v0.6.7 fits on the 25 °C charge and holds out the 15 °C one, whose whole-test error (96.5 mV) is mostly its first 10% from empty. On the three drive profiles both fits share, v0.6.7 is better in the cold and 3.7 mV worse at 25 °C (the table above).
+\* Not the same four checks: v0.6.7 fits on the 25 °C charge and holds out the 15 °C one, whose whole-test error (95.9 mV) is mostly its first 10% from empty. On the three drive profiles both fits share, v0.6.8 is about level in the cold and 3.4 mV worse at 25 °C (the table above).
 
-At 25 °C the four agree: 18.1, 16.6, 22.1 and 11.9 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 was v0.6.6's blind check; v0.6.7 added its hysteresis with those errors known. Its four checks are few: two of them are in the cold, where it fails, and one is a charge from empty. Its median says less than the others'.
+At 25 °C the four agree: 18.1, 17.2, 23.0 and 11.6 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 was v0.6.6's blind check; v0.6.7 added its hysteresis with those errors known. Its four checks are few: two of them are in the cold, where it fails, and one is a charge from empty. Its median says less than the others'.
 
 ## Known limits
 
