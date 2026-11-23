@@ -1,0 +1,25 @@
+{
+ "scale_fitted": 2.0346,
+ "scale_used": 2.04,
+ "pulses": 48,
+ "groups": {
+  "fitted: 10 A, 30 % and above": {
+   "n": 18,
+   "rms_mV_derived": 167.2571,
+   "rms_mV_scaled": 18.004,
+   "measured_over_derived": 2.0615
+  },
+  "check: 10 A, about 20 %": {
+   "n": 6,
+   "rms_mV_derived": 147.3023,
+   "rms_mV_scaled": 54.82,
+   "measured_over_derived": 1.717
+  },
+  "check: 2.5 A, all": {
+   "n": 24,
+   "rms_mV_derived": 39.2429,
+   "rms_mV_scaled": 13.0288,
+   "measured_over_derived": 1.9337
+  }
+ }
+}

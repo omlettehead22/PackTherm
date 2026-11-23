@@ -1,0 +1,23 @@
+{
+ "citation": "M. Gulsoy, K. Kucuk, A. Barai, J. Marco, Dataset of internal temperature during lithium-ion battery ageing, University of Warwick, Mendeley Data v2, doi:10.17632/bf6fksxpp2.2",
+ "licence": "CC BY 4.0",
+ "cell": "LG INR21700-M50, chamber 25 degC",
+ "start": "rested after a C/3 CC-CV charge to 4.2 V: state of charge 1",
+ "tests": [
+  {
+   "name": "run_A",
+   "samples": 29547,
+   "duration_s": 29546.0
+  },
+  {
+   "name": "run_B",
+   "samples": 29487,
+   "duration_s": 29486.0
+  },
+  {
+   "name": "run_C",
+   "samples": 29486,
+   "duration_s": 29485.0
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "M50": {
+  "run_A": {
+   "rms_mV_under_current": 34.04597194447416,
+   "p95_mV_under_current": 74.15467298440115,
+   "bias_mV_under_current": -24.573802106985205,
+   "rest_end_errors_mV": [
+    -17.1,
+    -15.2,
+    -30.8,
+    -35.0
+   ]
+  },
+  "run_B": {
+   "rms_mV_under_current": 34.84475370495871,
+   "p95_mV_under_current": 76.6045824467848,
+   "bias_mV_under_current": -25.887167407226627,
+   "rest_end_errors_mV": [
+    -17.6,
+    -16.4,
+    -32.5,
+    -36.6
+   ]
+  },
+  "run_C": {
+   "rms_mV_under_current": 36.22230889670717,
+   "p95_mV_under_current": 81.31265257660496,
+   "bias_mV_under_current": -25.563604224835643,
+   "rest_end_errors_mV": [
+    -16.4,
+    -15.5,
+    -30.5,
+    -34.4
+   ]
+  }
+ },
+ "M50-DERIVED": {
+  "run_A": {
+   "rms_mV_under_current": 44.45900083120714,
+   "p95_mV_under_current": 88.35356941325045,
+   "bias_mV_under_current": 10.677901145787171,
+   "rest_end_errors_mV": [
+    -17.1,
+    -15.1,
+    -30.8,
+    -35.0
+   ]
+  },
+  "run_B": {
+   "rms_mV_under_current": 44.50163124473025,
+   "p95_mV_under_current": 88.32789723827572,
+   "bias_mV_under_current": 9.678925146115835,
+   "rest_end_errors_mV": [
+    -17.6,
+    -16.3,
+    -32.5,
+    -36.6
+   ]
+  },
+  "run_C": {
+   "rms_mV_under_current": 44.22686683004027,
+   "p95_mV_under_current": 88.42046677331452,
+   "bias_mV_under_current": 9.973964754468833,
+   "rest_end_errors_mV": [
+    -16.4,
+    -15.4,
+    -30.5,
+    -34.3
+   ]
+  }
+ }
+}

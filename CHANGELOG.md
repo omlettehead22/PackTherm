@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.9
+
+The LG M50 against measured data, with a thermocouple inside the cell (Warwick, Gulsoy et al., Mendeley bf6fksxpp2 v2, CC BY 4.0).
+
+- **Changed: the library M50's resistance, ×2.04.** Its circuit, derived from a physics model in v0.4.11, had half the real cell's resistance: on the 2C pulses of six fresh cells it dropped 130–200 mV where they dropped 270–400 mV (its open-circuit voltage was within 10–50 mV). One scale on every loss term, fitted on the 2C pulses at 30 % charge and above, takes them from 167 to 18 mV RMS; the C/2 pulses (not fitted) from 39 to 13 mV. Near empty it now drops too much (55 mV). The v0.6.8 circuit is `M50-DERIVED`.
+- **The core-temperature check.** Seven 1C discharges with the core measured, never fitted on, predicted from the current alone: voltage 18–40 mV (was 114–146), surface 0.8–0.9 K (was 1.1–2.2), core 0.7–1.4 K (was 2.2–3.2). The heat had been about 60 % of the real cell's. The core runs 2–3.5 K above the surface at the end, the model's 1.7–2 K; a tenth of the radial conductivity (0.12 W/(m K), BACKLOG item 5) gives 14–16 K and is ruled out. Checked at 25 °C only: the temperature dependence is still the physics model's.
+- **Design results move.** With twice the heat the M50 studies run hotter: on the road trip an uncooled pack reaches 70 °C (was 55), the lightest feasible design is air at 0.3 g/s per cell (1.9 % of the energy moved; 0.15 g/s now fails the worst-case check), and liquid cooling costs about 0.1 % (was 0.05). Still 23 of 39 feasible. The 1.5C full discharge at 25 °C, the M50's rated current, now has no feasible design (was the hard example); 3 × WLTC keeps every cooled design within 1.1 K of ambient. All three examples, the comparison CSVs and the field figure are re-run.
+- **Reading the data:** `validation/prepare_m50_core.py` (mat-io, only for preparing) and `validation/prepare_m50_rpt.py`, which takes a MATLAB table's numbers straight from the file's elements (mat-io needs more than 7 GB for the 241 MB characterisation file). `validation/fit_m50_scale.py`, `validation/check_m50_core.py`, `docs/figures/make_m50_measured.py`.
+- **Drive cycles, never fitted on:** three cells' 8 h of drive cycles with regen, top-ups and rests (`validation/prepare_m50_drive.py`, h5py, only for preparing; `validation/check_m50_drive.py`): 34–36 mV RMS while current flows (the derived circuit: 44 mV). Most of what is left is the open-circuit curve, 15–35 mV low at rest. The file's temperatures have no clock shared with its current and are not used.
+- **The M50's cold limits** (no charging below 0 °C, discharge to −20 °C, from LG's specification): a study charging it in the cold gave no warning before.
+- **Lumped models make too little heat:** 22–64 % of the fitted circuit's on a constant discharge (the M50's datasheet 30 mΩ: about half its measured heat). The library's lumped versions and the v0.6.8 M50 are now listed apart, for comparison only (`packtherm cells`, the API's `group`, the web app's cell list, which says so when one is chosen). User-defined datasheet cells and the MJ1 still use the lumped model: BACKLOG item 2, next.
+- **Checked across the M50's range:** discharges at 0.2–2C from −20 to 40 °C, charges at 0.3–0.7C from 0 to 40 °C, and fast studies of every duty type at −10, 0, 25 and 40 °C ran without errors; it delivers 93–98 % of 5 Ah (the cells measured 4.7–4.9 Ah at 1C). Its cold behaviour is still the physics model's, not measured.
+- **Not read:** the long-term ageing files (22 GB).
+- **Tests:** the pulses, the scale, a 1C discharge predicted, the core above the surface (`tests/test_m50_measured.py`). Five tests that used the M50 as a convenient cell now use a duty it can deliver at its measured resistance (a 2C module study to 1.5C, the browser check to 0.8C, the reversible-heat check at 70 % charge, where a 1C charge no longer meets the voltage limit at once).
+
 ## 0.6.8
 
 A patch of fixes for the known issues after v0.6.7.

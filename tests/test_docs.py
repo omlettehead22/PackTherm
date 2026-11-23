@@ -5,6 +5,7 @@ examples, regenerated with `packtherm run docs/examples/<study>.yaml`) is stale.
 """
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -77,7 +78,8 @@ def test_wltc_claims():
     d = pd.DataFrame(_results("wltc3_35c")["designs"])
     cooled = d[d.cooling_kind != "natural"]
     sealed = d[d.cooling_kind == "natural"]
-    assert cooled.T_peak_C.max() - 35.0 <= 0.4 + 1e-9  # "within 0.4 K of the 35 °C ambient"
+    rise = (cooled.T_peak_C.max() - 35.0) * 10
+    assert f"within {math.ceil(rise - 1e-9) / 10:.1f} K of the 35 °C ambient" in README
     assert f"even a sealed pack peaks at {sealed.T_peak_C.max():.0f} °C" in README
 
 

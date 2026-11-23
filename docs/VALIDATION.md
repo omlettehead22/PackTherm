@@ -65,9 +65,51 @@ The measured rises go up to 20 K in the cold. 96 % of thermal-mode tests and 88 
   - **Deep cold (v0.4.10):** the low-SOC rise now grows in the cold, so the voltage knee arrives earlier (the cold capacity loss), and the slow branch follows its own Arrhenius law. Both laws come from identification data, not the validation tests. In the cold the predictive model now under-predicts heat by 7–10 % on average (worst peak −3.5 K at −20 °C): a slow-branch law fitted at 0.3C is a little too gentle for drive-cycle currents. Following the charge-transfer kinetics instead over-predicts by a similar amount, so the true behaviour sits between the two.
   - **Cold capacity loss** is now modelled through that low-SOC rise; voltage error is still reported before the knee for comparability.
   - **Entropic heat** is still neglected for this NCA cell (no dU/dT data in the dataset). The charge is about 1.1–1.4 K under-predicted in both modes, consistent with missing reversible heat. Published NCA/graphite profiles disagree on the sign over the relevant SOC range (one study reports entropic heat strongly negative on charge, which would make the error worse), so no literature curve is applied; a potentiometric measurement on this cell would settle it.
-  - **Single cell, thermocouple on the surface:** core temperature is not validated directly. The model's in-cell gradient is up to about 2.8 K at 2C (25 °C). Core-temperature datasets for the LG M50 (Warwick, Mendeley bf6fksxpp2) would close this gap, but they are not reachable from this build environment.
+  - **Single cell, thermocouple on the surface:** core temperature is not validated on this cell. The model's in-cell gradient is up to about 2.8 K at 2C (25 °C). Since v0.6.9 the core is checked on the LG M50 against a thermocouple inside the cell ([below](#lg-m50-measured-v069)).
+
+## LG M50: measured (v0.6.9)
+
+Data: Gulsoy, Kucuk, Barai and Marco (University of Warwick), "Dataset of internal temperature during lithium-ion battery ageing", Mendeley Data v2, doi:10.17632/bf6fksxpp2.2, CC BY 4.0. LG INR21700-M50 cells in a 25 °C chamber, three with a thermocouple in the core as well as on the surface. Three parts are used, all prepared into `validation/data/` (the raw MATLAB files are not stored here):
+
+- **Pulses** (`prepare_m50_rpt.py`): each of six cells' first characterisation run, fresh: 2C (10 A) and C/2 pulses of 30 s at about 100, 80, 50 and 20 % charge.
+- **1C discharges with the core measured** (`prepare_m50_core.py`): cycles 2 and 3 of the three instrumented cells and cycle 2 of a plain one, each with the 10 minutes before, the rest after and the first hour of the next charge.
+- **Drive cycles** (`prepare_m50_drive.py`): three cells' 8 h from full, in 1 s steps (logged at up to 1 kHz).
+
+**The resistance was half the cell's.** The derived circuit (below) drops 130–200 mV on a 2C pulse where the cells drop 270–400 mV; its open-circuit voltage is within about 10–50 mV. One scale on every loss term, fitted on the 2C pulses at 30 % charge and above (`fit_m50_scale.py`), is **2.04**, and the library M50 has carried it since v0.6.9 (the v0.6.8 circuit is `M50-DERIVED`):
+
+| Pulses (six cells) | n | Derived circuit (v0.6.8) | Scaled ×2.04 (v0.6.9) |
+|---|---|---|---|
+| 2C, 30 % and above (fitted) | 18 | 167 mV RMS | 18 mV |
+| 2C, about 20 % (check) | 6 | 147 mV | 55 mV |
+| C/2, all levels (check) | 24 | 39 mV | 13 mV |
+
+Near empty the scaled circuit drops too much: there the cells drop 1.7 times what the derived circuit does, not 2 times.
+
+**Then the 1C discharges, never fitted on** (`check_m50_core.py`). The chamber's h is calibrated on one test's surface (VP010, cycle 2: 43.8 W/(m² K)); everything else is a check. "Measured heat" puts the heat from the measured voltage into the thermal model alone; "predicted" makes voltage and heat from the current:
+
+| 1C discharge, 7 tests | Surface RMS | Core RMS | Core − surface at the end | Voltage RMS |
+|---|---|---|---|---|
+| Measured heat, library conductivity (1.2 W/(m K)) | 0.6–1.1 K | 0.6–1.2 K | 1.7–2.0 K (measured 2.3–3.5) | |
+| Predicted, library M50 (v0.6.9) | 0.8–0.9 K | 0.7–1.4 K | 1.7–1.9 K | 18–40 mV |
+| Predicted, derived circuit (v0.6.8) | 1.1–2.2 K | 2.2–3.2 K | 1.1–1.2 K | 114–146 mV |
+| Measured heat, a tenth of the conductivity (0.12) | 0.4–1.0 K | 5.8–7.1 K | 14–16 K | |
+
+![LG M50 against measured data](validation/m50_measured.png)
+
+- **The heat was about 60 % of the real cell's** with the derived circuit: its surface rose 5.7–6.4 K where the cells rose 8–10.4 K. Scaled, the model rises 9.2–10.2 K.
+- **The core runs 2–3.5 K above the surface** at the end of a 1C discharge; the model has 1.7–2 K with the library's radial conductivity. A tenth of it (0.12 W/(m K), which the 30T and HG2 fits allowed) gives 14–16 K and is ruled out: the effective value is nearer 0.6–1 W/(m K). That settles BACKLOG item 5 for these cells: the 30T and HG2's low fitted values stood in for something else (the fixture, or the case thermocouple's lag).
+- **Not yet right:** the measured heat comes later in the discharge than the model's (the model's core is about 1 K warm in the first third and 1–2 K cool in the middle), and the cells cool more slowly afterwards than the model. Both point at heat the model doesn't have in the right place (entropic heat near empty, or the cell holder's heat capacity).
+- **Drive cycles, never fitted on** (`check_m50_drive.py`, three cells, 8 h each of drive cycles up to 7.2 A with regen, CC-CV top-ups and rests, from full to about 16 % charge): **34–36 mV RMS** while current flows (the derived circuit: 44 mV). Most of what is left is the open-circuit curve, taken from the M50T's published table: at the end of long rests the circuit sits 15–35 mV below the cells. The file's temperatures carry no clock shared with its current, so these runs check the voltage only (the cells rise only a few kelvin).
+- **25 °C only.** The scale is checked at 25 °C; the circuit's temperature dependence is still the physics model's. The plain cell (VP016) rises 8.5 K and two of the instrumented cells about 10 K at the same current: the thermocouple in the core changes the cell a little.
+
+- **The lumped M50 (`M50-LUMPED`, the datasheet's 30 mΩ) makes about half the heat:** its surface rises 5.6–5.9 K on the 1C discharges against 8–10.4 K measured. Lumped models of the other library cells make 22–64 % of their circuits' heat on a constant discharge (BACKLOG item 2), so since v0.6.9 the lumped and derived variants are listed apart, for comparison only.
+
+Results: [`validation/m50_pulse_scale.json`](../validation/m50_pulse_scale.json), [`validation/m50_core_check.json`](../validation/m50_core_check.json), [`validation/m50_drive_check.json`](../validation/m50_drive_check.json).
 
 ## LG M50: checked against a physics model, not measured
+
+*Before v0.6.9. The measured pulses above showed this circuit's resistance at half the real cell's; the library M50 now carries it scaled ×2.04.*
+
 
 The LG M50 is the cell the design studies use, but there is no open temperature dataset for it that this build can reach. Since v0.4.11 its equivalent circuit is **derived**: PyBaMM's DFN model with the ORegan2022 parameter set (measured on the LG M50T, with temperature dependence) is run through synthetic pulse tests at 25, 10, 0 and −10 °C, and the same circuit as the PF cell is fitted to them (`validation/derive_m50_ecm.py`).
 
@@ -97,4 +139,13 @@ python validation/identify_panasonic.py /path/to/Panasonic-18650PF-Data   # kine
 python validation/derive_m50_ecm.py
 python validation/check_m50_ecm.py           # writes validation/m50_vs_dfn.csv
 python docs/figures/make_m50_check.py
+# LG M50 measured (v0.6.9; preparing needs the Warwick files, mat-io for the core tests and about 6 GB):
+python validation/prepare_m50_core.py /path/to/100cycles_dataTable.mat
+python validation/prepare_m50_rpt.py  /path/to/ShortTerm_RPT_dataTable.mat
+python validation/prepare_m50_drive.py /path/to/LoadProfile_dataTable.mat   # needs h5py
+python validation/check_m50_drive.py --json validation/m50_drive_check.json
+python validation/fit_m50_scale.py --json validation/m50_pulse_scale.json
+python validation/check_m50_core.py --json validation/m50_core_check.json   # rounded when committed
+python docs/figures/make_m50_measured.py
+pytest tests/test_m50_measured.py
 ```

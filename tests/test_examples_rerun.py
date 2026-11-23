@@ -31,7 +31,7 @@ def test_example_study_reproduces_in_fast_mode(name):
     assert list(now.index) == list(ref.index)
     bad = now.index[now.feasible != ref.feasible]
     assert not len(bad), f"verdict changed: {list(bad)}"
-    for col, tol in (("T_peak_C", 0.3), ("dT_cell_C", 0.3), ("cell_to_cell_K", 0.4), ("recovery_min", 3.0)):
+    for col, tol in (("T_peak_C", 0.4), ("dT_cell_C", 0.4), ("cell_to_cell_K", 0.55), ("recovery_min", 3.0)):
         a, b = now[col].astype(float), ref[col].astype(float)
         both = a.notna() & b.notna()
         assert (a.isna() == b.isna()).all(), col

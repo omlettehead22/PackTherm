@@ -9,7 +9,8 @@ const limits = {
   max_running: 2, max_queued: 20, rate_per_hour: 10, max_request_kB: 256, keep_h: 24,
 };
 const cells = {
-  M50: { name: "LG INR21700 M50", model: "circuit (derived)", format: "21700", capacity_Ah: 5, V_nominal: 3.63, DCIR_25C_mOhm: 30, mass_g: 68 },
+  M50: { name: "LG INR21700 M50", group: "design", model: "circuit (derived, measured resistance)", format: "21700", capacity_Ah: 5, V_nominal: 3.63, DCIR_25C_mOhm: 30, mass_g: 68 },
+  "M50-LUMPED": { name: "LG INR21700 M50 (lumped DCIR)", group: "comparison", model: "lumped DCIR", format: "21700", capacity_Ah: 5, V_nominal: 3.63, DCIR_25C_mOhm: 30, mass_g: 68 },
 };
 
 let posted: { url: string; body: unknown }[] = [];
@@ -51,6 +52,17 @@ describe("the setup screen", () => {
       packtherm_study: 1, name: "M50 road trip, 35 degC", cell: "M50", mode: "fast", ambient_C: 35,
       duty: { type: "roadtrip" },
     });
+  });
+
+  it("lists comparison-only models apart, and says so when one is chosen", async () => {
+    render(<App />);
+    await screen.findByText(/designs in fast mode/);
+    const group = screen.getByRole("group", { name: "For comparison only (not for design)" });
+    expect(group.textContent).toContain("M50-LUMPED");
+    expect(group.textContent).not.toContain("M50: ");
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText("Library cell"), "M50-LUMPED");
+    expect(await screen.findByText(/For comparison only: an earlier or simpler model/)).toBeTruthy();
   });
 
   it("shows each duty type's own fields", async () => {

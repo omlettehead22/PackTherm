@@ -7,7 +7,7 @@ from packtherm.module import Chiller
 from packtherm.module_design import ModuleDesign, ModuleStudy, evaluate_module_design, run_module_study
 from packtherm.report import plot_tradeoff
 
-DUTY = DutyCycle.constant(2.0, "discharge", soc0=1.0, soc_limits=(0.5, 1.0), rest_after_s=3600)
+DUTY = DutyCycle.constant(1.5, "discharge", soc0=1.0, soc_limits=(0.5, 1.0), rest_after_s=3600)  # the M50's rating (2C before its resistance was measured, v0.6.9)
 
 
 def small_study(**kw):

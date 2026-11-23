@@ -1,0 +1,453 @@
+{
+ "library (1.2 W/(m K)), measured heat": {
+  "h_W_m2K": 43.85,
+  "k_radial": 1.225063080816923,
+  "rows": [
+   {
+    "test": "VP010_cycle2",
+    "surface_rmse_K": 0.605,
+    "surface_rise_meas_K": 10.4,
+    "surface_rise_model_K": 10.876,
+    "core_minus_surface_model_K": 1.986,
+    "core_rmse_K": 0.729,
+    "core_rise_meas_K": 12.7,
+    "core_rise_model_K": 12.861,
+    "core_minus_surface_meas_K": 2.3,
+    "role": "calibration"
+   },
+   {
+    "test": "VP010_cycle3",
+    "surface_rmse_K": 0.612,
+    "surface_rise_meas_K": 10.2,
+    "surface_rise_model_K": 10.864,
+    "core_minus_surface_model_K": 1.979,
+    "core_rmse_K": 0.722,
+    "core_rise_meas_K": 12.5,
+    "core_rise_model_K": 12.841,
+    "core_minus_surface_meas_K": 2.3,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle2",
+    "surface_rmse_K": 0.746,
+    "surface_rise_meas_K": 10.3,
+    "surface_rise_model_K": 9.21,
+    "core_minus_surface_model_K": 1.686,
+    "core_rmse_K": 1.235,
+    "core_rise_meas_K": 13.4,
+    "core_rise_model_K": 10.897,
+    "core_minus_surface_meas_K": 3.2,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle3",
+    "surface_rmse_K": 0.718,
+    "surface_rise_meas_K": 10.1,
+    "surface_rise_model_K": 9.36,
+    "core_minus_surface_model_K": 1.712,
+    "core_rmse_K": 1.193,
+    "core_rise_meas_K": 13.3,
+    "core_rise_model_K": 11.072,
+    "core_minus_surface_meas_K": 3.1,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle2",
+    "surface_rmse_K": 1.073,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 10.096,
+    "core_minus_surface_model_K": 1.846,
+    "core_rmse_K": 0.621,
+    "core_rise_meas_K": 11.6,
+    "core_rise_model_K": 11.942,
+    "core_minus_surface_meas_K": 3.5,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle3",
+    "surface_rmse_K": 1.078,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 10.129,
+    "core_minus_surface_model_K": 1.851,
+    "core_rmse_K": 0.622,
+    "core_rise_meas_K": 11.5,
+    "core_rise_model_K": 11.982,
+    "core_minus_surface_meas_K": 3.4,
+    "role": "check"
+   },
+   {
+    "test": "VP016_cycle2",
+    "surface_rmse_K": 0.795,
+    "surface_rise_meas_K": 8.5,
+    "surface_rise_model_K": 9.479,
+    "core_minus_surface_model_K": 1.73,
+    "role": "check"
+   }
+  ]
+ },
+ "library (1.2 W/(m K)), predicted": {
+  "h_W_m2K": 43.85,
+  "k_radial": 1.225063080816923,
+  "rows": [
+   {
+    "test": "VP010_cycle2",
+    "surface_rmse_K": 0.847,
+    "surface_rise_meas_K": 10.4,
+    "surface_rise_model_K": 9.34,
+    "core_minus_surface_model_K": 1.721,
+    "core_rmse_K": 1.098,
+    "core_rise_meas_K": 12.7,
+    "core_rise_model_K": 11.061,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 37.302,
+    "role": "calibration"
+   },
+   {
+    "test": "VP010_cycle3",
+    "surface_rmse_K": 0.83,
+    "surface_rise_meas_K": 10.2,
+    "surface_rise_model_K": 9.17,
+    "core_minus_surface_model_K": 1.683,
+    "core_rmse_K": 1.078,
+    "core_rise_meas_K": 12.5,
+    "core_rise_model_K": 10.855,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 39.504,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle2",
+    "surface_rmse_K": 0.847,
+    "surface_rise_meas_K": 10.3,
+    "surface_rise_model_K": 10.16,
+    "core_minus_surface_model_K": 1.868,
+    "core_rmse_K": 1.394,
+    "core_rise_meas_K": 13.4,
+    "core_rise_model_K": 12.029,
+    "core_minus_surface_meas_K": 3.2,
+    "V_rmse_mV": 25.853,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle3",
+    "surface_rmse_K": 0.83,
+    "surface_rise_meas_K": 10.1,
+    "surface_rise_model_K": 10.083,
+    "core_minus_surface_model_K": 1.852,
+    "core_rmse_K": 1.375,
+    "core_rise_meas_K": 13.3,
+    "core_rise_model_K": 11.938,
+    "core_minus_surface_meas_K": 3.1,
+    "V_rmse_mV": 23.078,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle2",
+    "surface_rmse_K": 0.837,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 9.789,
+    "core_minus_surface_model_K": 1.797,
+    "core_rmse_K": 0.659,
+    "core_rise_meas_K": 11.6,
+    "core_rise_model_K": 11.588,
+    "core_minus_surface_meas_K": 3.5,
+    "V_rmse_mV": 21.934,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle3",
+    "surface_rmse_K": 0.839,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 9.747,
+    "core_minus_surface_model_K": 1.791,
+    "core_rmse_K": 0.662,
+    "core_rise_meas_K": 11.5,
+    "core_rise_model_K": 11.54,
+    "core_minus_surface_meas_K": 3.4,
+    "V_rmse_mV": 22.69,
+    "role": "check"
+   },
+   {
+    "test": "VP016_cycle2",
+    "surface_rmse_K": 0.762,
+    "surface_rise_meas_K": 8.5,
+    "surface_rise_model_K": 9.844,
+    "core_minus_surface_model_K": 1.807,
+    "V_rmse_mV": 17.608,
+    "role": "check"
+   }
+  ]
+ },
+ "a tenth (0.12 W/(m K)), measured heat": {
+  "h_W_m2K": 43.42,
+  "k_radial": 0.1225063080816923,
+  "rows": [
+   {
+    "test": "VP010_cycle2",
+    "surface_rmse_K": 0.434,
+    "surface_rise_meas_K": 10.4,
+    "surface_rise_model_K": 9.998,
+    "core_minus_surface_model_K": 15.907,
+    "core_rmse_K": 6.767,
+    "core_rise_meas_K": 12.7,
+    "core_rise_model_K": 25.906,
+    "core_minus_surface_meas_K": 2.3,
+    "role": "calibration"
+   },
+   {
+    "test": "VP010_cycle3",
+    "surface_rmse_K": 0.418,
+    "surface_rise_meas_K": 10.2,
+    "surface_rise_model_K": 10.002,
+    "core_minus_surface_model_K": 15.888,
+    "core_rmse_K": 6.819,
+    "core_rise_meas_K": 12.5,
+    "core_rise_model_K": 25.889,
+    "core_minus_surface_meas_K": 2.3,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle2",
+    "surface_rmse_K": 0.617,
+    "surface_rise_meas_K": 10.3,
+    "surface_rise_model_K": 8.637,
+    "core_minus_surface_model_K": 14.078,
+    "core_rmse_K": 5.818,
+    "core_rise_meas_K": 13.4,
+    "core_rise_model_K": 22.723,
+    "core_minus_surface_meas_K": 3.2,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle3",
+    "surface_rmse_K": 0.577,
+    "surface_rise_meas_K": 10.1,
+    "surface_rise_model_K": 8.751,
+    "core_minus_surface_model_K": 14.202,
+    "core_rmse_K": 5.849,
+    "core_rise_meas_K": 13.3,
+    "core_rise_model_K": 22.951,
+    "core_minus_surface_meas_K": 3.1,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle2",
+    "surface_rmse_K": 1.037,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 9.378,
+    "core_minus_surface_model_K": 15.144,
+    "core_rmse_K": 7.091,
+    "core_rise_meas_K": 11.6,
+    "core_rise_model_K": 24.526,
+    "core_minus_surface_meas_K": 3.5,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle3",
+    "surface_rmse_K": 1.037,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 9.404,
+    "core_minus_surface_model_K": 15.164,
+    "core_rmse_K": 7.097,
+    "core_rise_meas_K": 11.5,
+    "core_rise_model_K": 24.579,
+    "core_minus_surface_meas_K": 3.4,
+    "role": "check"
+   },
+   {
+    "test": "VP016_cycle2",
+    "surface_rmse_K": 0.784,
+    "surface_rise_meas_K": 8.5,
+    "surface_rise_model_K": 8.79,
+    "core_minus_surface_model_K": 14.097,
+    "role": "check"
+   }
+  ]
+ },
+ "a tenth (0.12 W/(m K)), predicted": {
+  "h_W_m2K": 43.42,
+  "k_radial": 0.1225063080816923,
+  "rows": [
+   {
+    "test": "VP010_cycle2",
+    "surface_rmse_K": 0.885,
+    "surface_rise_meas_K": 10.4,
+    "surface_rise_model_K": 7.925,
+    "core_minus_surface_model_K": 12.95,
+    "core_rmse_K": 4.639,
+    "core_rise_meas_K": 12.7,
+    "core_rise_model_K": 20.878,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 55.543,
+    "role": "calibration"
+   },
+   {
+    "test": "VP010_cycle3",
+    "surface_rmse_K": 0.866,
+    "surface_rise_meas_K": 10.2,
+    "surface_rise_model_K": 7.806,
+    "core_minus_surface_model_K": 12.732,
+    "core_rmse_K": 4.626,
+    "core_rise_meas_K": 12.5,
+    "core_rise_model_K": 20.549,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 57.807,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle2",
+    "surface_rmse_K": 0.796,
+    "surface_rise_meas_K": 10.3,
+    "surface_rise_model_K": 8.521,
+    "core_minus_surface_model_K": 13.792,
+    "core_rmse_K": 4.421,
+    "core_rise_meas_K": 13.4,
+    "core_rise_model_K": 22.325,
+    "core_minus_surface_meas_K": 3.2,
+    "V_rmse_mV": 30.49,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle3",
+    "surface_rmse_K": 0.769,
+    "surface_rise_meas_K": 10.1,
+    "surface_rise_model_K": 8.466,
+    "core_minus_surface_model_K": 13.696,
+    "core_rmse_K": 4.427,
+    "core_rise_meas_K": 13.3,
+    "core_rise_model_K": 22.175,
+    "core_minus_surface_meas_K": 3.1,
+    "V_rmse_mV": 29.978,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle2",
+    "surface_rmse_K": 0.398,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 8.254,
+    "core_minus_surface_model_K": 13.37,
+    "core_rmse_K": 5.257,
+    "core_rise_meas_K": 11.6,
+    "core_rise_model_K": 21.637,
+    "core_minus_surface_meas_K": 3.5,
+    "V_rmse_mV": 39.076,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle3",
+    "surface_rmse_K": 0.4,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 8.222,
+    "core_minus_surface_model_K": 13.333,
+    "core_rmse_K": 5.251,
+    "core_rise_meas_K": 11.5,
+    "core_rise_model_K": 21.567,
+    "core_minus_surface_meas_K": 3.4,
+    "V_rmse_mV": 39.884,
+    "role": "check"
+   },
+   {
+    "test": "VP016_cycle2",
+    "surface_rmse_K": 0.325,
+    "surface_rise_meas_K": 8.5,
+    "surface_rise_model_K": 8.29,
+    "core_minus_surface_model_K": 13.412,
+    "V_rmse_mV": 26.125,
+    "role": "check"
+   }
+  ]
+ },
+ "v0.6.8 derived circuit, library k, predicted": {
+  "h_W_m2K": 43.85,
+  "k_radial": 1.225063080816923,
+  "rows": [
+   {
+    "test": "VP010_cycle2",
+    "surface_rmse_K": 2.212,
+    "surface_rise_meas_K": 10.4,
+    "surface_rise_model_K": 5.874,
+    "core_minus_surface_model_K": 1.079,
+    "core_rmse_K": 2.785,
+    "core_rise_meas_K": 12.7,
+    "core_rise_model_K": 6.953,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 143.548,
+    "role": "calibration"
+   },
+   {
+    "test": "VP010_cycle3",
+    "surface_rmse_K": 2.181,
+    "surface_rise_meas_K": 10.2,
+    "surface_rise_model_K": 5.745,
+    "core_minus_surface_model_K": 1.051,
+    "core_rmse_K": 2.75,
+    "core_rise_meas_K": 12.5,
+    "core_rise_model_K": 6.798,
+    "core_minus_surface_meas_K": 2.3,
+    "V_rmse_mV": 145.601,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle2",
+    "surface_rmse_K": 2.175,
+    "surface_rise_meas_K": 10.3,
+    "surface_rise_model_K": 6.449,
+    "core_minus_surface_model_K": 1.184,
+    "core_rmse_K": 3.156,
+    "core_rise_meas_K": 13.4,
+    "core_rise_model_K": 7.634,
+    "core_minus_surface_meas_K": 3.2,
+    "V_rmse_mV": 117.018,
+    "role": "check"
+   },
+   {
+    "test": "VP011_cycle3",
+    "surface_rmse_K": 2.142,
+    "surface_rise_meas_K": 10.1,
+    "surface_rise_model_K": 6.397,
+    "core_minus_surface_model_K": 1.173,
+    "core_rmse_K": 3.128,
+    "core_rise_meas_K": 13.3,
+    "core_rise_model_K": 7.572,
+    "core_minus_surface_meas_K": 3.1,
+    "V_rmse_mV": 118.045,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle2",
+    "surface_rmse_K": 1.142,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 6.195,
+    "core_minus_surface_model_K": 1.135,
+    "core_rmse_K": 2.199,
+    "core_rise_meas_K": 11.6,
+    "core_rise_model_K": 7.331,
+    "core_minus_surface_meas_K": 3.5,
+    "V_rmse_mV": 129.626,
+    "role": "check"
+   },
+   {
+    "test": "VP012_cycle3",
+    "surface_rmse_K": 1.142,
+    "surface_rise_meas_K": 8.0,
+    "surface_rise_model_K": 6.166,
+    "core_minus_surface_model_K": 1.131,
+    "core_rmse_K": 2.203,
+    "core_rise_meas_K": 11.5,
+    "core_rise_model_K": 7.298,
+    "core_minus_surface_meas_K": 3.4,
+    "V_rmse_mV": 130.206,
+    "role": "check"
+   },
+   {
+    "test": "VP016_cycle2",
+    "surface_rmse_K": 1.235,
+    "surface_rise_meas_K": 8.5,
+    "surface_rise_model_K": 6.239,
+    "core_minus_surface_model_K": 1.144,
+    "V_rmse_mV": 114.085,
+    "role": "check"
+   }
+  ]
+ }
+}

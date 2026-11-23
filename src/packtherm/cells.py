@@ -19,6 +19,15 @@ Sources
               5.0 Ah, 3.63 V, <=21.10 x 70.15 mm, 68 g, DCIR 30 +/- 6 mOhm
               (30 s, 0.5C), max charge 0.7C at 25-50 degC, max continuous
               discharge 1.5C at 5-60 degC.
+[Gulsoy-M50]  M. Gulsoy, K. Kucuk, A. Barai, J. Marco (University of Warwick),
+              "Dataset of internal temperature during lithium-ion battery
+              ageing", Mendeley Data v2, doi:10.17632/bf6fksxpp2.2, CC BY 4.0.
+              LG INR21700-M50 cells at 25 degC: 2C pulses of fresh cells and
+              1C discharges with a core thermocouple (v0.6.9).
+[M50-DS]      LG Chem, "Product specification, rechargeable lithium ion battery,
+              model INR21700 M50 18.2Wh" (2017, tentative): charge 0-45 degC
+              (0.3C at 0-25 degC), discharge -20-55 degC; DCIR 30 +/- 6 mOhm
+              (0.5C for 30 s at 50 % SOC, 25 degC).
 [BD-MJ1]      batterydesign.net, "LG INR 18650 MJ1": NMC811 / graphite-Si,
               3.5 Ah, 46.8 g measured, DCIR 33 mOhm (summary) and 60 mOhm
               (Heenan et al., J. Electrochem. Soc. 167 (2020)), -20 to 60 degC.
@@ -305,7 +314,7 @@ _M50_SOC, _M50_OCV = _load_ocv_table("lgm50_oregan2022_ocv.csv")
 # of the DFN on 0.5-1.4C discharges and a pulsed profile at 0-25 degC (the lumped
 # model it replaces: 0.92-1.42x). The knee comes late in the cold: cut-off up to
 # 0.75 Ah after the DFN at 0 degC 1.4C. Measured M50 data would replace this.
-LG_M50_ECM = ECM(
+LG_M50_ECM_DERIVED = ECM(
     ocv_soc=_M50_SOC,
     ocv_V=_M50_OCV,
     R0_25C=0.0131,
@@ -326,6 +335,17 @@ LG_M50_ECM = ECM(
     sources=("ORegan2022", "PyBaMM"),
 )
 
+# v0.6.9: measured M50 data. The derived circuit has about half the cell's real
+# resistance: on the 2C pulses of six fresh cells at 25 degC [Gulsoy-M50] it
+# drops 130-200 mV where the cells drop 270-400 mV. One scale on every loss term,
+# fitted on those pulses alone (validation/fit_m50_scale.py), takes the pulse
+# error from 168 to 19 mV RMS; on the 1C discharges of the core-temperature tests
+# (never fitted on) the voltage error falls from 114-146 to 18-40 mV and the heat,
+# about 60 % of the measured before, comes right (validation/check_m50_core.py).
+# Checked at 25 degC only: the temperature dependence is still the DFN's.
+M50_R_SCALE = 2.04
+LG_M50_ECM = LG_M50_ECM_DERIVED.scaled(M50_R_SCALE)
+
 LG_M50 = Cell(
     name="LG INR21700 M50",
     form_factor="21700",
@@ -343,9 +363,18 @@ LG_M50 = Cell(
     max_discharge_C=1.5,
     T_max_charge_C=50.0,
     T_max_discharge_C=60.0,
-    sources=("BD-M50", "ORegan2022", "Chen2020"),
+    # v0.6.9: the lower limits (no charging below 0 degC, discharge down to -20 degC),
+    # as in [M50-DS] and [BD-M50] (0.3C from 0 degC); without them studies gave no cold warnings.
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-20.0,
+    sources=("BD-M50", "M50-DS", "ORegan2022", "Chen2020", "Gulsoy-M50"),
     ecm=LG_M50_ECM,
-    model_label="circuit (derived)",
+    model_label="circuit (derived, measured resistance)",
+)
+
+# The v0.4.11-v0.6.8 M50: the derived circuit as the DFN gave it, for comparison.
+LG_M50_DERIVED = replace(
+    LG_M50, name="LG INR21700 M50 (derived circuit, v0.6.8)", ecm=LG_M50_ECM_DERIVED, model_label="circuit (derived)"
 )
 
 # The v0.4.10 lumped-resistance M50 (I^2 R with an Arrhenius DCIR), for comparison.
@@ -374,7 +403,7 @@ LG_MJ1 = Cell(
     sources=("BD-MJ1", "MJ1-DS", "ORegan2022"),
 )
 
-CELLS: dict[str, Cell] = {"M50": LG_M50, "M50-LUMPED": LG_M50_LUMPED, "MJ1": LG_MJ1}
+CELLS: dict[str, Cell] = {"M50": LG_M50, "M50-DERIVED": LG_M50_DERIVED, "M50-LUMPED": LG_M50_LUMPED, "MJ1": LG_MJ1}
 
 
 def with_R0(cell: Cell, R0: float) -> Cell:
@@ -651,11 +680,18 @@ A123_26650 = _packaged_fitted_cell("a123_26650_fitted.yaml", "A123 ANR26650M1B",
 CELLS["A123"] = A123_26650
 
 
+# Kept to compare against, not to design with (v0.6.9): the M50's circuit before its
+# resistance was measured, and the lumped-resistance versions of the circuit cells.
+# On a constant discharge a lumped cell makes 22-64 % of its circuit's heat (BACKLOG item 2).
+COMPARISON = frozenset({"M50-DERIVED", "M50-LUMPED", "30T-LUMPED", "HG2-LUMPED", "A123-LUMPED"})
+
+
 def library_summary() -> dict[str, dict]:
     """The cell library in brief, as the API's GET /cells and the web app show it."""
     return {
         k: {
             "name": c.name,
+            "group": "comparison" if k in COMPARISON else "design",
             "model": c.model_label,
             "format": c.form_factor,
             "capacity_Ah": c.capacity_Ah,
