@@ -12,7 +12,7 @@ STUDY = {
     "cell": "M50",
     "mode": "fast",
     "ambient_C": 25,
-    "duty": {"type": "constant", "c_rate": 1.0, "rest_h": 1},
+    "duty": {"type": "constant", "c_rate": 0.8, "rest_h": 1},  # robust picks with the M50's measured resistance (v0.6.9)
     "design_space": {
         "topologies": ["air", "ribbon"],
         "fillers": ["none", "RT31"],

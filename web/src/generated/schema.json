@@ -628,6 +628,10 @@
   "cells": {
    "M50": {
     "name": "LG INR21700 M50",
+    "model": "circuit (derived, measured resistance)"
+   },
+   "M50-DERIVED": {
+    "name": "LG INR21700 M50 (derived circuit, v0.6.8)",
     "model": "circuit (derived)"
    },
    "M50-LUMPED": {

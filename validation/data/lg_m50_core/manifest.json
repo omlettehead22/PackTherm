@@ -1,0 +1,90 @@
+{
+ "citation": "M. Gulsoy, K. Kucuk, A. Barai, J. Marco, Dataset of internal temperature during lithium-ion battery ageing, University of Warwick, Mendeley Data v2, doi:10.17632/bf6fksxpp2.2",
+ "licence": "CC BY 4.0",
+ "tests": [
+  {
+   "name": "VP010_cycle2",
+   "file": "VP010_cycle2.csv.gz",
+   "cell": "VP010",
+   "cycle": 2,
+   "core_thermocouple": true,
+   "ambient_C": 24.7,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7890
+  },
+  {
+   "name": "VP010_cycle3",
+   "file": "VP010_cycle3.csv.gz",
+   "cell": "VP010",
+   "cycle": 3,
+   "core_thermocouple": true,
+   "ambient_C": 24.7,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7872
+  },
+  {
+   "name": "VP011_cycle2",
+   "file": "VP011_cycle2.csv.gz",
+   "cell": "VP011",
+   "cycle": 2,
+   "core_thermocouple": true,
+   "ambient_C": 25.1,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7954
+  },
+  {
+   "name": "VP011_cycle3",
+   "file": "VP011_cycle3.csv.gz",
+   "cell": "VP011",
+   "cycle": 3,
+   "core_thermocouple": true,
+   "ambient_C": 25.1,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7946
+  },
+  {
+   "name": "VP012_cycle2",
+   "file": "VP012_cycle2.csv.gz",
+   "cell": "VP012",
+   "cycle": 2,
+   "core_thermocouple": true,
+   "ambient_C": 25.0,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7922
+  },
+  {
+   "name": "VP012_cycle3",
+   "file": "VP012_cycle3.csv.gz",
+   "cell": "VP012",
+   "cycle": 3,
+   "core_thermocouple": true,
+   "ambient_C": 25.0,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7918
+  },
+  {
+   "name": "VP016_cycle2",
+   "file": "VP016_cycle2.csv.gz",
+   "cell": "VP016",
+   "cycle": 2,
+   "core_thermocouple": false,
+   "ambient_C": 25.5,
+   "ambient_from": "the surface over the first 5 min (the end of a 3 h charge at C/3: settled)",
+   "soc0": 1.0,
+   "soc0_from": "full: the end of a CC-CV charge to 4.2 V",
+   "samples": 7933
+  }
+ ]
+}

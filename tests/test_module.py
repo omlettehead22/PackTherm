@@ -440,4 +440,4 @@ def test_coolant_rise_is_measured_from_the_inlet():
     # measured from the first-step coolant temperature (the old method) hides
     # most of it, and the inlet's 10 K step at hand-back confuses it further.
     assert 5.0 < rise < 10.0
-    assert abs(float(r.T_coolant.max() - r.T_coolant[1]) - rise) > 2.0
+    assert abs(float(r.T_coolant.max() - r.T_coolant[1]) - rise) > 1.0

@@ -8,7 +8,7 @@ same circuit as the NCR18650PF is fitted to them. Requires `pip install pybamm`.
     python validation/derive_m50_ecm.py           # writes synthetic.pkl, m50_ecm.pkl, prints constants
     python validation/derive_m50_ecm.py --check   # heat and cut-off against the DFN
 
-Results used in packtherm.cells.LG_M50_ECM (v0.4.11).
+Results used in packtherm.cells.LG_M50_ECM_DERIVED (v0.4.11; the library scales it to measured pulses from v0.6.9).
 """
 
 # ---- 1. synthetic characterisation ----

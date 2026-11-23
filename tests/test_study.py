@@ -177,6 +177,6 @@ def test_a_duty_the_cell_cannot_deliver_fails_rather_than_looking_cool():
     bad = run(30)["designs"][0]
     assert not bad["feasible"] and bad["fail_reason"] == "short"
     assert "voltage cut-off" in bad["rating_warning"]
-    ok = run(1.5)
+    ok = run(1.0)  # 1.5C is deliverable too, but too hot for this one ribbon since the M50's measured resistance
     assert ok["designs"][0]["feasible"] and "short" not in ok["designs"][0]["fail_reason"]
     assert all(not n.startswith("The cell") for n in ok["notes"])  # warnings carry their WARNING: prefix

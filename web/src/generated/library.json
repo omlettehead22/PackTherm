@@ -1,6 +1,15 @@
 {
  "M50": {
   "name": "LG INR21700 M50",
+  "model": "circuit (derived, measured resistance)",
+  "format": "21700",
+  "capacity_Ah": 5.0,
+  "V_nominal": 3.63,
+  "DCIR_25C_mOhm": 30.0,
+  "mass_g": 68.0
+ },
+ "M50-DERIVED": {
+  "name": "LG INR21700 M50 (derived circuit, v0.6.8)",
   "model": "circuit (derived)",
   "format": "21700",
   "capacity_Ah": 5.0,

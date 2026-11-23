@@ -55,7 +55,7 @@ def test_soc_window_stops_charge():
 
 def test_reversible_heat_sign():
     """Bernardi: Q_rev = -I T dU/dT. Opposite sign on charge vs discharge."""
-    soc = 0.9
+    soc = 0.7  # below where a 1C charge reaches V_max at once (the M50's measured resistance, v0.6.9)
     assert nmc811_graphite_dUdT(soc) > 0
     dis = ElectroThermalLoad(LG_M50, constant_current(LG_M50, 1.0, "discharge"), soc0=soc)
     chg = ElectroThermalLoad(LG_M50, constant_current(LG_M50, 1.0, "charge"), soc0=soc)

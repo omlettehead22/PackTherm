@@ -2,7 +2,7 @@
 
 Runs PyBaMM's DFN (ORegan2022, lumped thermal, self-heating) on constant-current
 discharges and a pulsed profile at 25, 10 and 0 degC, drives the packtherm
-circuit (LG_M50_ECM) and the old lumped model (LG_M50_LUMPED) with the same
+circuit (LG_M50_ECM_DERIVED, before v0.6.9's measured scale) and the old lumped model (LG_M50_LUMPED) with the same
 current along the DFN's temperature path, and compares irreversible heat.
 Writes validation/m50_vs_dfn.csv. Requires `pip install pybamm`.
 """
@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import pybamm
 
-from packtherm.cells import LG_M50, LG_M50_LUMPED
+from packtherm.cells import LG_M50_DERIVED, LG_M50_LUMPED
 from packtherm.ecm import ECMState
 
 pybamm.set_logging_level("ERROR")
@@ -56,7 +56,7 @@ def dfn(T_C: float, steps: list[str]):
 
 
 def main() -> pd.DataFrame:
-    ecm, lumped = LG_M50.ecm, LG_M50_LUMPED
+    ecm, lumped = LG_M50_DERIVED.ecm, LG_M50_LUMPED  # the derived circuit as the DFN gave it (unscaled)
     rows = []
     for T_C in (25, 10, 0):
         for name, steps in CASES.items():
