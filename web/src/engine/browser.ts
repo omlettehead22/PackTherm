@@ -21,7 +21,7 @@ class PyWorker {
   private pending = new Map<number, { resolve: (v: string) => void; reject: (e: Error) => void }>();
   readonly ready: Promise<string>;
 
-  constructor(wheelUrl: string) {
+  constructor(wheelUrls: string[]) {
     this.worker = new Worker(new URL("./py.worker.ts", import.meta.url), { type: "module" });
     this.worker.onmessage = (e: MessageEvent<{ id: number; ok: boolean; value?: string; error?: string }>) => {
       const p = this.pending.get(e.data.id);
@@ -34,7 +34,7 @@ class PyWorker {
       for (const p of this.pending.values()) p.reject(new Error(e.message || "the engine stopped"));
       this.pending.clear();
     };
-    this.ready = this.call("init", [wheelUrl]);
+    this.ready = this.call("init", wheelUrls);
   }
 
   call(fn: string, args: unknown[]): Promise<string> {
@@ -69,7 +69,7 @@ export class BrowserEngine {
   readonly kind = "browser" as const;
   private main: PyWorker | null = null;
   private extra: PyWorker[] = [];
-  private wheel: Promise<string> | null = null;
+  private wheel: Promise<string[]> | null = null;
   private state: EngineState = { phase: "idle" };
   private listeners = new Set<(s: EngineState) => void>();
 
@@ -85,13 +85,16 @@ export class BrowserEngine {
     for (const fn of this.listeners) fn(s);
   }
 
-  private wheelUrl(): Promise<string> {
+  /** PackTherm's wheel, then the pure-Python wheels it needs beyond Pyodide's own packages (v0.6.12). */
+  private wheelUrl(): Promise<string[]> {
     this.wheel ??= fetch(WHEEL_MANIFEST)
       .then((r) => {
         if (!r.ok) throw new Error(`no engine package here (${r.status})`);
-        return r.json() as Promise<{ wheel: string }>;
+        return r.json() as Promise<{ wheel: string; deps?: string[] }>;
       })
-      .then((m) => new URL(m.wheel, new URL(WHEEL_MANIFEST, window.location.href)).href)
+      .then((m) =>
+        [m.wheel, ...(m.deps ?? [])].map((w) => new URL(w, new URL(WHEEL_MANIFEST, window.location.href)).href),
+      )
       .catch((e: unknown) => {
         this.wheel = null; // try again next time
         throw e;

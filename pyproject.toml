@@ -8,7 +8,7 @@ version = "0.6.11"
 description = "Battery thermal management design toolkit for cylindrical-cell EV packs: electro-thermal cells, packed-module model, cooling design advisor"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24", "scipy>=1.10", "pandas>=2.0", "matplotlib>=3.7", "pyyaml>=6.0"]
+dependencies = ["numpy>=1.24", "scipy>=1.10", "pandas>=2.0", "matplotlib>=3.7", "pyyaml>=6.0", "ht>=1.0", "fluids>=1.0"]
 
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn>=0.29"]
