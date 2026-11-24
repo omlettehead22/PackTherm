@@ -33,18 +33,18 @@ Measured on the three example studies (LG M50, 39 designs each, interior and edg
 | 1.5C discharge, 25 °C | 104 s | 19 s | 5.5× |
 | 3 × WLTC, 35 °C | 139 s | 28 s | 5.0× |
 
-Largest difference from normal mode over all 117 designs (v0.6.9, with the M50's measured resistance, which makes the 1.5C discharge harder):
+Largest difference from normal mode over all 117 designs (v0.6.12: the M50's measured resistance and the coolant side worked out from the channels):
 
 | Quantity | Road trip | 1.5C | WLTC |
 |---|---|---|---|
-| Hottest cell | 0.02 K | 0.28 K | 0.01 K |
-| In-cell spread | 0.18 K | 0.29 K | 0.18 K |
-| Cell-to-cell spread | 0.03 K | 0.42 K | 0.01 K |
-| Recovery time | 1.4 min | 2.4 min | 0.05 min |
-| Fan, pump and chiller energy | 0.2 % | 0.5 % | 0.5 % |
+| Hottest cell | 0.02 K | 0.40 K | 0.01 K |
+| In-cell spread | 0.16 K | 0.25 K | 0.19 K |
+| Cell-to-cell spread | 0.04 K | 0.56 K | 0.01 K |
+| Recovery time | 1.5 min | 2.6 min | 0.05 min |
+| Fan, pump and chiller energy | 0.2 % | 0.6 % | 0.5 % |
 | Designs whose verdict changes | 0 | 0 | 0 |
 | Picks | same | same (none) | same |
 
-The largest errors come from fast transients: the end of a hard discharge, when the cell heats fastest (time step), and a chiller pulling a hot pack down through its base (plate layers). A design within about 0.3 K of a temperature limit or of the in-cell limit, or 0.4 K of the cell-to-cell limit, can come out differently in the two modes. Check close calls in normal mode.
+The largest errors come from fast transients: the end of a hard discharge, when the cell heats fastest (time step), and a chiller pulling a hot pack down through its base (plate layers). A design within about 0.4 K of a temperature limit, 0.3 K of the in-cell limit or 0.6 K of the cell-to-cell limit can come out differently in the two modes; on these studies none did. Check close calls in normal mode.
 
 `tests/test_module_design.py::test_fast_mode_tracks_normal_mode` checks agreement on a smaller study in CI.
