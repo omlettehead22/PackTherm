@@ -30,7 +30,7 @@ from packtherm.params import KELVIN
 RIBBON_GAP = Layout("hex", 3.5)
 
 # Constant heat: flat resistance, no entropic term -> Q = I^2 R exactly.
-FLAT = replace(LG_M50_LUMPED, Ea_R=0.0, soc_factor=lambda soc: 1.0)
+FLAT = replace(LG_M50_LUMPED, Ea_R=0.0, soc_factor=lambda soc: 1.0, slow_share=0.0)  # Q = I^2 R exactly
 I = FLAT.current(1.0)
 Q = I**2 * FLAT.R0_25C  # 0.75 W
 

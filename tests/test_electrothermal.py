@@ -1,3 +1,4 @@
+import math
 from dataclasses import replace
 
 import numpy as np
@@ -24,7 +25,7 @@ from packtherm.params import KELVIN
 
 T25 = 25 + KELVIN
 # Constant-resistance M50: no SOC or temperature dependence, for hand checks.
-FLAT = replace(LG_M50_LUMPED, Ea_R=0.0, soc_factor=lambda soc: 1.0)
+FLAT = replace(LG_M50_LUMPED, Ea_R=0.0, soc_factor=lambda soc: 1.0, slow_share=0.0)
 
 
 def test_joule_heat_matches_hand_calculation():
@@ -34,6 +35,29 @@ def test_joule_heat_matches_hand_calculation():
     current = FLAT.current(1.0)
     assert res.E_generated == pytest.approx(current**2 * FLAT.R0_25C * duration, rel=1e-12)
     assert res.balance_error_pct < 1e-6
+
+
+def test_the_slow_branch_matches_hand_calculation():
+    """v0.6.11: with a slow branch Rs, tau held at a constant current from rest,
+    E = I^2 R t + I^2 Rs (t - tau (1 - exp(-t / tau))) exactly."""
+    cell = replace(FLAT, slow_share=0.88, slow_tau_s=440.0, slow_Ea_R=0.0)
+    duration = 600.0
+    res, _load = simulate_cell(cell, constant_current(cell, 1.0), duration, h=0.0, T_env=T25, entropic=False)
+    I, R, Rs, tau = cell.current(1.0), cell.R0_25C, 0.88 * cell.R0_25C, 440.0
+    expected = I**2 * R * duration + I**2 * Rs * (duration - tau * (1 - math.exp(-duration / tau)))
+    assert res.E_generated == pytest.approx(expected, rel=1e-9)
+    assert res.balance_error_pct < 1e-6
+
+
+def test_the_slow_branch_fades_in_a_rest():
+    """In a rest the slow branch makes no heat (I = 0), and its overpotential decays with tau."""
+    cell = replace(FLAT, slow_share=0.88, slow_tau_s=440.0, slow_Ea_R=0.0)
+    profile = lambda t: cell.current(1.0) if t < 600 else 0.0
+    _res, load = simulate_cell(cell, profile, 1800.0, h=0.0, T_env=T25, entropic=False)
+    a = load.arrays()
+    assert np.all(a["Q_irr_W"][a["t"] >= 600] == 0.0)
+    steady = cell.current(1.0) * 0.88 * cell.R0_25C
+    assert load.v_slow == pytest.approx(steady * (1 - math.exp(-600 / 440)) * math.exp(-1200 / 440), rel=1e-3)
 
 
 def test_coulomb_counting():

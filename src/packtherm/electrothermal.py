@@ -101,6 +101,7 @@ class ElectroThermalLoad:
         # Hysteresis starts on the charge branch from full (just charged), otherwise on the discharge's.
         h0 = 1.0 if self.soc0 >= FULL_SOC else 0.0
         self.ecm_state = ECMState(h=h0, s=h0) if self.cell.ecm is not None else None
+        self.v_slow = 0.0  # the lumped model's slow overpotential [V] (v0.6.11)
         self.log = {
             k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A", "I_req_A")
         }
@@ -158,6 +159,17 @@ class ElectroThermalLoad:
         soc_mid = self.soc - 0.5 * current * dt / (3600.0 * self.cell.capacity_Ah)
         R = self.cell.resistance(soc_mid, T_cell)
         q_irr = current**2 * R
+        Rs = self.cell.slow_resistance(soc_mid, T_cell)
+        if Rs or self.v_slow:
+            # The slow branch (v0.6.11): relaxes towards I Rs with time constant slow_tau_s (exact
+            # for a current held over the step); its heat is I times its mean overpotential.
+            target = current * Rs
+            v0 = self.v_slow
+            decay = math.exp(-dt / self.cell.slow_tau_s)
+            self.v_slow = target + (v0 - target) * decay
+            v_mean = target + (v0 - target) * (1.0 - decay) * self.cell.slow_tau_s / dt if dt > 0 else v0
+            q_irr += current * v_mean
+            R = R + (v_mean / current if current else 0.0)
         q_rev = -current * T_cell * self.cell.dUdT(soc_mid) if self.entropic else 0.0
         self.soc = min(max(self.soc - current * dt / (3600.0 * self.cell.capacity_Ah), lo), hi)
         for k, v in zip(self.log, (t, current, self.soc, R, q_irr, q_rev, np.nan, abs(current), self._requested)):

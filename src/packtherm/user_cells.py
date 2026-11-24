@@ -259,7 +259,9 @@ def cell_from_spec(spec: dict, base: str | Path | None = None) -> Cell:
     cap = float(spec["capacity_Ah"])
     r0 = _milli(spec["DCIR_mOhm"])
     rmax = _milli(spec["DCIR_max_mOhm"] or spec["DCIR_mOhm"])
-    kw = {}
+    from .cells import LUMPED_SLOW
+
+    kw = dict(LUMPED_SLOW["LFP" if chem == "LFP" else "NMC"])  # the slow losses (v0.6.11)
     if spec["Ea_kJ_mol"] is not None:
         kw["Ea_R"] = spec["Ea_kJ_mol"] * 1e3
     return Cell(
@@ -334,6 +336,9 @@ def cell_summary(spec: dict) -> dict:
         "density_g_cm3": c.density / 1e3,
         "DCIR_worst_case_mOhm": c.R0_range[1] * 1e3,
         "resistance_rise_at_0C": math.exp(c.Ea_R / 8.314462618 * (1 / 273.15 - 1 / 298.15)),
+        # v0.6.11: the slow losses a DC resistance misses, by chemistry (cells.LUMPED_SLOW)
+        "slow_resistance_share": c.slow_share,
+        "slow_time_constant_s": c.slow_tau_s,
         "cp_J_kgK": c.cp,
         "k_radial_W_mK": c.k_radial,
         "k_axial_W_mK": c.k_axial,

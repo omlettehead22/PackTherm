@@ -306,7 +306,7 @@ def _cells(args) -> None:
     table = pd.DataFrame(rows)
     print("Cells to design with:")
     print(table[~table.key.isin(COMPARISON)].to_string(index=False))
-    print("\nFor comparison only (an earlier or simpler model of a cell above; lumped models make about half the heat):")
+    print("\nFor comparison only (an earlier or simpler model of a cell above; lumped models have no voltage limits):")
     print(table[table.key.isin(COMPARISON)].to_string(index=False))
     print(
         "DCIR_25C is the lumped reference; it sets the worst-case re-check. Circuit cells compute "

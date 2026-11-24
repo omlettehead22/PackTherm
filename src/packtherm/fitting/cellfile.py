@@ -400,6 +400,7 @@ def cell_from_doc(doc: dict, base: str | Path | None = None):
         R0_25C=r0,
         R0_range=(0.9 * r0, 1.1 * r0),
         ecm=ecm,
+        slow_share=0.0,  # the lumped model's slow branch (v0.6.11): the circuit has its own
         model_label="circuit (fitted)",
         user_defined=True,
         sources=("fitted by packtherm fit", *like.sources),

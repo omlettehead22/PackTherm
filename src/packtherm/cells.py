@@ -257,6 +257,13 @@ class Cell:
     user_defined: bool = False
     # A fitted cell's tested range: cell temperature (degC), discharge and charge C-rates. Studies warn beyond it.
     validity: dict | None = None
+    # v0.6.11: the lumped model's slow losses (diffusion), which a DC resistance read over
+    # seconds misses: a first-order overpotential with resistance slow_share x R0_25C (with its
+    # own Arrhenius and the same SOC factor) and time constant slow_tau_s. Under steady current
+    # it adds slow_share x R0 to the heat; it fades in rests. 0: none (circuit cells don't use it).
+    slow_share: float = 0.0
+    slow_tau_s: float = 440.0
+    slow_Ea_R: float = 26e3  # J/mol
 
     @property
     def radius(self) -> float:
@@ -280,6 +287,13 @@ class Cell:
         arrhenius = math.exp(self.Ea_R / R_GAS * (1.0 / T - 1.0 / T_REF))
         return self.R0_25C * arrhenius * self.soc_factor(soc)
 
+    def slow_resistance(self, soc: float, T: float) -> float:
+        """The lumped model's slow-branch resistance [Ohm] (v0.6.11; 0 when it has none)."""
+        if not self.slow_share:
+            return 0.0
+        arrhenius = math.exp(self.slow_Ea_R / R_GAS * (1.0 / T - 1.0 / T_REF))
+        return self.slow_share * self.R0_25C * arrhenius * self.soc_factor(soc)
+
     def current(self, c_rate: float) -> float:
         return c_rate * self.capacity_Ah
 
@@ -292,6 +306,20 @@ class Cell:
 
 
 _RHO_JR, _CP_JR, _K_JR = nmc811_jellyroll_properties()
+
+# v0.6.11: the lumped model's slow branch (Cell.slow_share), by chemistry. A DC resistance
+# read over seconds left a lumped cell making 22-64 % of its fitted circuit's heat. Tuned
+# (validation/tune_lumped_slow.py) so lumped models of the PF, 30T and HG2 (NMC/NCA) and of
+# the A123 (LFP), from their 10 s DC resistance, make the heat of their fitted circuits over
+# steady discharges (0.5-2C), 2C pulses, a measured drive cycle and a 0.5C charge at 25 to
+# -10 degC: lumped/circuit heat 0.69-1.19 (NMC/NCA; was 0.33-1.05) and 0.58-1.27 (LFP, whose
+# resistance depends on current more than a lumped model can follow; was 0.16-0.68).
+# Checked on the M50, never tuned on: its circuit 0.98-1.42 (most above 1.15 on 2C pulses),
+# and the measured 1C discharges, surface rise 8.0-8.4 K against 8-10.4 K (was 5.5-5.9).
+LUMPED_SLOW: dict[str, dict[str, float]] = {
+    "NMC": {"slow_share": 0.88, "slow_tau_s": 440.0, "slow_Ea_R": 26e3},
+    "LFP": {"slow_share": 1.6, "slow_tau_s": 250.0, "slow_Ea_R": 36e3},
+}
 
 
 def _load_ocv_table(name: str) -> tuple[tuple[float, ...], tuple[float, ...]]:
@@ -378,7 +406,9 @@ LG_M50_DERIVED = replace(
 )
 
 # The v0.4.10 lumped-resistance M50 (I^2 R with an Arrhenius DCIR), for comparison.
-LG_M50_LUMPED = replace(LG_M50, name="LG INR21700 M50 (lumped DCIR)", ecm=None, model_label="lumped DCIR")
+LG_M50_LUMPED = replace(
+    LG_M50, name="LG INR21700 M50 (lumped DCIR)", ecm=None, model_label="lumped DCIR", **LUMPED_SLOW["NMC"]
+)
 
 LG_MJ1 = Cell(
     name="LG INR18650 MJ1",
@@ -403,6 +433,7 @@ LG_MJ1 = Cell(
     T_min_charge_C=0.0,  # [MJ1-DS] (v0.6.10: missing before, so cold studies gave no warning)
     T_min_discharge_C=-20.0,
     sources=("BD-MJ1", "MJ1-DS", "ORegan2022"),
+    **LUMPED_SLOW["NMC"],
 )
 
 CELLS: dict[str, Cell] = {"M50": LG_M50, "M50-DERIVED": LG_M50_DERIVED, "M50-LUMPED": LG_M50_LUMPED, "MJ1": LG_MJ1}
@@ -573,6 +604,7 @@ SAMSUNG_30T_LUMPED = Cell(
     T_min_charge_C=0.0,
     T_min_discharge_C=-20.0,
     sources=("Kollmeyer2023", "30T-TI", "30T-DS"),
+    **LUMPED_SLOW["NMC"],
 )
 
 CELLS["30T-LUMPED"] = SAMSUNG_30T_LUMPED
@@ -629,6 +661,7 @@ LG_HG2_LUMPED = Cell(
     T_min_charge_C=0.0,
     T_min_discharge_C=-20.0,
     sources=("Kollmeyer2020", "HG2-TI", "HG2-DS"),
+    **LUMPED_SLOW["NMC"],
 )
 
 CELLS["HG2-LUMPED"] = LG_HG2_LUMPED
@@ -674,6 +707,7 @@ A123_26650_LUMPED = Cell(
     T_min_charge_C=0.0,
     T_min_discharge_C=-30.0,
     sources=("Souza2021", "A123-DS"),
+    **LUMPED_SLOW["LFP"],
 )
 
 CELLS["A123-LUMPED"] = A123_26650_LUMPED
@@ -688,7 +722,8 @@ CELLS["A123"] = A123_26650
 
 # Kept to compare against, not to design with (v0.6.9): the M50's circuit before its
 # resistance was measured, and the lumped-resistance versions of the circuit cells.
-# On a constant discharge a lumped cell makes 22-64 % of its circuit's heat (BACKLOG item 2).
+# A lumped cell's heat is within about -30 to +20 % of its circuit's since v0.6.11 (22-64 % on a
+# steady discharge before), but it has no voltage limits: no cut-off, no constant-voltage taper.
 COMPARISON = frozenset({"M50-DERIVED", "M50-LUMPED", "30T-LUMPED", "HG2-LUMPED", "A123-LUMPED"})
 
 
