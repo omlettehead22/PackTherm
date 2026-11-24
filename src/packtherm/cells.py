@@ -400,6 +400,8 @@ LG_MJ1 = Cell(
     max_discharge_C=10.0 / 3.5,  # 10 A
     T_max_charge_C=45.0,
     T_max_discharge_C=60.0,
+    T_min_charge_C=0.0,  # [MJ1-DS] (v0.6.10: missing before, so cold studies gave no warning)
+    T_min_discharge_C=-20.0,
     sources=("BD-MJ1", "MJ1-DS", "ORegan2022"),
 )
 
@@ -526,6 +528,10 @@ PANASONIC_NCR18650PF = Cell(
     max_discharge_C=10.0 / 2.99491,  # 10 A
     T_max_charge_C=45.0,
     T_max_discharge_C=60.0,
+    # Panasonic's NCR18650PF sheet: charge 0 to +45 degC, discharge -20 to +60 degC (some later
+    # copies give charge from +10 degC). v0.6.10: missing before, so cold studies gave no warning.
+    T_min_charge_C=0.0,
+    T_min_discharge_C=-20.0,
     sources=("Kollmeyer2018", "NCR18650PF datasheet"),
     ecm=NCR18650PF_ECM,
     model_label="circuit (measured)",

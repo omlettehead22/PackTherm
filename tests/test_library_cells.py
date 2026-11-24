@@ -85,9 +85,9 @@ def test_only_the_lfp_cell_has_hysteresis():
     assert not CELLS["30T"].ecm.hyst and not CELLS["HG2"].ecm.hyst
 
 
-@pytest.mark.parametrize("key", ["M50", "30T", "HG2", "A123"])
-def test_library_circuit_cells_carry_their_cold_limits(key):
-    """Without them a study charging in the cold gives no warning (the M50 had none before v0.6.9)."""
+@pytest.mark.parametrize("key", ["M50", "30T", "HG2", "A123", "PF", "MJ1"])
+def test_library_cells_carry_their_cold_limits(key):
+    """Without them a study charging in the cold gives no warning (the M50 had none before v0.6.9, the PF and MJ1 before v0.6.10)."""
     cell = CELLS[key]
     assert cell.T_min_charge_C == 0.0
     assert cell.T_min_discharge_C is not None and cell.T_min_discharge_C <= -20.0

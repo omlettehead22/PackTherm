@@ -354,6 +354,7 @@ def check_fitted_range(cell: Cell, load: ElectroThermalLoad, res, window_s: floa
 
 
 LOW_T_C_RATE = 0.05  # C, held over the window: below it, current in the cold isn't checked against the lower limits
+LOW_T_SLACK_K = 0.05  # K: a dip this small below a lower limit (it reads as the limit, to 0.1 K) is not reported (v0.6.10)
 
 
 def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30.0) -> list[str]:
@@ -399,12 +400,13 @@ def check_limits(cell: Cell, load: ElectroThermalLoad, res, window_s: float = 30
     chg, dis = held <= -LOW_T_C_RATE, held >= LOW_T_C_RATE
     T_low_chg = float(T_cold[chg].min()) if chg.any() else np.inf
     T_low_dis = float(T_cold[dis].min()) if dis.any() else np.inf
-    if cell.T_min_charge_C is not None and T_low_chg < cell.T_min_charge_C:
+    # A cell charging at its limit can dip a few hundredths below it (entropic cooling): not a breach.
+    if cell.T_min_charge_C is not None and T_low_chg < cell.T_min_charge_C - LOW_T_SLACK_K:
         warnings.append(
             f"Charging at {T_low_chg:.1f} degC, below the {cell.T_min_charge_C:.0f} degC limit "
             "(below it, charging can plate lithium)."
         )
-    if cell.T_min_discharge_C is not None and T_low_dis < cell.T_min_discharge_C:
+    if cell.T_min_discharge_C is not None and T_low_dis < cell.T_min_discharge_C - LOW_T_SLACK_K:
         warnings.append(
             f"Discharging at {T_low_dis:.1f} degC, below the {cell.T_min_discharge_C:.0f} degC limit."
         )
