@@ -14,27 +14,27 @@ It answers questions like *"for this cell and this duty, should I use air, a col
 packtherm design M50 --duty roadtrip --t-env 35 --out-dir results/
 ```
 
-An LG M50 21700 pack (61 kWh, 96s35p) in a C-segment EV drives at 130 km/h from 90 % to 10 % charge on a 35 °C day, then rapid-charges at 0.7C to 80 %. Limits: peak 45 °C, 5 K inside the cell, ready again (back near ambient, PCM re-frozen) within 3 hours. **39 designs, 23 feasible** ([CSV](docs/examples/module_m50_roadtrip_130kmh_35c_designs.csv)):
+An LG M50 21700 pack (61 kWh, 96s35p) in a C-segment EV drives at 130 km/h from 90 % to 10 % charge on a 35 °C day, then rapid-charges at 0.7C to 80 %. Limits: peak 45 °C, 5 K inside the cell, ready again (back near ambient, PCM re-frozen) within 3 hours. **39 designs, 24 feasible** ([CSV](docs/examples/module_m50_roadtrip_130kmh_35c_designs.csv)):
 
 | Pick | Design | Hottest cell | Mass added | Fan, pump and chiller energy |
 |---|---|---|---|---|
 | Lightest | forced air, 0.3 g/s per cell | 40.4 °C | +1.8 % | 1.91 % of the energy moved |
-| Lowest energy | side ribbon, 0.02 g/s per cell, 3.5 mm gap | 42.5 °C | +7.2 % | 0.09 % |
-| Balanced | forced air, 0.3 g/s per cell | 40.4 °C | +1.8 % | 1.91 % |
+| Lowest energy | side ribbon, 0.02 g/s per cell, 3.5 mm gap, RT42 | 40.3 °C | +19.9 % | 0.09 % |
+| Balanced | side ribbon, 0.05 g/s per cell, 3.5 mm gap | 39.2 °C | +7.2 % | 0.14 % |
 
 ![Road-trip trade-off](docs/examples/module_m50_roadtrip_130kmh_35c_tradeoff.png)
 
 **What it shows**
-- **Liquid cooling costs very little to run.** About 0.1 % of the energy moved, mostly the radiator fan (the pump itself is under a fifth), against 1.9 % for the air design that passes. Air at half that flow (0.3 % of the energy) is feasible but fails the worst-case resistance check (45.6 °C), as does the lightest cold plate. The real choice is hardware mass against fan energy.
+- **Liquid cooling costs very little to run.** About 0.1 % of the energy moved, mostly the radiator fan (the pump itself is under a fifth), against 1.9 % for the air design that passes. Air at half that flow (0.3 % of the energy) is feasible but fails the worst-case resistance check (45.6 °C), and the lightest cold plate (0.02 g/s) now runs over the limit (45.4 °C). The real choice is hardware mass against fan energy.
 - **A PCM that melts below ambient is a liability.** At 35 °C, RT31 (melting at 31 °C) never re-freezes, so every RT31 design without a chiller fails on recovery. RT42 still works.
-- **A chiller holds every cell at 35 °C** but costs 1.7–2.8 % of the energy moved, about 20–30 times the cheapest liquid design without one. Its COP falls with ambient (about 3.0 at 35 °C), and heat leaking in from the hot day is charged to it.
+- **A chiller holds every cell at 35 °C** but costs 1.6–2.8 % of the energy moved, about 20–30 times the cheapest liquid design without one. Its COP falls with ambient (about 3.0 at 35 °C), and heat leaking in from the hot day is charged to it.
 - **An uncooled pack reaches 70 °C.** Inside a pack, an interior cell has nowhere to shed heat, so "natural cooling" does not exist.
 
-The same study on three back-to-back WLTC cycles ([chart](docs/examples/module_m50_wltc3_35c_tradeoff.png)) keeps every cooled design within 1.1 K of the 35 °C ambient, and even a sealed pack peaks at 38 °C: a 61 kWh pack sees mild C-rates on urban driving. **Thermal design is driven by motorway driving and rapid charging.**
+The same study on three back-to-back WLTC cycles ([chart](docs/examples/module_m50_wltc3_35c_tradeoff.png)) keeps every cooled design within 1.2 K of the 35 °C ambient, and even a sealed pack peaks at 38 °C: a 61 kWh pack sees mild C-rates on urban driving. **Thermal design is driven by motorway driving and rapid charging.**
 
 ### Inside the cell: why the 2D models matter
 
-A cold plate under the cell or a ribbon on one side cools the cell unevenly, so those designs are solved on 2D slices of the cell's share ([how](docs/figures/model_overview.svg)). At 1.5C the plate-cooled cell runs about 9 K hotter at the top than at the base. The same plate pulling a hot-soaked pack down to a 15 °C chiller opens a large gradient while it does so, which is why some chilled plate designs fail on unevenness.
+A cold plate under the cell or a ribbon on one side cools the cell unevenly, so those designs are solved on 2D slices of the cell's share ([how](docs/figures/model_overview.svg)). At 1.5C the plate-cooled cell runs about 8 K hotter at the top than at the base. The same plate pulling a hot-soaked pack down to a 15 °C chiller opens a large gradient while it does so, which is why some chilled plate designs fail on unevenness.
 
 ![Temperature fields](docs/figures/fields_2d.png)
 
@@ -50,16 +50,16 @@ LG M50 at a 1.5C full discharge, 25 °C, hex packing, 0.05 g/s coolant per cell 
 |---|---|---|---|---|---|---|
 | none | air | 91.0 °C | 91.0 °C | 0 K | 0 K | 0 |
 | forced air, 2 mm gap | air | 48.4 °C | 53.3 °C | 4.9 K | 2.2 K | 169 mW |
-| bottom plate | air | 49.2 °C | 56.9 °C | 7.7 K | **9.1 K** | 7.9 mW |
-| bottom plate | RT42-EG | 43.5 °C | 50.0 °C | 6.5 K | 10.4 K | 7.9 mW |
-| side ribbon, 3.5 mm gap | air | 36.4 °C | 48.7 °C | 12.3 K | 5.0 K | 7.9 mW |
-| side ribbon, 3.5 mm gap | RT31 | **35.2 °C** | **45.5 °C** | 10.3 K | 4.7 K | 7.9 mW |
+| bottom plate | air | 53.0 °C | 59.8 °C | 6.8 K | **8.2 K** | 4.7 mW |
+| bottom plate | RT42-EG | 45.3 °C | 52.1 °C | 6.8 K | 9.9 K | 4.7 mW |
+| side ribbon, 3.5 mm gap | air | **35.9 °C** | 48.8 °C | 13.0 K | 4.9 K | 4.7 mW |
+| side ribbon, 3.5 mm gap | RT31 | 34.8 °C | **45.6 °C** | 10.8 K | 4.7 K | 4.7 mW |
 
 At the M50's rated 1.5C, run continuously to empty, every one of these cells passes 45 °C somewhere (the cell's resistance measured in v0.6.9 doubled its heat), and the design study on this duty finds no feasible design ([results](docs/examples/module_m50_discharge_1.5c_25c_designs.csv)). The comparisons still hold:
 
-- **Side ribbon vs bottom plate for a 70 mm cell:** the ribbon runs about 13 K cooler at the inlet while touching a quarter of the can, and its in-cell spread is 5.0 K against 9.1 K. Pulling heat down the full height of the winding is slow, which is why tall cylindrical cells are usually side-cooled.
-- **The coolant warms up to 16 K along the channel** at this flow, so the outlet cell runs up to 12 K hotter than the inlet cell. PCM in the gaps narrows that spread (12.3 → 10.3 K with RT31, 7.9 K with RT42-EG).
-- **More flow mostly cuts how much the coolant warms:** the channels are laminar, so extra flow barely improves heat transfer at the can. On the road trip, 2.5 times the flow lowers the hottest cell by about 3 K for about twice the pump and fan energy.
+- **Side ribbon vs bottom plate for a 70 mm cell:** the ribbon runs about 17 K cooler at the inlet while touching a quarter of the can, and its in-cell spread is 4.9 K against 8.2 K. Pulling heat down the full height of the winding is slow, and since v0.6.12 the plate's coolant side is worked out from its channels: a 10 × 4 mm channel under half the footprint gives about 650 W/m²K per can base, where the ribbon's many small ports give about 1,950 per bonded strip (both had been an assumed 1,500). That is why tall cylindrical cells are usually side-cooled.
+- **The coolant warms up to 17 K along the channel** at this flow, so the outlet cell runs up to 13 K hotter than the inlet cell. PCM in the gaps narrows that spread (13.0 → 10.8 K with RT31, 8.4 K with RT42-EG).
+- **More flow mostly cuts how much the coolant warms:** the channels are laminar, so extra flow barely improves heat transfer at the can. On the road trip, 2.5 times the flow lowers the hottest cell by about 3 K for about 1.6 times the pump and fan energy.
 
 ## Validation
 
@@ -214,8 +214,10 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.8** | Fixes: cold drive cycles were cut to seconds in the fit (30T 25.7 mV, HG2 36.6 mV); hysteresis in two parts (the A123's warm profiles back to 4–7 mV); the HG2's hysteresis sign; notes where branch values aren't pinned; a slightly warm module in the cold no longer fails on recovery; no cold-charge warning for a moment's regen. The cold and charging from empty are still not fixed |
 | **v0.6.9** | The LG M50 against measured data with a core thermocouple: its circuit had half the real resistance, now scaled ×2.04 on measured pulses (1C voltage 114–146 → 18–40 mV, core 0.7–1.4 K); drive cycles 44 → 35 mV; a tenth of the radial conductivity ruled out; the M50's cold limits; earlier and lumped cell versions listed apart, for comparison only; the example studies re-run (the 1.5C discharge now has no feasible design) |
 | **v0.6.10** | Patch: cold limits for the PF and MJ1 (no warning before when charging them in the cold); no warning for a dip of hundredths of a kelvin below a limit |
-| **v0.6.11** (current) | The lumped model's slow losses (datasheet cells, the MJ1): heat from 22–64 % of the fitted circuits' to within −31 to +19 % (LFP −42 to +27 %); the M50's datasheet resistance now gives 8.0–8.4 K on the measured 1C tests against 8–10.4 K (was 5.5–5.9) |
-| v0.6.12 (next) | The cold capacity and charging from empty (BACKLOG item 7) |
+| **v0.6.11** | The lumped model's slow losses (datasheet cells, the MJ1): heat from 22–64 % of the fitted circuits' to within −31 to +19 % (LFP −42 to +27 %); the M50's datasheet resistance now gives 8.0–8.4 K on the measured 1C tests against 8–10.4 K (was 5.5–5.9) |
+| **v0.6.12** (current) | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
+| v0.6.13 (next) | Battery life from each design's temperatures (NREL BLAST-Lite's degradation models) |
+| v0.6.14–v0.6.17 | Optimised designs (pymoo); which inputs matter most (SALib); BPX cell files; the cold capacity and charging from empty (BACKLOG item 7) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
