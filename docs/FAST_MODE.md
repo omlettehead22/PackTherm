@@ -25,7 +25,7 @@ The electrical substeps keep a drive cycle's second-by-second current (and its d
 
 ## Speed and accuracy
 
-Measured on the three example studies (LG M50, 39 designs each, interior and edge cells at inlet and outlet, worst-case re-check), run one at a time on the same 2-core machine (v0.5.0; fast mode takes 21–46 s on them in v0.6.9):
+Measured on the three example studies (LG M50, 39 designs each, interior and edge cells at inlet and outlet, worst-case re-check), run one at a time on the same 2-core machine (v0.5.0; fast mode takes 22–47 s on them in v0.6.12):
 
 | Study | Normal | Fast | Speed-up |
 |---|---|---|---|
