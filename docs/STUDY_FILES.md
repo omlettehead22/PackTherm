@@ -63,7 +63,7 @@ DCIR_mOhm: 22
 
 [`examples/user_cell_mj1.yaml`](examples/user_cell_mj1.yaml) is the LG MJ1 written this way; it gives exactly the library MJ1's results. [`examples/user_cell_lfp_26650.yaml`](examples/user_cell_lfp_26650.yaml) is an LFP power cell (Lithium Werks / A123 ANR26650M1-B) from its datasheet.
 
-**Model.** The lumped resistance model, as for the library MJ1: heat from current and DC resistance, rising in the cold (Arrhenius) and at low charge, plus entropic heat. There is no voltage model, so no voltage cut-off and no constant-voltage charge taper: a charge runs at constant current to its target. Results are labelled "user-defined, lumped DCIR" and are less accurate than the validated cells.
+**Model.** The lumped resistance model, as for the library MJ1: heat from current and DC resistance, rising in the cold (Arrhenius) and at low charge, plus entropic heat. Since v0.6.11 it adds the slow losses a DC resistance misses (diffusion): under steady current they build over minutes to +88 % of the DC resistance (NMC and NCA; +160 % for LFP) and fade in rests, as tuned on the library's fitted cells. Without them a lumped model made 22–64 % of the fitted circuits' heat on a steady discharge; with them its heat is within −31 to +19 % of theirs (LFP −42 to +27 %) over steady, pulsed, drive and charge duties from −10 to 25 °C. Give the DC resistance over about 10 s (PackTherm's cells state theirs at 10 s, 1.5C, mid charge, 25 °C). There is no voltage model, so no voltage cut-off and no constant-voltage charge taper: a charge runs at constant current to its target. Results are labelled "user-defined, lumped DCIR" and are less accurate than the validated cells.
 
 | Key | Default | Meaning |
 |---|---|---|

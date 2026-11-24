@@ -16,6 +16,8 @@ const DERIVED: [string, string, (v: number) => string][] = [
   ["max_discharge_C", "Max discharge", (v) => `${v.toFixed(1)}C`],
   ["max_charge_C", "Max charge", (v) => `${v.toFixed(1)}C`],
   ["resistance_rise_at_0C", "Resistance at 0 °C", (v) => `×${v.toFixed(2)}`],
+  ["slow_resistance_share", "Slow losses (steady current)", (v) => `+${(v * 100).toFixed(0)} % of the DCIR`],
+  ["slow_time_constant_s", "Slow losses build over", (v) => `${(v / 60).toFixed(0)} min (time constant)`],
 ];
 
 interface Props {
@@ -82,7 +84,7 @@ export function CellPicker({ schema, cells, form, update, checkCell }: Props) {
               {lib.format}, {lib.capacity_Ah} Ah, {lib.V_nominal} V, {lib.mass_g.toFixed(1)} g, DC resistance{" "}
               {lib.DCIR_25C_mOhm.toFixed(0)} mΩ. Model: {lib.model}.
               {lib.group === "comparison" &&
-                " For comparison only: an earlier or simpler model of a library cell, which understates its heat. Design with the cell above it."}
+                " For comparison only: an earlier or simpler model of a library cell (a lumped one has no voltage limits, so no cut-off or charge taper). Design with the cell above it."}
             </p>
           )}
         </>

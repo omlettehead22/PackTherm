@@ -102,7 +102,7 @@ Near empty the scaled circuit drops too much: there the cells drop 1.7 times wha
 - **Drive cycles, never fitted on** (`check_m50_drive.py`, three cells, 8 h each of drive cycles up to 7.2 A with regen, CC-CV top-ups and rests, from full to about 16 % charge): **34–36 mV RMS** while current flows (the derived circuit: 44 mV). Most of what is left is the open-circuit curve, taken from the M50T's published table: at the end of long rests the circuit sits 15–35 mV below the cells. The file's temperatures carry no clock shared with its current, so these runs check the voltage only (the cells rise only a few kelvin).
 - **25 °C only.** The scale is checked at 25 °C; the circuit's temperature dependence is still the physics model's. The plain cell (VP016) rises 8.5 K and two of the instrumented cells about 10 K at the same current: the thermocouple in the core changes the cell a little.
 
-- **The lumped M50 (`M50-LUMPED`, the datasheet's 30 mΩ) makes about half the heat:** its surface rises 5.6–5.9 K on the 1C discharges against 8–10.4 K measured. Lumped models of the other library cells make 22–64 % of their circuits' heat on a constant discharge (BACKLOG item 2), so since v0.6.9 the lumped and derived variants are listed apart, for comparison only.
+- **The lumped M50 (`M50-LUMPED`, the datasheet's 30 mΩ) made about half the heat** (v0.6.9): its surface rose 5.5–5.9 K on the 1C discharges against 8–10.4 K measured. Lumped models of the other library cells made 22–64 % of their circuits' heat on a steady discharge, so the lumped and derived variants are listed apart, for comparison only. **Since v0.6.11** the lumped model carries slow losses tuned on the PF, 30T and HG2 circuits (`validation/tune_lumped_slow.py`, never on the M50): the lumped M50 rises 8.0–8.4 K, surface RMS 0.8–1.1 K (was 1.0–2.1), core 0.9–1.7 K (was 2.0–3.0). It is still low on the hottest three cells (10.1–10.4 K) and right on the others (8.0–8.5 K).
 
 Results: [`validation/m50_pulse_scale.json`](../validation/m50_pulse_scale.json), [`validation/m50_core_check.json`](../validation/m50_core_check.json), [`validation/m50_drive_check.json`](../validation/m50_drive_check.json).
 
@@ -144,6 +144,7 @@ python validation/prepare_m50_core.py /path/to/100cycles_dataTable.mat
 python validation/prepare_m50_rpt.py  /path/to/ShortTerm_RPT_dataTable.mat
 python validation/prepare_m50_drive.py /path/to/LoadProfile_dataTable.mat   # needs h5py
 python validation/check_m50_drive.py --json validation/m50_drive_check.json
+python validation/tune_lumped_slow.py --json validation/lumped_slow.json     # v0.6.11, about 20 min
 python validation/fit_m50_scale.py --json validation/m50_pulse_scale.json
 python validation/check_m50_core.py --json validation/m50_core_check.json   # rounded when committed
 python docs/figures/make_m50_measured.py

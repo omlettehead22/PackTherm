@@ -1,0 +1,251 @@
+{
+ "families": {
+  "NMC": {
+   "cells": [
+    "PF",
+    "30T",
+    "HG2"
+   ],
+   "fitted": {
+    "slow_share": 0.8845,
+    "slow_tau_s": 440.3418,
+    "slow_Ea_R": 25910.843
+   },
+   "used": {
+    "slow_share": 0.88,
+    "slow_tau_s": 440.0,
+    "slow_Ea_R": 26000.0
+   },
+   "lumped_over_circuit_without": {
+    "min": 0.325,
+    "max": 1.0499
+   },
+   "lumped_over_circuit_with": {
+    "min": 0.6907,
+    "max": 1.1885
+   },
+   "rms_log_error": {
+    "without": 0.4888,
+    "with": 0.124
+   },
+   "runs": {
+    "PF 0.5C 25 degC": 0.7669,
+    "PF 1C 25 degC": 0.8778,
+    "PF 2C 25 degC": 0.9696,
+    "PF pulses 25 degC": 0.9772,
+    "PF drive 25 degC": 1.1028,
+    "PF charge 0.5C 25 degC": 1.1253,
+    "PF 0.5C 10 degC": 0.8227,
+    "PF 1C 10 degC": 0.943,
+    "PF 2C 10 degC": 1.03,
+    "PF pulses 10 degC": 1.0959,
+    "PF drive 10 degC": 1.1636,
+    "PF charge 0.5C 10 degC": 1.1268,
+    "PF 0.5C 0 degC": 0.8301,
+    "PF 1C 0 degC": 0.9371,
+    "PF 2C 0 degC": 1.0292,
+    "PF pulses 0 degC": 1.1336,
+    "PF drive 0 degC": 1.0837,
+    "PF charge 0.5C 0 degC": 1.0522,
+    "PF 0.5C -10 degC": 0.8027,
+    "PF 1C -10 degC": 0.9099,
+    "PF 2C -10 degC": 1.0073,
+    "PF pulses -10 degC": 1.1775,
+    "PF drive -10 degC": 0.9317,
+    "30T 0.5C 25 degC": 0.797,
+    "30T 1C 25 degC": 0.8293,
+    "30T 2C 25 degC": 0.8605,
+    "30T pulses 25 degC": 0.9069,
+    "30T drive 25 degC": 1.0029,
+    "30T charge 0.5C 25 degC": 0.9626,
+    "30T 0.5C 10 degC": 0.7023,
+    "30T 1C 10 degC": 0.903,
+    "30T 2C 10 degC": 1.0512,
+    "30T pulses 10 degC": 1.0115,
+    "30T drive 10 degC": 1.1787,
+    "30T charge 0.5C 10 degC": 1.0883,
+    "30T 0.5C 0 degC": 0.7662,
+    "30T 1C 0 degC": 0.86,
+    "30T 2C 0 degC": 0.9271,
+    "30T pulses 0 degC": 0.8841,
+    "30T drive 0 degC": 0.8564,
+    "30T charge 0.5C 0 degC": 0.9541,
+    "30T 0.5C -10 degC": 0.6907,
+    "30T 1C -10 degC": 0.8208,
+    "30T 2C -10 degC": 0.9207,
+    "30T pulses -10 degC": 0.8338,
+    "30T drive -10 degC": 0.7373,
+    "HG2 0.5C 25 degC": 0.8102,
+    "HG2 1C 25 degC": 0.8569,
+    "HG2 2C 25 degC": 0.8793,
+    "HG2 pulses 25 degC": 1.0408,
+    "HG2 drive 25 degC": 0.9518,
+    "HG2 charge 0.5C 25 degC": 0.8748,
+    "HG2 0.5C 10 degC": 1.0105,
+    "HG2 1C 10 degC": 1.0099,
+    "HG2 2C 10 degC": 0.9845,
+    "HG2 pulses 10 degC": 1.1772,
+    "HG2 drive 10 degC": 1.0542,
+    "HG2 charge 0.5C 10 degC": 1.0663,
+    "HG2 0.5C 0 degC": 1.067,
+    "HG2 1C 0 degC": 1.0679,
+    "HG2 2C 0 degC": 1.0362,
+    "HG2 pulses 0 degC": 1.1885,
+    "HG2 drive 0 degC": 1.0492,
+    "HG2 charge 0.5C 0 degC": 1.1287,
+    "HG2 0.5C -10 degC": 1.0141,
+    "HG2 1C -10 degC": 1.1392,
+    "HG2 2C -10 degC": 1.1884,
+    "HG2 pulses -10 degC": 1.1269,
+    "HG2 drive -10 degC": 0.9815
+   }
+  },
+  "LFP": {
+   "cells": [
+    "A123"
+   ],
+   "fitted": {
+    "slow_share": 1.5782,
+    "slow_tau_s": 254.3724,
+    "slow_Ea_R": 35833.7102
+   },
+   "used": {
+    "slow_share": 1.6,
+    "slow_tau_s": 250.0,
+    "slow_Ea_R": 36000.0
+   },
+   "lumped_over_circuit_without": {
+    "min": 0.1608,
+    "max": 0.6794
+   },
+   "lumped_over_circuit_with": {
+    "min": 0.5776,
+    "max": 1.2748
+   },
+   "rms_log_error": {
+    "without": 0.973,
+    "with": 0.2224
+   },
+   "runs": {
+    "A123 0.5C 25 degC": 0.5776,
+    "A123 1C 25 degC": 0.8229,
+    "A123 2C 25 degC": 1.062,
+    "A123 pulses 25 degC": 0.8539,
+    "A123 drive 25 degC": 0.8079,
+    "A123 charge 0.5C 25 degC": 0.7205,
+    "A123 0.5C 10 degC": 0.7713,
+    "A123 1C 10 degC": 1.0455,
+    "A123 2C 10 degC": 1.2748,
+    "A123 pulses 10 degC": 1.0057,
+    "A123 drive 10 degC": 0.9515,
+    "A123 charge 0.5C 10 degC": 1.0798,
+    "A123 0.5C 0 degC": 0.8086,
+    "A123 1C 0 degC": 1.0542,
+    "A123 2C 0 degC": 1.2381,
+    "A123 pulses 0 degC": 0.9182,
+    "A123 drive 0 degC": 0.8905,
+    "A123 charge 0.5C 0 degC": 1.0861,
+    "A123 0.5C -10 degC": 0.7413,
+    "A123 1C -10 degC": 0.9271,
+    "A123 2C -10 degC": 1.0495,
+    "A123 pulses -10 degC": 0.7646,
+    "A123 drive -10 degC": 0.6295
+   }
+  }
+ },
+ "check_m50_circuit": {
+  "M50 0.5C 25 degC": 1.0372,
+  "M50 1C 25 degC": 1.0573,
+  "M50 2C 25 degC": 1.0782,
+  "M50 pulses 25 degC": 1.1357,
+  "M50 drive 25 degC": 0.9999,
+  "M50 charge 0.5C 25 degC": 1.1459,
+  "M50 0.5C 10 degC": 1.0167,
+  "M50 1C 10 degC": 1.0838,
+  "M50 2C 10 degC": 1.1261,
+  "M50 pulses 10 degC": 1.2794,
+  "M50 drive 10 degC": 1.0423,
+  "M50 charge 0.5C 10 degC": 1.1047,
+  "M50 0.5C 0 degC": 1.0022,
+  "M50 1C 0 degC": 1.0888,
+  "M50 2C 0 degC": 1.0805,
+  "M50 pulses 0 degC": 1.3687,
+  "M50 drive 0 degC": 1.0655,
+  "M50 charge 0.5C 0 degC": 1.0706,
+  "M50 0.5C -10 degC": 0.9815,
+  "M50 1C -10 degC": 1.0612,
+  "M50 2C -10 degC": 1.012,
+  "M50 pulses -10 degC": 1.4215,
+  "M50 drive -10 degC": 1.0866
+ },
+ "check_m50_measured": [
+  {
+   "test": "VP010_cycle2",
+   "surface_rise_meas_K": 10.4,
+   "no branch: surface_rise_K": 5.5938,
+   "no branch: surface_rmse_K": 2.0681,
+   "no branch: core_rmse_K": 2.613,
+   "branch: surface_rise_K": 8.0845,
+   "branch: surface_rmse_K": 1.0327,
+   "branch: core_rmse_K": 1.3266
+  },
+  {
+   "test": "VP010_cycle3",
+   "surface_rise_meas_K": 10.2,
+   "no branch: surface_rise_K": 5.5441,
+   "no branch: surface_rmse_K": 2.0277,
+   "no branch: core_rmse_K": 2.5676,
+   "branch: surface_rise_K": 8.0354,
+   "branch: surface_rmse_K": 0.9994,
+   "branch: core_rmse_K": 1.2852
+  },
+  {
+   "test": "VP011_cycle2",
+   "surface_rise_meas_K": 10.3,
+   "no branch: surface_rise_K": 5.8723,
+   "no branch: surface_rmse_K": 2.0501,
+   "no branch: core_rmse_K": 3.0082,
+   "branch: surface_rise_K": 8.3638,
+   "branch: surface_rmse_K": 1.0459,
+   "branch: core_rmse_K": 1.6739
+  },
+  {
+   "test": "VP011_cycle3",
+   "surface_rise_meas_K": 10.1,
+   "no branch: surface_rise_K": 5.8532,
+   "no branch: surface_rmse_K": 2.0148,
+   "no branch: core_rmse_K": 2.9762,
+   "branch: surface_rise_K": 8.3428,
+   "branch: surface_rmse_K": 1.0229,
+   "branch: core_rmse_K": 1.6472
+  },
+  {
+   "test": "VP012_cycle2",
+   "surface_rise_meas_K": 8.0,
+   "no branch: surface_rise_K": 5.7661,
+   "no branch: surface_rmse_K": 1.0087,
+   "no branch: core_rmse_K": 2.0306,
+   "branch: surface_rise_K": 8.2538,
+   "branch: surface_rmse_K": 0.8063,
+   "branch: core_rmse_K": 0.8683
+  },
+  {
+   "test": "VP012_cycle3",
+   "surface_rise_meas_K": 8.0,
+   "no branch: surface_rise_K": 5.7513,
+   "no branch: surface_rmse_K": 1.0089,
+   "no branch: core_rmse_K": 2.0334,
+   "branch: surface_rise_K": 8.2379,
+   "branch: surface_rmse_K": 0.81,
+   "branch: core_rmse_K": 0.8702
+  },
+  {
+   "test": "VP016_cycle2",
+   "surface_rise_meas_K": 8.5,
+   "no branch: surface_rise_K": 5.7752,
+   "no branch: surface_rmse_K": 1.1015,
+   "branch: surface_rise_K": 8.2352,
+   "branch: surface_rmse_K": 0.7579
+  }
+ ]
+}

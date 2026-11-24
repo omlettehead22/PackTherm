@@ -84,3 +84,42 @@ def test_drive_cycles_it_never_saw():
     assert lib["rms_mV_under_current"] < 40.0 < old["rms_mV_under_current"]
     # Most of what is left is the open-circuit curve: the circuit sits 15-35 mV low at rest.
     assert all(-40.0 < e < -10.0 for e in lib["rest_end_errors_mV"])
+
+
+def test_the_lumped_slow_branch_is_the_tuned_one():
+    """cells.LUMPED_SLOW holds tune_lumped_slow.py's result, rounded (v0.6.11)."""
+    import json
+
+    from packtherm.cells import LUMPED_SLOW
+
+    res = json.loads((VALIDATION / "lumped_slow.json").read_text())["families"]
+    for fam, used in LUMPED_SLOW.items():
+        fitted = res[fam]["fitted"]
+        assert used["slow_share"] == pytest.approx(fitted["slow_share"], rel=0.02)
+        assert used["slow_tau_s"] == pytest.approx(fitted["slow_tau_s"], rel=0.02)
+        assert used["slow_Ea_R"] == pytest.approx(fitted["slow_Ea_R"], rel=0.02)
+        assert res[fam]["lumped_over_circuit_with"]["min"] > 0.55
+        assert res[fam]["lumped_over_circuit_with"]["max"] < 1.3
+
+
+def test_the_lumped_m50_on_a_measured_discharge(core):
+    """The datasheet's 30 mOhm with the slow branch, never tuned on the M50: within 1 K of the
+    measured surface rise on VP012 (was 2.2 K short), and the core within 1 K RMS."""
+    from dataclasses import replace
+
+    from packtherm.cells import params_for_cell
+    from packtherm.electrothermal import ElectroThermalLoad
+    from packtherm.model import simulate
+
+    test = core.load("VP012_cycle2")
+    rec = test["rec"]
+    t = rec.t - rec.t[0]
+    cell = CELLS["M50-LUMPED"]
+    P = params_for_cell(cell, pcm_thickness=0.0, case_thickness=0.0)
+    P = P.with_(T_initial=float(rec.temperature_C[0]) + 273.15, solver=replace(P.solver, dt=2.0, store_every=10**6))
+    load = ElectroThermalLoad(cell, lambda x: float(np.interp(x, t, rec.current_A)), soc0=1.0)
+    res = simulate(P, duration=float(t[-1]), h=H, T_env=test["ambient_C"] + 273.15, load=load)
+    rise = float(np.interp(t, res.t, res.T_surface - 273.15).max() - test["ambient_C"])
+    assert abs(rise - (rec.temperature_C.max() - test["ambient_C"])) < 1.0
+    core_T = np.interp(t, res.t, res.T_max - 273.15)
+    assert float(np.sqrt(np.nanmean((core_T - test["core"]) ** 2))) < 1.0

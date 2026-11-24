@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.11
+
+The lumped model's slow losses: datasheet cells and the MJ1 make about the right heat.
+
+- **Changed: lumped cells add slow losses.** A DC resistance read over seconds misses the losses that keep building over minutes (diffusion): on a steady discharge a lumped model made 22–64 % of the fitted circuit's heat. The lumped model now carries a slow branch, a first-order overpotential that under steady current builds to +88 % of the DC resistance with a 7-minute time constant (NMC and NCA; LFP: +160 %, 4 minutes) and fades in rests. It has its own temperature dependence (26 kJ/mol; LFP 36).
+- **How it was set:** tuned so lumped models of the PF, 30T and HG2 (NMC/NCA) and of the A123 (LFP), from their 10 s DC resistance, make the heat of their fitted circuits over steady discharges (0.5–2C), 2C pulses, a measured drive cycle and a 0.5C charge at 25 to −10 °C (`validation/tune_lumped_slow.py`). Lumped heat over circuit heat moved from 0.33–1.05 to 0.69–1.19 (NMC/NCA) and from 0.16–0.68 to 0.58–1.27 (LFP).
+- **Checked, never tuned on:**
+  - The M50's circuit: 0.98–1.42 (above 1.15 only on 2C pulses).
+  - The M50's measured 1C discharges, with the datasheet's 30 mΩ: surface rise 8.0–8.4 K against 8–10.4 K measured (was 5.5–5.9); surface RMS 0.8–1.1 K (was 1.0–2.1); core 0.9–1.7 K (was 2.0–3.0).
+- **Who it changes:** user-defined datasheet cells (by their chemistry), the MJ1 and the lumped comparison versions. Circuit cells (the M50, PF, 30T, HG2, A123 and fitted cell files) are unchanged, and so are the example studies. A datasheet cell's summary (`packtherm cells my_cell.yaml`, the web app) shows the slow losses.
+- **Tests:** hand calculations for the branch (energy held at a constant current; its decay in a rest).
+
 ## 0.6.10
 
 A small patch from a check of every library cell after v0.6.9 (discharges at 0.2–2C from −20 to 40 °C, charges at 0.3–0.7C from 0 to 40 °C, and fast studies of every duty type at −10, 0, 25 and 40 °C: no errors, results as expected).
