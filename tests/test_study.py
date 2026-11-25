@@ -130,10 +130,10 @@ def test_every_key_is_documented():
     """docs/STUDY_FILES.md names every key the format accepts."""
     from pathlib import Path
 
-    from packtherm.study import SECTIONS, TOP_KEYS
+    from packtherm.study import SEARCH_KEYS, SECTIONS, TOP_KEYS
 
     doc = (Path(__file__).resolve().parents[1] / "docs" / "STUDY_FILES.md").read_text(encoding="utf-8")
-    for name, keys in {"": TOP_KEYS, **SECTIONS}.items():
+    for name, keys in {"": TOP_KEYS, **SECTIONS, "search": SEARCH_KEYS}.items():
         if name:
             assert f"## `{name}`" in doc, name
         for k in keys:

@@ -30,7 +30,7 @@ Open items as of v0.6.9, ranked within each group by how much they could change 
 18. **Cost objective (£/pack):** PCM £/kg, cooling hardware, chiller.
 19. **Cold climate:** pre-heating energy and cold-start limits, not just cooling.
 20. **Speed.** Fast mode (v0.5.0) runs the road-trip study in about 40 s on two cores, against about 3 minutes in normal mode. Not yet done: adaptive time steps (long steady cruise and rest periods would allow much longer steps), stopping a simulation once the cell has recovered, and compiled inner loops (Numba). A design is four cell simulations in a Python time loop, so more cores help directly.
-21. **Search instead of grid** once the design variables multiply (NSGA-II or Bayesian optimisation).
+21. **Search instead of grid.** Since v0.6.14 a study can search (pymoo's NSGA-II for mixed variables) with flows, gap and chiller set-point as ranges. Left: the search runs in fast mode, so a design near a limit can rank differently in normal mode (the best are re-run in normal mode, but one the search ranked out is not); the web app and the API don't offer it yet; geometry (channel shape, ribbon ports, cell pitch beyond the gap) is not a variable; and a budget of a few hundred designs is minutes on two cores, so Bayesian optimisation would suit larger spaces.
 22. **Uncertainty:** Monte Carlo over the assumptions instead of a single worst case.
 23. **Assumption registry.** Since v0.5.1 a results JSON carries the main assumptions (reference flows and pressure drops, efficiencies, chiller, wall, pack parts, resolution). Not yet: the cell-model and material values, and the CSV on its own carries none.
 

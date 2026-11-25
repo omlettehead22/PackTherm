@@ -106,6 +106,8 @@ def check_study(doc_json: str) -> str:
 
     try:
         _spec, study, designs = _build(doc_json)
+        if _spec.is_search:
+            return _error("Search runs from the command line (packtherm run), not in the browser yet.")
     except StudyError as e:
         lines = str(e).splitlines()
         return _error("Invalid study", [x.strip() for x in lines[1:]] or [str(e)])

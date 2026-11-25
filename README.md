@@ -113,6 +113,8 @@ packtherm module M50 --compare --duty roadtrip --t-env 35 --edge   # cells on th
 pytest -q
 ```
 
+**Searching instead of a grid** (v0.6.14). Add a `search:` section to a study and its flows, gap and chiller set-point become ranges: pymoo's NSGA-II looks for the lightest and least energy-hungry designs that meet every limit, judging them at worst-case resistance so they survive the picks' re-check, then runs the best again in normal mode. It needs the search extra (`pip install "packtherm[search]"`) and runs from the command line; every key is in [docs/STUDY_FILES.md](docs/STUDY_FILES.md#search). On the 35 °C road trip ([study](docs/examples/m50_roadtrip_35c_search.yaml), 172 designs simulated, about 6 minutes on two cores) it found forced air at 0.246 g/s that needs 0.43 % of the energy moved for its fan, where the grid's best air design needs 1.91 %, and a ribbon at 0.032 g/s at 0.10 % (the grid's: 0.14 %). Much of the air design's gain comes from a wider gap (3.5 mm against 2): less pressure drop for no added mass, but the module is about 50 % larger by volume instead of 32 %. A search optimises what it is given, so add `volume` to its objectives when the gap is free.
+
 **Your own cell.** Describe a cylindrical NMC, NCA or LFP cell from its datasheet in a small YAML file, then use the file wherever a cell name goes. Mistakes such as mass in kg or resistance in ohms are caught before anything runs. Every key is in [docs/STUDY_FILES.md](docs/STUDY_FILES.md#user-defined-cells).
 
 ```yaml
@@ -218,9 +220,10 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.10** | Patch: cold limits for the PF and MJ1 (no warning before when charging them in the cold); no warning for a dip of hundredths of a kelvin below a limit |
 | **v0.6.11** | The lumped model's slow losses (datasheet cells, the MJ1): heat from 22–64 % of the fitted circuits' to within −31 to +19 % (LFP −42 to +27 %); the M50's datasheet resistance now gives 8.0–8.4 K on the measured 1C tests against 8–10.4 K (was 5.5–5.9) |
 | **v0.6.12** | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
-| **v0.6.13** (current) | Battery life: capacity left after 8 years of the duty once a day, from NREL's BLAST-Lite ageing models (copied in, BSD 3-clause), and an optional minimum. Road trip at 35 °C: 46–52 % sealed, 55–57 % for every cooled design that passes |
-| v0.6.14 (next) | Optimised designs (pymoo) |
-| v0.6.15–v0.6.17 | Which inputs matter most (SALib); BPX cell files; the cold capacity and charging from empty (BACKLOG item 7) |
+| **v0.6.13** | Battery life: capacity left after 8 years of the duty once a day, from NREL's BLAST-Lite ageing models (copied in, BSD 3-clause), and an optional minimum. Road trip at 35 °C: 46–52 % sealed, 55–57 % for every cooled design that passes |
+| **v0.6.14** (current) | Design search (pymoo's NSGA-II, an optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance; on the road trip, air at 0.43 % running energy where the grid's best needs 1.91 % (with a wider gap: more volume) |
+| v0.6.15 (next) | Which inputs matter most (SALib) |
+| v0.6.16–v0.6.17 | BPX cell files; the cold capacity and charging from empty (BACKLOG item 7) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
