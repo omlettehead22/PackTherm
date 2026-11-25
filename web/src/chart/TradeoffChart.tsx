@@ -308,6 +308,7 @@ const FAIL_WORDS: Record<string, string> = {
   slow: "slow to recover",
   spread: "cell-to-cell spread",
   short: "cell can't deliver the current",
+  ages: "loses too much capacity",
 };
 
 export const failWords = (reason: string) =>

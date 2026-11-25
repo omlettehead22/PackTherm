@@ -263,6 +263,12 @@ function PickCards({ picks, designs }: { picks: Pick[]; designs: Design[] }) {
                 <dt>Ready again in</dt>
                 <dd>{typeof p.recovery_min === "number" ? `${p.recovery_min.toFixed(0)} min` : "–"}</dd>
               </div>
+              {typeof p.capacity_after_pct === "number" && (
+                <div>
+                  <dt>Capacity after {fmt(p.life_years ?? 8, 0)} yr</dt>
+                  <dd>{p.capacity_after_pct.toFixed(0)} %</dd>
+                </div>
+              )}
             </dl>
             {p.robust === false && (
               <p className="pick-card__warn">
@@ -282,7 +288,7 @@ function PickCards({ picks, designs }: { picks: Pick[]; designs: Design[] }) {
   );
 }
 
-type SortKey = "design" | "T_peak_C" | "dT_cell_C" | "cell_to_cell_K" | "recovery_min" | "mass_overhead_pct" | "aux_energy_pct" | "feasible";
+type SortKey = "design" | "T_peak_C" | "dT_cell_C" | "cell_to_cell_K" | "recovery_min" | "mass_overhead_pct" | "aux_energy_pct" | "capacity_after_pct" | "feasible";
 
 const COLUMNS: { key: SortKey; label: string; unit?: string; digits?: number }[] = [
   { key: "design", label: "Design" },
@@ -292,6 +298,7 @@ const COLUMNS: { key: SortKey; label: string; unit?: string; digits?: number }[]
   { key: "recovery_min", label: "Ready again", unit: "min", digits: 0 },
   { key: "mass_overhead_pct", label: "Mass added", unit: "%" },
   { key: "aux_energy_pct", label: "Running energy", unit: "%", digits: 2 },
+  { key: "capacity_after_pct", label: "Capacity left", unit: "%", digits: 0 },
   { key: "feasible", label: "Result" },
 ];
 

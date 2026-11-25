@@ -26,7 +26,7 @@ Open items as of v0.6.9, ranked within each group by how much they could change 
 16. **Pack-level parts** (liquid loop 3 kg, air system 4 kg, chiller 4 kg) are assumptions.
 
 ## Advisor and product
-17. **Ageing as a third objective.** Temperature drives calendar and cycle ageing. Scoring designs on predicted capacity fade would show what "hotter but lighter" costs in battery life. Probably the highest-value product feature.
+17. **Ageing.** Since v0.6.13 every design reports the capacity left after `life_years` (NREL's BLAST-Lite models, copied in) and can be limited on it. Left: the cell's temperature for ageing is the mean of its hottest and coolest points (not a volume average); the day repeats the hot-day study every day (no climate year); BLAST-Lite has models for the M50 and MJ1 only among the library cells, so the 30T, HG2, PF, A123 and user cells use a stand-in by chemistry; and ageing does not feed back into the resistance during the study. Not yet an objective on the trade-off chart.
 18. **Cost objective (£/pack):** PCM £/kg, cooling hardware, chiller.
 19. **Cold climate:** pre-heating energy and cold-start limits, not just cooling.
 20. **Speed.** Fast mode (v0.5.0) runs the road-trip study in about 40 s on two cores, against about 3 minutes in normal mode. Not yet done: adaptive time steps (long steady cruise and rest periods would allow much longer steps), stopping a simulation once the cell has recovered, and compiled inner loops (Numba). A design is four cell simulations in a Python time loop, so more cores help directly.
