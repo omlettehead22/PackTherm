@@ -494,9 +494,16 @@ def _run(args) -> None:
 
     spec = load_study(args.study)
     study = spec.build()
-    n = len(study.designs())
     label = f" ({spec.spec['name']})" if spec.spec.get("name") else ""
-    print(f"{args.study}{label}: {n} module design{'s' if n != 1 else ''}, {study.mode} mode...")
+    if spec.is_search:
+        se = spec.spec["search"]
+        print(
+            f"{args.study}{label}: searching up to {se['evaluations']} module designs in {se['mode']} mode, "
+            f"the best run again in {study.mode} mode..."
+        )
+    else:
+        n = len(study.designs())
+        print(f"{args.study}{label}: {n} module design{'s' if n != 1 else ''}, {study.mode} mode...")
     run = spec.run(workers=args.workers)
     print(run.result.summary())
     print(f"({run.elapsed_s:.0f}s)")

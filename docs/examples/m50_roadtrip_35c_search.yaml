@@ -1,0 +1,22 @@
+# The road trip of m50_roadtrip_35c.yaml, searched instead of gridded (v0.6.14).
+# Needs the search extra: pip install "packtherm[search]". Then: packtherm run this file.
+# In a search the numeric lists are ranges: any flow, gap and chiller set-point
+# between the smallest and largest listed. Cooling types and fillers stay choices.
+packtherm_study: 1
+name: M50 road trip, 35 degC, searched
+cell: M50
+ambient_C: 35
+duty:
+  type: roadtrip
+  speed_kmh: 130
+design_space:
+  topologies: [none, air, bottom, ribbon]
+  air_flows_g_s: [0.1, 0.6]
+  coolant_flows_g_s: [0.01, 0.08]
+  chiller_C: [10, 30]
+  fillers: [none, RT31, RT42, RT31-EG]
+  gaps_mm: [1, 4]
+search:
+  evaluations: 200
+  population: 20
+  seed: 1

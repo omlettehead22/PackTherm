@@ -167,6 +167,18 @@ TOP_KEYS = {
     "ambient_C": (NUM, 25.0, None),
 }
 SECTIONS = {"duty": DUTY_KEYS, "requirements": REQ_KEYS, "design_space": SPACE_KEYS, "options": OPTION_KEYS}
+# v0.6.14: an optional section. With it the study searches the design space (packtherm.search,
+# needs the pymoo extra) instead of simulating the grid. Left out of a study without it, so
+# grid studies and their results read as before; the web app does not offer it yet.
+SEARCH_KEYS = {
+    "evaluations": (int, 200, _rule(min=10)(lambda x: None if x >= 10 else "must be at least 10")),
+    "population": (int, 20, _rule(min=4)(lambda x: None if x >= 4 else "must be at least 4")),
+    "seed": (int, 1, None),
+    "mode": (str, "fast", _choice("normal", "fast")),
+    "final_designs": (int, 12, _rule(min=1)(lambda x: None if x >= 1 else "must be at least 1")),
+    "objectives": (list, ["mass", "energy"], None),  # checked below
+    "worst_case": (bool, True, None),
+}
 
 
 def _type_ok(value, types) -> bool:
@@ -233,7 +245,7 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
     errors: list[str] = []
     if not isinstance(doc, dict):
         raise StudyError("A study must be a mapping of keys to values (YAML or a JSON object).")
-    top = {k: v for k, v in doc.items() if k not in SECTIONS}
+    top = {k: v for k, v in doc.items() if k not in SECTIONS and k != "search"}
     spec = _check_section(top, TOP_KEYS, "", errors)
     for k in ("packtherm_study", "cell"):
         if k not in doc:
@@ -275,6 +287,25 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
             errors.append(f"{name}: must be a mapping")
             sec = {}
         spec[name] = _check_section(sec, keys, f"{name}.", errors)
+
+    if "search" in doc:
+        sec = doc["search"] if doc["search"] is not None else {}
+        if not isinstance(sec, dict):
+            errors.append("search: must be a mapping")
+            sec = {}
+        spec["search"] = _check_section(sec, SEARCH_KEYS, "search.", errors)
+        objs = spec["search"].get("objectives")
+        if isinstance(objs, list):
+            allowed = ("mass", "energy", "volume", "life")
+            if not objs:
+                errors.append("search.objectives: must not be empty")
+            for i, o in enumerate(objs):
+                if o not in allowed:
+                    errors.append(f"search.objectives[{i}]: one of {', '.join(allowed)}, got {o!r}")
+            if len(set(map(str, objs))) < len(objs):
+                errors.append("search.objectives: each objective once")
+        if spec["search"].get("population", 0) > spec["search"].get("evaluations", 0):
+            errors.append("search.population: must not be more than search.evaluations")
 
     duty, raw_duty = spec["duty"], doc.get("duty") or {}
     if isinstance(raw_duty, dict):
@@ -464,7 +495,7 @@ def file_stem(spec: dict) -> str:
         stem = f"{cell}_roadtrip_{d['speed_kmh']:g}kmh"
     else:
         stem = f"{cell}_segments"
-    stem = f"module_{stem}_{spec['ambient_C']:g}C"
+    stem = f"module_{stem}_{spec['ambient_C']:g}C" + ("_search" if "search" in spec else "")
     return re.sub(r"_+", "_", re.sub(r"[^a-z0-9_.]+", "_", stem.lower()))
 
 
@@ -520,6 +551,17 @@ class StudySpec:
             mode=s["mode"],
         )
 
+    @property
+    def is_search(self) -> bool:
+        return "search" in self.spec
+
+    def search_settings(self):
+        from .search import SearchSettings
+
+        se = dict(self.spec["search"])
+        se["objectives"] = tuple(se["objectives"])
+        return SearchSettings(**se)
+
     def cell(self):
         """The study's cell (a library cell, or the user-defined one)."""
         from .cells import get_cell
@@ -541,7 +583,12 @@ class StudySpec:
 
         study = self.build()
         t0 = time.perf_counter()
-        result = run_module_study(study, workers=workers, progress=progress)
+        if self.is_search:
+            from .search import run_module_search
+
+            result = run_module_search(study, self.search_settings(), workers=workers, progress=progress)
+        else:
+            result = run_module_study(study, workers=workers, progress=progress)
         return StudyRun(self, study, result, time.perf_counter() - t0)
 
 
@@ -593,6 +640,7 @@ class StudyRun:
             + list(res.notes())
             + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
             "assumptions": _assumptions(st),
+            **({"search": _search_block(res.search)} if getattr(res, "search", None) is not None else {}),
             "designs": [_row(r) for _, r in t.iterrows()],
         }
 
@@ -610,6 +658,9 @@ class StudyRun:
         }
         paths["json"].write_text(json.dumps(self.to_json(), indent=1, allow_nan=False), encoding="utf-8")
         self.result.table.to_csv(paths["csv"], index=False)
+        if getattr(self.result, "search", None) is not None:  # every design the search simulated
+            paths["search"] = out / f"{stem}_simulated.csv"
+            self.result.search.history.to_csv(paths["search"], index=False)
         plot_tradeoff(self.result, paths["chart"])
         return paths
 
@@ -623,6 +674,19 @@ def _num(x):
     if isinstance(x, float) and not math.isfinite(x):
         return None
     return x
+
+
+def _search_block(log) -> dict:
+    """How a search ran (v0.6.14); its designs are in the search CSV."""
+    return {
+        "method": "NSGA-II for mixed variables (pymoo)",
+        "settings": dict(vars(log.settings)),
+        "simulated": len(log.history),
+        "asked": log.evaluations,
+        "generations": log.generations,
+        "judged_at_worst_case": log.worst_case,
+        "feasible_found": int(log.history.feasible.sum()) if len(log.history) else 0,
+    }
 
 
 def _row(row) -> dict:

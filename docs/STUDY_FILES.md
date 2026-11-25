@@ -163,6 +163,26 @@ Every combination is simulated (ribbons widen to their minimum gap; duplicates a
 
 Each design gets `capacity_after_pct`: the capacity left after `life_years`, from NREL's BLAST-Lite ageing models (BSD 3-clause, copied into PackTherm). One day is the duty as simulated (state of charge, and the cell's mean temperature: halfway between its hottest and coolest points), then parked at `life_park_C` and the state of charge it ended at for the rest of 24 h; that day repeats every day. The LG M50 and MJ1 have their own models; the other cells use the closest model by chemistry (Panasonic 18650B for NCA, Sony-Murata 26650 for LFP, the M50 for other NMC) and `life_model` says it is a stand-in. Use it to compare designs: a hot-day study makes every day hot, so as an absolute life it is pessimistic.
 
+## `search`
+
+From v0.6.14. Optional: with this section the study searches the design space instead of simulating every combination. It needs the search extra (`pip install "packtherm[search]"`, which installs pymoo) and runs from the command line (`packtherm run`); the web app and the API refuse it for now.
+
+In a search the design space's numeric lists are ranges: any flow between the smallest and largest listed (on a log scale, air and coolant separately), any gap between the smallest and largest (to 0.1 mm), and the chiller either off or at any set-point in its range below ambient (to 0.5 °C). A list with one value fixes it. Cooling types and fillers stay choices. pymoo's NSGA-II for mixed variables looks for the designs that do best on the objectives while meeting every limit in `requirements`; each design is simulated once, however often the search returns to it.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `evaluations` | 200 | Designs the search may ask for (≥ 10); repeats are not simulated again, so somewhat fewer are simulated |
+| `population` | 20 | Designs per generation (≥ 4, at most `evaluations`) |
+| `seed` | 1 | Random seed: the same seed gives the same search |
+| `mode` | `fast` | Resolution during the search |
+| `final_designs` | 12 | How many of the best designs (feasible ones by non-dominated rank, spread from lightest to heaviest) are run again at the study's own `mode` and the cell's resistance, then picked and re-checked at worst-case resistance as a grid study's are. With none feasible, the three nearest misses |
+| `objectives` | `[mass, energy]` | What the search minimises: `mass` (mass added), `energy` (fan, pump and chiller energy), `volume` (space taken between and around the cells) and `life` (capacity lost after `life_years`) |
+| `worst_case` | true | Judge designs at the worst-case resistance (the datasheet maximum plus `r_margin`) during the search, so that what it finds survives the picks' re-check; false: at the cell's resistance |
+
+A search optimises what it is given and nothing else. Wider gaps, for example, cut air and coolant pressure drop for no added mass but take space: add `volume` to the objectives when the gap is a variable.
+
+`packtherm run` names a search's files `<stem>_search_…`, so they sit beside the grid study's, and also writes `<stem>_search_simulated.csv`: every design the search simulated, in order, at the search's mode and resistance. The results document gains a `search` block (settings, designs simulated, generations, feasible designs found).
+
 ## Results document
 
 `packtherm run` writes `<stem>_results.json` next to the designs CSV and the chart (`<stem>` is the name `packtherm design` uses). Format `packtherm_results: 1`, strict JSON (NaN and infinities become `null`):

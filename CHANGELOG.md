@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.14
+
+Design search: instead of simulating every combination, a study can search the design space with pymoo's NSGA-II (an optional extra: `pip install "packtherm[search]"`).
+
+- **New: `packtherm/search.py`** and a study-file `search:` section. The design space's numeric lists become ranges: air and coolant flows on a log scale between the smallest and largest listed, the gap (to 0.1 mm) and the chiller (off, or a set-point to 0.5 °C below ambient). Cooling types and fillers stay choices. pymoo's `MixedVariableGA` with rank-and-crowding survival (NSGA-II for mixed variables) minimises the objectives (`mass` and `energy` by default; `volume` and `life` can be added) with one constraint per limit (peak, in-cell spread, recovery, cell-to-cell, delivery, capacity), each positive by how far it is missed and agreeing with `fail_reason`.
+- **Judged at worst-case resistance.** A first version searched at the cell's resistance: on a test study 11 of its 12 best designs then failed the picks' re-check. The search now simulates at the worst-case resistance (`worst_case: true`), then runs its best designs (`final_designs`, 12) again in the study's mode at the cell's resistance and makes the picks and re-check as a grid study does.
+- **Settings:** `evaluations` (200), `population` (20), `seed` (1: the same seed gives the same search), `mode` (`fast` during the search), `final_designs`, `objectives`, `worst_case`. A design the search returns to is not simulated again.
+- **Output:** a search writes `<stem>_search_…` files beside a grid study's, plus `<stem>_search_simulated.csv` with every design it simulated; the results document gains a `search` block, and a note says how it ran.
+- **Example** (`docs/examples/m50_roadtrip_35c_search.yaml`, 35 °C road trip): 172 designs simulated in about 6 minutes on two cores, all 12 re-run designs feasible, and the 3 on the trade-off front still pass at worst-case resistance.
+  - Lightest: air at 0.246 g/s with a 3.5 mm gap, 0.43 % running energy, where the grid's best air design (0.3 g/s, 2 mm) needs 1.91 %. The wider gap lowers the pressure drop for no added mass, but the module is about 50 % larger by volume instead of 32 %: add `volume` to the objectives when the gap is free.
+  - Balanced: a ribbon at 0.032 g/s, 0.10 % (the grid's 0.05 g/s ribbon: 0.14 %).
+  - Lowest energy: a ribbon at 0.028 g/s with RT42, 0.10 %. The grid's 0.02 g/s ribbon with RT42 needs 0.09 %: the search missed that corner.
+- **Where it runs:** the command line and Python. The web app's in-browser engine and the API refuse a study with a `search` section for now (pymoo's moocore is compiled and has no browser build, and a search is hundreds of simulations).
+- **Tests:** variables to designs by hand, constraints against `fail_reason`, the ranking of the best designs, a small search end to end (its picks robust, the search at worst case and the final rows at the cell's resistance), the study-file section, and the API and browser refusing it. The `dev` extra includes pymoo, so CI runs them.
+
 ## 0.6.13
 
 Battery life: each module design reports the capacity left after some years of its duty, from NREL's BLAST-Lite ageing models.

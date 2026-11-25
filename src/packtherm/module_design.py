@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field, replace
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
@@ -386,6 +386,7 @@ class ModuleStudyResult(StudyResult):
     mass_axis_label: ClassVar[str] = "Mass added per cell (filler + cooling hardware), % of cell mass"
     filler_axis_label: ClassVar[str] = "Filler between the cans"
     kind_names: ClassVar[dict[str, str]] = {"natural": "no cooling", "air": "forced air", "liquid": "liquid"}
+    search: Any = None  # packtherm.search.SearchLog when the designs came from a search (v0.6.14)
 
     def _chiller_text(self) -> str:
         s = self.study
@@ -441,6 +442,10 @@ class ModuleStudyResult(StudyResult):
                 f"NOTE: liquid pump power covers the whole loop ({liquid.pump_mW_per_cell.max():.1f} mW/cell at most) "
                 "and the radiator fan is charged at 3 % of the heat it rejects; chiller idle losses are not included."
             )
+        if self.search is not None:
+            from .search import search_note
+
+            out.append(search_note(self.search, self.study))
         return out
 
 
