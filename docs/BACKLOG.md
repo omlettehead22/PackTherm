@@ -14,7 +14,7 @@ Open items as of v0.6.9, ranked within each group by how much they could change 
 
 ## Module model
 8. **Roll-end-to-can resistance** (5e-4 m²K/W) dominates bottom-plate cooling and is the least certain value. A teardown or a bottom-cooling test would pin it down.
-9. **Reference flows and pressure drops are typical values, not a specific pack:** coolant 0.05 g/s per cell, h_ref 1500 W/m²K, module Δp 20 kPa plus loop 30 kPa, pump efficiency 0.3; air 0.3 g/s, h 30 W/m²K and Δp 200 Pa at a 2 mm gap. Only the scaling away from these points is physics (since v0.4.13: laminar coolant channels, cross-flow over the cans for air). The air correlation is used below its usual pitch range (pitch/diameter 1.1 against ≥ 1.25), and the ribbon's h_ref is not tied to its port geometry.
+9. **Reference flows and pressure drops:** since v0.6.12 the coolant's h and the module channels' pressure drop come from the channel shape, flow and glycol properties (ht, fluids), with assumed shapes (plate channels 10 × 4 mm under half the footprint; 21 ribbon ports of 1.7 × 2.15 mm) and 20 cells per coolant path. Still assumed: 0.05 g/s per cell as the flow reference for the rest of the loop (30 kPa), pump efficiency 0.3; air 0.3 g/s, h 30 W/m²K and Δp 200 Pa at a 2 mm gap (the air correlation is used below its usual pitch range, pitch/diameter 1.1 against ≥ 1.25). No measured cold plate checks the coolant side yet.
 10. **2D slices, not a 3D field.** The plate is solved in radius × height and the ribbon in radius × angle, separately. The ribbon displaces filler near the strip, but the angle model fills the full annulus.
 11. **Coolant holdup is one lump per cell**, not a transport delay, so a sharp inlet step arrives smeared rather than delayed.
 12. **Edge cells use an assumed wall** (U = 5 W/m²K over 1/3 of the share). With air gaps the wall is applied at the can, which slightly overstates the edge path. The chiller's heat leak and the edge wall are separate estimates of the same physics, and the leak is charged to the chiller but does not warm the cells.
@@ -75,3 +75,4 @@ Open items as of v0.6.9, ranked within each group by how much they could change 
 | v0.6.9 | LG M50 against measured data: resistance scaled to measured pulses, the core checked against a thermocouple inside the cell (item 1 narrowed, item 5 checked on one cell) |
 | v0.6.10 | Lower temperature limits for the PF and MJ1; no warning for a dip of hundredths of a kelvin below a limit |
 | v0.6.11 | The lumped model's slow losses (item 2): datasheet cells and the MJ1 make their fitted circuits' heat within −31 to +19 % (was 22–64 %) |
+| v0.6.12 | Coolant h and channel pressure drop from the channel shape (item 9) |

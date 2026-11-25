@@ -307,7 +307,11 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         "inlet_C": d.inlet_C if d.chilled else req.T_env_C,
         "h_W_m2K": getattr(module.cooling, "h", np.nan)
         if isinstance(module.cooling, AirFlow)
-        else (module.cooling.coolant.h if module.cooling is not None else 0.0),
+        else (
+            module.cooling.h_contact(cell, module.layout, module.cooling.coolant.property_T_C(req.T_env_C + KELVIN))
+            if module.cooling is not None
+            else 0.0
+        ),
         "filler": d.filler or "none",
         "pcm": filler,
         "pcm_melt_C": melt_midpoint_C(get_pcm(d.filler)) if d.filler else np.nan,

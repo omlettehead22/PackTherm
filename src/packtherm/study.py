@@ -629,9 +629,10 @@ def _assumptions(st) -> dict:
     return {
         "resolution": {k: v for k, v in vars(st.resolution).items()},
         "coolant": {
+            # v0.6.12: h and the module channels' pressure drop come from the channel shape
+            # (each design's h_W_m2K); these set the flow path and the rest of the loop.
+            "cells_per_channel": c.cells_per_channel,
             "flow_ref_g_s_per_cell": c.flow_ref_g_s,
-            "h_ref_W_m2K": c.h_ref,
-            "dp_module_ref_Pa": c.dp_ref_Pa,
             "dp_loop_ref_Pa": c.dp_loop_ref_Pa,
             "pump_efficiency": c.pump_efficiency,
             "radiator_fan_W_per_W": c.radiator_fan_W_per_W,

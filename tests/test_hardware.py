@@ -31,7 +31,7 @@ def test_cold_plate_by_hand():
     p = CELL.diameter + 2e-3
     A = math.sqrt(3) / 2 * p * p
     assert parts["aluminium"] == pytest.approx(RHO_AL * A * (1.5 + 1.0 * 1.1) * 1e-3)
-    assert parts["coolant"] == pytest.approx(1060 * A * 0.5 * 4e-3)
+    assert parts["coolant"] == pytest.approx(1062 * A * 0.5 * 4e-3)  # 50/50 glycol at 25 degC (v0.6.12)
     assert parts["interface"] == pytest.approx(2000 * A * 0.5e-3)
     assert parts["pack_share"] == pytest.approx(3.0 / N_CELLS)
     assert parts["total"] == pytest.approx(sum(v for k, v in parts.items() if k != "total"))
@@ -50,7 +50,7 @@ def test_ribbon_by_hand():
     a_al = 2 * (h + 2.5e-3) * 0.4e-3 + n_ribs * (2.5e-3 - 0.8e-3) * 0.35e-3
     length = (CELL.diameter + 3.5e-3) * 1.1 / 2
     assert parts["aluminium"] == pytest.approx(RHO_AL * a_al * length)
-    assert parts["coolant"] == pytest.approx(1060 * (h * 2.5e-3 - a_al) * length)
+    assert parts["coolant"] == pytest.approx(1062 * (h * 2.5e-3 - a_al) * length)
     bond = 0.25 * 2 * math.pi * CELL.radius * h * 0.5e-3
     assert parts["interface"] == pytest.approx(2000 * bond)
     # The ribbon sits in the gap, so a PCM filler gets less volume.

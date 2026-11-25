@@ -135,19 +135,41 @@ def test_chiller_hands_back_to_radiator():
     assert half.chiller_energy_Wh() < always.chiller_energy_Wh()
 
 
-def test_coolant_scaling():
-    """Laminar channels: h nearly flat with flow (plate 1/3 power, ribbon none)."""
-    c = Coolant()
-    c2 = replace(c, flow_g_s_per_cell=0.1)
-    assert c2.h == pytest.approx(c.h * 2 ** (1 / 3))  # alone: developing flow
-    plate = BottomPlate(coolant=c2)
-    ribbon = SideRibbon(coolant=c2)
-    assert plate.coolant.h == pytest.approx(1500.0 * 2 ** (1 / 3))
-    assert ribbon.coolant.h == pytest.approx(1500.0)  # fully developed in the ports
-    assert BottomPlate(coolant=Coolant(h_flow_exponent=0.8)).coolant.h_flow_exponent == 0.8  # explicit wins
+def test_coolant_h_comes_from_the_channel_shape():
+    """v0.6.12: laminar channels, so h hardly depends on flow; it depends on the channel's shape."""
+    lay = Layout("hex", 3.5)
+    plate, ribbon = BottomPlate(), SideRibbon()
+    for cool in (plate, ribbon):
+        f = cool.flow(LG_M50, lay, 25.0)
+        assert f.regime == "laminar" and 1.0 < f.Re < 300.0
+        doubled = replace(cool, coolant=replace(cool.coolant, flow_g_s_per_cell=0.1))
+        # Thermal entry only: under the 2^(1/3) = 1.26 of a Leveque (developing) law up to v0.6.11.
+        assert 1.0 <= doubled.h_contact(LG_M50, lay) / cool.h_contact(LG_M50, lay) < 1.15
+    # A 10 x 4 mm plate channel under half the footprint gives far less than the 1500 assumed up to v0.6.11;
+    # a ribbon's many small ports give more per bonded strip.
+    assert 500.0 < plate.h_contact(LG_M50, lay) < 900.0
+    assert 1500.0 < ribbon.h_contact(LG_M50, lay) < 2500.0
+    assert BottomPlate(coolant=Coolant(h_override=1234.0)).h_contact(LG_M50, lay) == 1234.0
     with pytest.raises(ValueError):
         Coolant(flow_g_s_per_cell=0.0)
-    assert c.rise_K(1.0) == pytest.approx(1.0 / (5e-5 * 3500))
+    c = Coolant()
+    assert c.rise_K(1.0) == pytest.approx(1.0 / (5e-5 * 3338.0))
+
+
+def test_channel_correlations_by_hand():
+    """Re, f and Nu for a square duct against hand values (Shah and London; Hausen)."""
+    from packtherm.channels import Passage, channel_flow, glycol50
+
+    fl = glycol50(25.0)
+    assert fl.mu == pytest.approx(3.16e-3, rel=0.02) and fl.k == pytest.approx(0.392, rel=0.01)
+    assert glycol50(-20.0).mu / fl.mu > 6.5  # viscosity rises sevenfold
+    p = Passage(2e-3, 2e-3, 1, 10.0)  # long: fully developed
+    mdot = 100.0 * fl.mu * p.Dh * p.area / p.Dh**2  # Re = 100
+    r = channel_flow(p, mdot, fl)
+    assert r.Re == pytest.approx(100.0)
+    assert r.f_darcy * r.Re == pytest.approx(56.91, rel=1e-3)  # square duct
+    assert r.Nu == pytest.approx(3.61, rel=0.02)  # square duct, uniform flux
+    assert r.dp_Pa == pytest.approx(r.f_darcy * 10.0 / 2e-3 * 0.5 * fl.rho * r.velocity_m_s**2)
 
 
 def test_air_flow_module_equals_bare_cell_model():
@@ -177,7 +199,7 @@ def test_bottom_plate_steady_state_matches_analytic():
     plate = BottomPlate(coolant=Coolant(), tim=Interface(), R_end=5e-4)
     r = steady(Module(filler=None, cooling=plate), nz=0)
     L, k = FLAT.height, FLAT.k_axial
-    R = plate.R_end + plate.tim.R + 1 / plate.coolant.h
+    R = plate.R_end + plate.tim.R + 1 / plate.h_contact(FLAT, Layout(), 25.0)
     V_model = r.res.volume[r.res.region == 1].sum()
     q = Q / V_model
     expected = q * (L * L / (3 * k) + L * R)
@@ -189,7 +211,8 @@ def test_bottom_plate_steady_state_matches_analytic():
     assert np.allclose(r.T_coolant, 25.0 + KELVIN)
     # Axial estimate: top - bottom = q L^2 / (2k) while current flows (q from the
     # heat reaching the coolant, which is a hair below generation at quasi-steady).
-    assert r.dT_axial[i] == pytest.approx(Q / (math.pi * FLAT.radius**2 * L) * L * L / (2 * k), rel=2e-3)
+    # (Since v0.6.12's lower plate h the plateau is slower: 50 min in, the coolant takes 99.6 % of the heat.)
+    assert r.dT_axial[i] == pytest.approx(Q / (math.pi * FLAT.radius**2 * L) * L * L / (2 * k), rel=5e-3)
     assert r.dT_axial[i] <= Q / (math.pi * FLAT.radius**2 * L) * L * L / (2 * k)
 
 
@@ -200,7 +223,7 @@ def test_bottom_plate_2d_matches_analytic():
     the roll's base face (z = 0), not at the bottom node centre."""
     plate = BottomPlate(coolant=Coolant(), tim=Interface(), R_end=5e-4)
     L, k = FLAT.height, FLAT.k_axial
-    R = plate.R_end + plate.tim.R + 1 / plate.coolant.h
+    R = plate.R_end + plate.tim.R + 1 / plate.h_contact(FLAT, Layout(), 25.0)
     for nz in (8, 16):
         r = steady(Module(filler=None, cooling=plate), nz=nz)
         i = np.searchsorted(r.res.t, 50 * 60)
@@ -222,8 +245,8 @@ def test_outlet_coolant_rise_balances_heat():
     r = steady(Module(layout=RIBBON_GAP, filler=None, cooling=SideRibbon(coolant=c)), position="outlet")
     i = np.searchsorted(r.res.t, 50 * 60)
     assert r.Q_coolant[i] == pytest.approx(Q, rel=0.01)
-    # Coolant temperature is set from the start-of-step state: ppm-level lag.
-    assert r.T_coolant[i] - (25.0 + KELVIN) == pytest.approx(c.rise_K(r.Q_coolant[i]), rel=1e-4)
+    # Coolant temperature is set from the start-of-step state: a lag of about 1e-4.
+    assert r.T_coolant[i] - (25.0 + KELVIN) == pytest.approx(c.rise_K(r.Q_coolant[i]), rel=3e-4)
 
 
 def test_air_warms_along_the_flow():
@@ -285,12 +308,18 @@ def test_filler_mass():
 
 
 def test_pump_covers_whole_loop():
-    c = Coolant()
+    """The pump moves the coolant through the module channels (from their shape) and the rest of the loop."""
+    lay = Layout("hex", 3.5)
+    rib = SideRibbon()
+    c = rib.coolant
     q = c.mdot / c.rho  # m^3/s per cell
-    assert c.pump_power_W_per_cell == pytest.approx(q * (20e3 + 30e3) / 0.3)
-    # Module channels laminar (dp ~ flow), the rest of the loop turbulent (dp ~ flow^2).
-    doubled = Coolant(flow_g_s_per_cell=0.1)
-    assert doubled.pump_power_W_per_cell == pytest.approx(2 * q * (2 * 20e3 + 4 * 30e3) / 0.3)
+    dp = rib.flow(LG_M50, lay, 25.0).dp_Pa
+    assert rib.pump_power_W_per_cell(LG_M50, lay) == pytest.approx(q * (dp + 30e3) / 0.3)
+    # The channels: laminar (dp ~ flow x viscosity); the rest of the loop turbulent (dp ~ flow^2).
+    doubled = replace(rib, coolant=replace(c, flow_g_s_per_cell=0.1))
+    assert doubled.flow(LG_M50, lay, 25.0).dp_Pa == pytest.approx(2 * dp, rel=0.01)
+    assert doubled.pump_power_W_per_cell(LG_M50, lay) == pytest.approx(2 * q * (2 * dp + 4 * 30e3) / 0.3, rel=0.01)
+    assert rib.flow(LG_M50, lay, -20.0).dp_Pa > 5 * dp
 
 
 def test_radiator_fan_charged_on_rejected_heat():

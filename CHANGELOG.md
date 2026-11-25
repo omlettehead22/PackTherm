@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.6.12
+
+The liquid coolant's heat transfer and pressure drop come from the channels' shape, the flow and the coolant's properties, using two new dependencies: ht and fluids (Caleb Bell, MIT, pure Python).
+
+- **Changed: coolant h per channel shape** (`packtherm/channels.py`). Up to v0.6.11 every cold plate and ribbon got an assumed 1500 W/(m² K) at 0.05 g/s per cell, scaled by an assumed flow exponent. Now:
+  - laminar rectangular passages, fully developed (Shah and London, by aspect ratio) with Hausen's thermal-entry rise;
+  - Gnielinski when turbulent, blended between Re 2300 and 3000;
+  - fin efficiency for the walls and ribs;
+  - the result is taken per area through which the cell is cooled.
+- **What it gives:**
+  - Bottom plate (10 × 4 mm channels under half the footprint): about 570–720 W/(m² K) per can base, depending on flow and coolant temperature. Its in-cell spread falls (8.2 K at 1.5C, was 9.1) and its cells run 0.3–4 K warmer.
+  - Side ribbon (21 ports of 1.7 × 2.15 mm): about 1,890–1,980 per bonded strip, so ribbon designs barely change.
+  - The channels are laminar (Re about 1–50).
+- **Changed: the module channels' pressure drop** comes from Shah and London's laminar friction (and fluids' turbulent friction). For a path of 20 cells it is under 1 kPa, rising sevenfold from 25 to −20 °C with the glycol's viscosity. Up to v0.6.11 it was an assumed 20 kPa. The rest of the loop (hoses, manifolds, chiller, radiator) is still an assumed 30 kPa at 0.05 g/s per cell, so pump power fell from 7.9 to 4.7 mW per cell at that flow.
+- **Coolant properties:** 50/50 ethylene glycol by mass, tabulated from CoolProp's MEG[0.5] (`data/meg50_properties.csv`, written by `validation/coolant_properties.py`; CoolProp is needed only for that). Heat capacity 3338 J/(kg K) at 25 °C (was 3500), so the coolant warms about 5 % more.
+- **New assumptions:**
+  - `Coolant.cells_per_channel`: 20 cells in series along one coolant path;
+  - `PlateGeometry.channel_width_mm`: 10 mm;
+  - `Coolant.h_override` replaces the computed h.
+  - Removed: `h_ref`, `h_flow_exponent` and `dp_ref_Pa` on the coolant.
+- **Design results:**
+  - **Road trip:** 24 of 39 feasible (was 23). The lightest cold plate (0.02 g/s) now runs over the limit (45.4 °C), while the 0.05 g/s chilled plates now pass. Lowest energy pick: a ribbon with RT42 at 0.02 g/s (0.09 %); balanced pick: a ribbon at 0.05 g/s (0.14 %).
+  - **3 × WLTC:** within 1.2 K of ambient.
+  - The 1.5C discharge still has no feasible design.
+- **Browser engine:** the site serves ht and fluids' wheels beside PackTherm's (`py/manifest.json` lists them).
+- **Tests:** a square duct's Re, f Re and Nu by hand; h hardly changing with flow (laminar); pressure drop proportional to flow and rising with viscosity in the cold.
+
 ## 0.6.11
 
 The lumped model's slow losses: datasheet cells and the MJ1 make about the right heat.

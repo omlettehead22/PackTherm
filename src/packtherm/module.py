@@ -99,30 +99,23 @@ class Layout:
 class Coolant:
     """Liquid coolant (50/50 water-glycol) shared along a channel.
 
-    ASSUMPTIONS (all overridable): reference flow 0.05 g/s per cell (about
-    9.5 L/min for a 3,360-cell 96s35p pack), h_ref at that flow, 20 kPa across
-    the module channels at that flow.
+    Since v0.6.12 the convective coefficient and the module channels' pressure
+    drop come from the channel's shape (``PlateGeometry``, ``RibbonGeometry``),
+    the flow and the coolant's properties at its temperature (packtherm.channels,
+    with ht and fluids): ``BottomPlate.h_contact`` and ``SideRibbon.h_contact``.
+    Up to v0.6.11 they were an assumed 1500 W/(m^2 K) and 20 kPa at 0.05 g/s per
+    cell for every plate and ribbon. The channels are laminar (Re about 5-300):
+    h hardly depends on flow, and the channel pressure drop is proportional to
+    flow and to viscosity, which rises sevenfold from 25 to -20 degC.
 
-    Flow laws (v0.4.13). The module's channels are laminar: Reynolds numbers of
-    about 3-550 for any plausible number of cells per channel (ribbon ports
-    under 2 mm, plate channels 4 mm high). So:
-    * h grows weakly with flow. In a ribbon port the flow is fully developed
-      within a few cells (Nusselt number fixed, h independent of flow); in a
-      plate channel it is still developing over much of the length (Leveque:
-      h ~ flow^(1/3)). ``h_flow_exponent`` defaults to 0 for a ``SideRibbon``
-      and 1/3 for a ``BottomPlate``. (Up to v0.4.12: flow^0.8, Dittus-Boelter,
-      a turbulent law.)
-    * The pressure drop across the module channels is proportional to flow
-      (Hagen-Poiseuille); the rest of the loop (hoses at Re ~ 4,000) goes as
-      flow^2.
-
-    Pump power covers the whole loop: the module channels plus the rest of the
-    loop (hoses, manifolds, chiller and radiator), 30 kPa at the reference
-    flow, so the total of 50 kPa matches the 0.5-0.6 bar that small electric
-    coolant pumps are rated for around 20-25 L/min (Pierburg CWA50, Rheinmetall
-    CWA 50). The same datasheets give a pump efficiency of about 0.3 (hydraulic
-    power over electrical input). The radiator fan is charged at 3 % of the
-    heat the radiator rejects (ASSUMPTION: e.g. a 300 W fan rejecting 10 kW).
+    ASSUMPTIONS (all overridable): ``cells_per_channel`` cells in series along
+    one coolant path (a module of two rows of ten under one ribbon or along one
+    plate row), so the path's flow is that many cells' share; 30 kPa across the
+    rest of the loop (hoses, manifolds, chiller and radiator) at 0.05 g/s per
+    cell, scaling as flow^2 (hoses at Re ~ 4,000). Pump efficiency about 0.3
+    (hydraulic over electrical input: Pierburg CWA50, Rheinmetall CWA 50 data).
+    The radiator fan is charged at 3 % of the heat the radiator rejects.
+    ``h_override`` (W/(m^2 K) per contact area) replaces the computed value.
     """
 
     flow_g_s_per_cell: float = 0.05
@@ -130,36 +123,38 @@ class Coolant:
     # The chiller holds inlet_C until this time [s], then the loop returns to
     # the radiator (inlet at ambient). None = chiller on throughout.
     chiller_until_s: float | None = None
-    cp: float = 3500.0  # J/(kg K), 50/50 water-glycol
-    rho: float = 1060.0  # kg/m^3
-    h_ref: float = 1500.0  # W/(m^2 K) at flow_ref, per cooled area
-    flow_ref_g_s: float = 0.05
-    dp_ref_Pa: float = 20e3  # module channels
+    cp: float = 3338.0  # J/(kg K), 50/50 water-glycol at 25 degC (CoolProp MEG[0.5]; 3500 up to v0.6.11)
+    rho: float = 1062.0  # kg/m^3, at 25 degC
+    cells_per_channel: int = 20
+    flow_ref_g_s: float = 0.05  # where dp_loop_ref_Pa applies
     dp_loop_ref_Pa: float = 30e3  # rest of the loop
     pump_efficiency: float = 0.3
     radiator_fan_W_per_W: float = 0.03
-    # None = set by the cooling topology (SideRibbon 0, BottomPlate 1/3); 1/3 if used alone.
-    h_flow_exponent: float | None = None
+    h_override: float | None = None
 
     def __post_init__(self) -> None:
         if self.flow_g_s_per_cell <= 0:
             raise ValueError("Coolant flow must be positive.")
+        if self.cells_per_channel < 1:
+            raise ValueError("cells_per_channel must be at least 1.")
 
     @property
     def mdot(self) -> float:
         return self.flow_g_s_per_cell * 1e-3
 
     @property
-    def h(self) -> float:
-        """Convective coefficient at this flow (laminar: weak flow dependence)."""
-        n = 1.0 / 3.0 if self.h_flow_exponent is None else self.h_flow_exponent
-        return self.h_ref * (self.flow_g_s_per_cell / self.flow_ref_g_s) ** n
+    def mdot_channel(self) -> float:
+        """The flow along one coolant path [kg/s]."""
+        return self.mdot * self.cells_per_channel
 
-    @property
-    def pump_power_W_per_cell(self) -> float:
-        """Electrical pump power per cell for the whole loop."""
+    def property_T_C(self, T_amb_K: float) -> float:
+        """The temperature the coolant's properties are taken at: the chiller set-point, else ambient."""
+        return self.inlet_C if self.inlet_C is not None else T_amb_K - KELVIN
+
+    def pump_power_W_per_cell(self, dp_channel_Pa: float) -> float:
+        """Electrical pump power per cell for the whole loop, given the module channels' pressure drop."""
         f = self.flow_g_s_per_cell / self.flow_ref_g_s
-        dp = self.dp_ref_Pa * f + self.dp_loop_ref_Pa * f * f  # laminar channels, turbulent loop
+        dp = dp_channel_Pa + self.dp_loop_ref_Pa * f * f
         return self.mdot / self.rho * dp / self.pump_efficiency
 
     def rise_K(self, Q_W_per_cell: float) -> float:
@@ -322,7 +317,8 @@ class PlateGeometry:
     Sources: brazed battery plates are a flat base sheet of 1.5-2.0 mm and a
     formed channel sheet of 0.8-1.2 mm (AMAG); channel heights of 4-8 mm are
     typical (Boyd). ASSUMPTIONS: channels cover half the footprint; forming
-    adds 10 % to the channel-sheet area.
+    adds 10 % to the channel-sheet area; channels 10 mm wide (v0.6.12: the
+    width sets the coolant's heat transfer).
     """
 
     base_mm: float = 1.5
@@ -330,6 +326,7 @@ class PlateGeometry:
     channel_height_mm: float = 4.0
     channel_coverage: float = 0.5
     forming_factor: float = 1.1
+    channel_width_mm: float = 10.0
 
 
 @dataclass(frozen=True)
@@ -358,13 +355,6 @@ class RibbonGeometry:
             raise ValueError("Ribbon thickness must exceed two walls.")
 
 
-def _set_h_exponent(cooling, n: float) -> None:
-    if cooling.coolant.h_flow_exponent is None:
-        from dataclasses import replace as _replace
-
-        object.__setattr__(cooling, "coolant", _replace(cooling.coolant, h_flow_exponent=n))
-
-
 @dataclass(frozen=True)
 class BottomPlate:
     coolant: Coolant = field(default_factory=Coolant)
@@ -375,8 +365,39 @@ class BottomPlate:
     plate: PlateGeometry = field(default_factory=PlateGeometry)
     name: str = "bottom plate"
 
-    def __post_init__(self) -> None:
-        _set_h_exponent(self, 1.0 / 3.0)  # developing laminar flow in a 4 mm channel
+    def passage(self, cell: Cell, layout: Layout):
+        """The channels under one row of cells along the coolant path (v0.6.12)."""
+        from .channels import Passage
+
+        g, pitch = self.plate, layout.pitch(cell)
+        row_width = layout.area_per_cell(cell) / pitch
+        w = g.channel_width_mm * 1e-3
+        count = g.channel_coverage * row_width / w
+        return Passage(w, g.channel_height_mm * 1e-3, count, self.coolant.cells_per_channel * pitch)
+
+    def flow(self, cell: Cell, layout: Layout, T_C: float):
+        from .channels import channel_flow, glycol50
+
+        return channel_flow(self.passage(cell, layout), self.coolant.mdot_channel, glycol50(T_C))
+
+    def h_contact(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
+        """Coolant h per area of the can base [W/(m^2 K)] (v0.6.12).
+
+        The channel's top wall, under the base sheet, is fully effective; its side
+        walls and floor are a fin of the channel sheet's thickness.
+        """
+        if self.coolant.h_override is not None:
+            return self.coolant.h_override
+        from .channels import fin_efficiency
+
+        g, p = self.plate, self.passage(cell, layout)
+        h = self.flow(cell, layout, T_C).h_wall
+        eta = fin_efficiency(h, g.channel_sheet_mm * 1e-3, p.height_m + 0.5 * p.width_m)
+        per_length = p.count * (p.width_m + eta * (2.0 * p.height_m + p.width_m))
+        return h * per_length * layout.pitch(cell) / (math.pi * cell.radius**2)
+
+    def pump_power_W_per_cell(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
+        return self.coolant.pump_power_W_per_cell(self.flow(cell, layout, T_C).dp_Pa)
 
 
 @dataclass(frozen=True)
@@ -388,8 +409,42 @@ class SideRibbon:
     tube: RibbonGeometry = field(default_factory=RibbonGeometry)
     name: str = "side ribbon"
 
-    def __post_init__(self) -> None:
-        _set_h_exponent(self, 0.0)  # fully developed laminar flow in sub-2 mm ports
+    def passage(self, cell: Cell, layout: Layout):
+        """The ribbon's ports along the coolant path (v0.6.12)."""
+        from .channels import Passage
+
+        g = self.tube
+        ports = max(1, math.floor(g.height_fraction * cell.height / (g.rib_pitch_mm * 1e-3)))
+        length = self.coolant.cells_per_channel / g.rows_per_ribbon * layout.pitch(cell) * g.weave_factor
+        return Passage(
+            (g.thickness_mm - 2.0 * g.wall_mm) * 1e-3, (g.rib_pitch_mm - g.rib_mm) * 1e-3, ports, length
+        )
+
+    def flow(self, cell: Cell, layout: Layout, T_C: float):
+        from .channels import channel_flow, glycol50
+
+        return channel_flow(self.passage(cell, layout), self.coolant.mdot_channel, glycol50(T_C))
+
+    def h_contact(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
+        """Coolant h per area of the bonded strip of can [W/(m^2 K)] (v0.6.12).
+
+        Each port's two faces (one against each row of cells) are fully effective;
+        its ribs are fins from both faces (half the port width each, rib thick).
+        """
+        if self.coolant.h_override is not None:
+            return self.coolant.h_override
+        from .channels import fin_efficiency
+
+        g, p = self.tube, self.passage(cell, layout)
+        h = self.flow(cell, layout, T_C).h_wall
+        eta = fin_efficiency(h, g.rib_mm * 1e-3, 0.5 * p.width_m)
+        length_per_cell = layout.pitch(cell) * g.weave_factor / g.rows_per_ribbon
+        wetted = p.count * (2.0 * p.height_m + eta * 2.0 * p.width_m) * length_per_cell
+        contact = self.contact_fraction * 2.0 * math.pi * cell.radius * g.height_fraction * cell.height
+        return h * wetted / contact
+
+    def pump_power_W_per_cell(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
+        return self.coolant.pump_power_W_per_cell(self.flow(cell, layout, T_C).dp_Pa)
 
     @property
     def min_gap_mm(self) -> float:
@@ -539,7 +594,7 @@ class ModuleResult:
     def pump_W_per_cell(self) -> float:
         c = self.module.cooling
         if isinstance(c, (BottomPlate, SideRibbon)):
-            return c.coolant.pump_power_W_per_cell
+            return c.pump_power_W_per_cell(self.cell, self.module.layout, c.coolant.property_T_C(self.T_ambient))
         if isinstance(c, AirFlow):
             return c.pump_power_W_per_cell
         return 0.0
@@ -658,7 +713,7 @@ def simulate_module(
         c = cooling.coolant
         holdup = coolant_holdup_kg(cell, module) if coolant_mass else 0.0
         T_sink = _coolant_temperature(lambda t, c=c: c.inlet_K(t, T_amb), c, position, holdup)
-        R_path = cooling.tim.R + 1.0 / c.h
+        R_path = cooling.tim.R + 1.0 / cooling.h_contact(cell, module.layout, c.property_T_C(T_amb))
         if isinstance(cooling, BottomPlate):
             k_fill = P.pcm.k
 
@@ -697,7 +752,7 @@ def simulate_module(
         # Full radius x height field (v0.4.8): replaces the quasi-steady axial estimate.
         from .model2d import Axial, simulate_2d
 
-        R_film = cooling.tim.R + 1.0 / cooling.coolant.h
+        R_film = cooling.tim.R + 1.0 / cooling.h_contact(cell, module.layout, cooling.coolant.property_T_C(T_amb))
         axial = Axial(nz, cell.k_axial, cooling.R_end + R_film, R_film)
         wall = None
         if edge:
@@ -724,7 +779,7 @@ def simulate_module(
         from .model2d import Strip, simulate_rtheta
 
         strip = Strip(n_theta=n_theta, k_inplane_cell=cell.k_axial)
-        R_film = cooling.tim.R + 1.0 / cooling.coolant.h
+        R_film = cooling.tim.R + 1.0 / cooling.h_contact(cell, module.layout, cooling.coolant.property_T_C(T_amb))
         wall = None
         if edge:
             wall = (module.wall.fraction * 2.0 * math.pi * module.layout.unit_radius(cell), module.wall.U)

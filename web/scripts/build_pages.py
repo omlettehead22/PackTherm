@@ -4,7 +4,8 @@
 
 The site is static files (GitHub Pages serves it): the app, built with
 VITE_ENGINE=browser, and py/<the PackTherm wheel> with py/manifest.json
-naming it. Each visitor's browser downloads Python (Pyodide, from its CDN)
+naming it, and the pure-Python wheels it needs that Pyodide does not ship
+(ht and fluids, v0.6.12). Each visitor's browser downloads Python (Pyodide, from its CDN)
 and runs PackTherm itself.
 """
 
@@ -17,10 +18,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from importlib import metadata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "web"
+BROWSER_DEPS = ("ht", "fluids")
 
 
 def main() -> int:
@@ -46,7 +49,19 @@ def main() -> int:
         (wheel,) = Path(tmp).glob("packtherm-*.whl")
         (out / "py").mkdir(exist_ok=True)
         shutil.copy(wheel, out / "py" / wheel.name)
-    (out / "py" / "manifest.json").write_text(json.dumps({"wheel": wheel.name}) + "\n", encoding="utf-8")
+        # Pure-Python dependencies Pyodide does not ship (v0.6.12): the versions installed here.
+        deps = []
+        for name in BROWSER_DEPS:
+            spec = f"{name}=={metadata.version(name)}"
+            subprocess.run(
+                [sys.executable, "-m", "pip", "download", spec, "--no-deps", "--only-binary=:all:", "-q", "-d", tmp],
+                check=True,
+            )
+            (dep,) = Path(tmp).glob(f"{name}-*.whl")
+            shutil.copy(dep, out / "py" / dep.name)
+            deps.append(dep.name)
+    manifest = {"wheel": wheel.name, "deps": deps}
+    (out / "py" / "manifest.json").write_text(json.dumps(manifest) + "\n", encoding="utf-8")
     # GitHub Pages: serve files as they are (no Jekyll).
     (out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"site in {out} (served under {args.base}); engine package py/{wheel.name}")
