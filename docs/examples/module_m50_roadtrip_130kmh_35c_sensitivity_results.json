@@ -1,0 +1,540 @@
+{
+ "packtherm_results": 1,
+ "packtherm_version": "0.6.15",
+ "created": "2026-11-25T20:01:56+00:00",
+ "elapsed_s": 128.42,
+ "study": {
+  "packtherm_study": 1,
+  "name": "M50 road trip, 35 degC, sensitivity of the balanced design",
+  "cell": "M50",
+  "mode": "normal",
+  "ambient_C": 35.0,
+  "duty": {
+   "type": "roadtrip",
+   "c_rate": 1.0,
+   "direction": "discharge",
+   "soc0": null,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "cycles": 3,
+   "speed_kmh": 130.0,
+   "charge_c_rate": null,
+   "pack_kWh": 60.0,
+   "pack_V": 350.0,
+   "steps": null,
+   "name": null,
+   "rest_h": 3.0
+  },
+  "requirements": {
+   "T_max_C": null,
+   "dT_cell_max_C": 5.0,
+   "recovery_max_min": null,
+   "cell_to_cell_max_K": null,
+   "capacity_min_pct": null
+  },
+  "design_space": {
+   "topologies": [
+    "none",
+    "air",
+    "bottom",
+    "ribbon"
+   ],
+   "air_flows_g_s": [
+    0.15,
+    0.3,
+    0.6
+   ],
+   "coolant_flows_g_s": [
+    0.02,
+    0.05
+   ],
+   "chiller_C": [
+    15.0
+   ],
+   "fillers": [
+    "none",
+    "RT31",
+    "RT42",
+    "RT31-EG"
+   ],
+   "gaps_mm": [
+    2.0
+   ],
+   "packing": "hex"
+  },
+  "options": {
+   "edge_cells": true,
+   "wall_U": 5.0,
+   "r_margin": 0.2,
+   "chiller_cop": null,
+   "chiller_runs": "event",
+   "liquid_loop_kg": 3.0,
+   "air_system_kg": 4.0,
+   "chiller_kg": 4.0,
+   "life_years": 8.0,
+   "life_park_C": null
+  },
+  "sensitivity": {
+   "design": {
+    "topology": "ribbon",
+    "flow_g_s": 0.05,
+    "filler": "none",
+    "gap_mm": 3.5
+   },
+   "trajectories": 10,
+   "levels": 4,
+   "seed": 1,
+   "mode": "fast",
+   "factors": null,
+   "ranges": {}
+  }
+ },
+ "summary": {
+  "cell": "LG INR21700 M50",
+  "cell_model": "circuit (derived, measured resistance)",
+  "duty": "130 km/h 90%\u219210%, then 0.7C charge to 80% (96s35p)",
+  "mode": "fast",
+  "design": "ribbon, 0.05 g/s, 3.5 mm gap, no filler",
+  "simulations": 90,
+  "feasible_share": 0.9111111111111111,
+  "text": "Sensitivity of ribbon, 0.05 g/s, 3.5 mm gap, no filler (90 simulations, Morris, 10 trajectories, fast mode)\nPeak temperature (degC): ambient temperature 8.9, cell resistance (nominal to worst case) 1.5, air or coolant flow 1.2\nIn-cell spread (K): cell thermal conductivity 0.55, cell resistance (nominal to worst case) 0.3, ambient temperature 0.21\nCell-to-cell spread (K): air or coolant flow 1.2, cell resistance (nominal to worst case) 1, ambient temperature 0.75\nRunning energy (% of energy moved): air or coolant flow 0.063, cell resistance (nominal to worst case) 0.037, ambient temperature 0.027\nCapacity left (%): ambient temperature 9.2, cell resistance (nominal to worst case) 0.079, air or coolant flow 0.076"
+ },
+ "design": {
+  "topology": "ribbon",
+  "flow_g_s": 0.05,
+  "chiller_C": null,
+  "filler": null,
+  "gap_mm": 3.5
+ },
+ "inputs": [
+  {
+   "name": "ambient",
+   "label": "Ambient temperature",
+   "unit": "K",
+   "low": -5.0,
+   "high": 5.0
+  },
+  {
+   "name": "resistance",
+   "label": "Cell resistance (nominal to worst case)",
+   "unit": "share",
+   "low": 0.0,
+   "high": 1.0
+  },
+  {
+   "name": "cell_heat_capacity",
+   "label": "Cell heat capacity",
+   "unit": "x",
+   "low": 0.9,
+   "high": 1.1
+  },
+  {
+   "name": "cell_conductivity",
+   "label": "Cell thermal conductivity",
+   "unit": "x",
+   "low": 0.7,
+   "high": 1.3
+  },
+  {
+   "name": "entropic_heat",
+   "label": "Reversible heat (dU/dT)",
+   "unit": "x",
+   "low": 0.5,
+   "high": 1.5
+  },
+  {
+   "name": "tim_conductivity",
+   "label": "Interface (TIM) conductivity",
+   "unit": "x",
+   "low": 0.5,
+   "high": 1.5
+  },
+  {
+   "name": "heat_transfer",
+   "label": "Air or coolant heat transfer",
+   "unit": "x",
+   "low": 0.7,
+   "high": 1.3
+  },
+  {
+   "name": "flow",
+   "label": "Air or coolant flow",
+   "unit": "x",
+   "low": 0.8,
+   "high": 1.2
+  }
+ ],
+ "outputs": {
+  "T_peak_C": "Peak temperature (degC)",
+  "dT_cell_C": "In-cell spread (K)",
+  "cell_to_cell_K": "Cell-to-cell spread (K)",
+  "aux_energy_pct": "Running energy (% of energy moved)",
+  "capacity_after_pct": "Capacity left (%)"
+ },
+ "ranking": [
+  {
+   "output": "T_peak_C",
+   "factor": "ambient",
+   "mu_star": 8.881701540769683,
+   "mu_star_conf": 0.09168281179355069,
+   "sigma": 0.15295494931008818,
+   "rank": 1
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "resistance",
+   "mu_star": 1.4958849070864146,
+   "mu_star_conf": 0.12424606414233604,
+   "sigma": 0.22391375722636792,
+   "rank": 2
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "cell_heat_capacity",
+   "mu_star": 0.026979468438995013,
+   "mu_star_conf": 0.00652094072057357,
+   "sigma": 0.011480825084079518,
+   "rank": 8
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "cell_conductivity",
+   "mu_star": 0.5005940186708188,
+   "mu_star_conf": 0.06292234198595946,
+   "sigma": 0.10910784632089746,
+   "rank": 4
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "entropic_heat",
+   "mu_star": 0.41049243408238567,
+   "mu_star_conf": 0.02722465578415654,
+   "sigma": 0.0429946257371427,
+   "rank": 5
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "tim_conductivity",
+   "mu_star": 0.1733155297499252,
+   "mu_star_conf": 0.042229128967108544,
+   "sigma": 0.06792124744409514,
+   "rank": 7
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "heat_transfer",
+   "mu_star": 0.1903691141235413,
+   "mu_star_conf": 0.02844955149283619,
+   "sigma": 0.047229059904842156,
+   "rank": 6
+  },
+  {
+   "output": "T_peak_C",
+   "factor": "flow",
+   "mu_star": 1.246460768935907,
+   "mu_star_conf": 0.1061578925548807,
+   "sigma": 0.20190012618279365,
+   "rank": 3
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "ambient",
+   "mu_star": 0.20646960983752366,
+   "mu_star_conf": 0.034398368270516295,
+   "sigma": 0.05515722468060851,
+   "rank": 3
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "resistance",
+   "mu_star": 0.3027515975965656,
+   "mu_star_conf": 0.029474448190868894,
+   "sigma": 0.05336128748112123,
+   "rank": 2
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "cell_heat_capacity",
+   "mu_star": 0.005504295938209225,
+   "mu_star_conf": 0.0012093505388195045,
+   "sigma": 0.002160919798649924,
+   "rank": 6
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "cell_conductivity",
+   "mu_star": 0.5533449719790638,
+   "mu_star_conf": 0.07195001211499336,
+   "sigma": 0.12547860099400154,
+   "rank": 1
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "entropic_heat",
+   "mu_star": 0.07940646964817404,
+   "mu_star_conf": 0.01026782872636623,
+   "sigma": 0.01786155901059504,
+   "rank": 4
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "tim_conductivity",
+   "mu_star": 0.0014963777096909324,
+   "mu_star_conf": 0.0007432401394414228,
+   "sigma": 0.001648223998623318,
+   "rank": 7
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "heat_transfer",
+   "mu_star": 0.0012125772410399803,
+   "mu_star_conf": 0.000484802020056762,
+   "sigma": 0.0013972208495378294,
+   "rank": 8
+  },
+  {
+   "output": "dT_cell_C",
+   "factor": "flow",
+   "mu_star": 0.037976531079752365,
+   "mu_star_conf": 0.006687885021730317,
+   "sigma": 0.013157579598233781,
+   "rank": 5
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "ambient",
+   "mu_star": 0.7500814575201702,
+   "mu_star_conf": 0.058313113214386536,
+   "sigma": 0.11569842547077583,
+   "rank": 3
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "resistance",
+   "mu_star": 0.99773761216899,
+   "mu_star_conf": 0.1105260202072955,
+   "sigma": 0.1981163931137643,
+   "rank": 2
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "cell_heat_capacity",
+   "mu_star": 0.02130270407911894,
+   "mu_star_conf": 0.004325815481056155,
+   "sigma": 0.00792412980941843,
+   "rank": 7
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "cell_conductivity",
+   "mu_star": 0.07530200295426255,
+   "mu_star_conf": 0.02280505309551434,
+   "sigma": 0.044238360238401324,
+   "rank": 5
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "entropic_heat",
+   "mu_star": 0.1903442143871672,
+   "mu_star_conf": 0.04247049893542703,
+   "sigma": 0.07187875922378702,
+   "rank": 4
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "tim_conductivity",
+   "mu_star": 0.02301250152788157,
+   "mu_star_conf": 0.005842023332097055,
+   "sigma": 0.010043625230738295,
+   "rank": 6
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "heat_transfer",
+   "mu_star": 0.020423612634147048,
+   "mu_star_conf": 0.005948462627724508,
+   "sigma": 0.010401166099876747,
+   "rank": 8
+  },
+  {
+   "output": "cell_to_cell_K",
+   "factor": "flow",
+   "mu_star": 1.242801906051693,
+   "mu_star_conf": 0.10595496985459989,
+   "sigma": 0.20154196447368117,
+   "rank": 1
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "ambient",
+   "mu_star": 0.02746441465083867,
+   "mu_star_conf": 0.0023791887023757977,
+   "sigma": 0.003657354272955044,
+   "rank": 3
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "resistance",
+   "mu_star": 0.0371857109405893,
+   "mu_star_conf": 0.0017425636956226725,
+   "sigma": 0.002903930795822701,
+   "rank": 2
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "cell_heat_capacity",
+   "mu_star": 0.0005541026222580195,
+   "mu_star_conf": 0.00010898435240511197,
+   "sigma": 0.00019453076759309374,
+   "rank": 5
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "cell_conductivity",
+   "mu_star": 0.0002688099294348309,
+   "mu_star_conf": 0.00010951021871616902,
+   "sigma": 0.0003480414392981515,
+   "rank": 6
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "entropic_heat",
+   "mu_star": 0.0006718896418726257,
+   "mu_star_conf": 2.442148127985343e-05,
+   "sigma": 4.2890184558152104e-05,
+   "rank": 4
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "tim_conductivity",
+   "mu_star": 0.0001523828799632393,
+   "mu_star_conf": 4.320854171227641e-05,
+   "sigma": 9.093143037915358e-05,
+   "rank": 7
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "heat_transfer",
+   "mu_star": 0.0001136336561980783,
+   "mu_star_conf": 4.617581772568143e-05,
+   "sigma": 0.00010742050474309095,
+   "rank": 8
+  },
+  {
+   "output": "aux_energy_pct",
+   "factor": "flow",
+   "mu_star": 0.06314479691864486,
+   "mu_star_conf": 0.004885496861418692,
+   "sigma": 0.008316249890929895,
+   "rank": 1
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "ambient",
+   "mu_star": 9.18055717815202,
+   "mu_star_conf": 0.400048814276927,
+   "sigma": 0.6205074022426131,
+   "rank": 1
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "resistance",
+   "mu_star": 0.07852823466529593,
+   "mu_star_conf": 0.0058838352349620295,
+   "sigma": 0.009785424539894456,
+   "rank": 2
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "cell_heat_capacity",
+   "mu_star": 0.0015270489468740323,
+   "mu_star_conf": 0.00034669414017361836,
+   "sigma": 0.0005909693563997889,
+   "rank": 8
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "cell_conductivity",
+   "mu_star": 0.012709362827314052,
+   "mu_star_conf": 0.0018379688261986541,
+   "sigma": 0.0030738475390438688,
+   "rank": 4
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "entropic_heat",
+   "mu_star": 0.0031678464677074914,
+   "mu_star_conf": 0.0004927588058233549,
+   "sigma": 0.0007834899371231739,
+   "rank": 7
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "tim_conductivity",
+   "mu_star": 0.009815418996331714,
+   "mu_star_conf": 0.0024454217603312204,
+   "sigma": 0.003942500844961069,
+   "rank": 6
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "heat_transfer",
+   "mu_star": 0.010679891503708206,
+   "mu_star_conf": 0.0017482903423230375,
+   "sigma": 0.002961442504674636,
+   "rank": 5
+  },
+  {
+   "output": "capacity_after_pct",
+   "factor": "flow",
+   "mu_star": 0.0758518534977334,
+   "mu_star_conf": 0.007256189251255095,
+   "sigma": 0.013643411753405143,
+   "rank": 3
+  }
+ ],
+ "notes": [
+  "mu_star: about how much a result changes as the input goes from the low to the high end of its range (the mean absolute Morris elementary effect, SALib); sigma large against mu_star: the effect depends on the other inputs.",
+  "cell_to_cell_K compares the outlet cell's peak with the inlet cell's peak, which can come at different times."
+ ],
+ "assumptions": {
+  "resolution": {
+   "name": "normal",
+   "dt": 2.0,
+   "electrical_dt": null,
+   "dr_mm": 0.1,
+   "nz": 16,
+   "n_theta": 12,
+   "exact_volumes": true
+  },
+  "coolant": {
+   "cells_per_channel": 20,
+   "flow_ref_g_s_per_cell": 0.05,
+   "dp_loop_ref_Pa": 30000.0,
+   "pump_efficiency": 0.3,
+   "radiator_fan_W_per_W": 0.03
+  },
+  "air": {
+   "flow_ref_g_s_per_cell": 0.3,
+   "h_ref_W_m2K": 30.0,
+   "dp_ref_Pa": 200.0,
+   "fan_efficiency": 0.3,
+   "gap_ref_mm": 2.0
+  },
+  "chiller": {
+   "cop": null,
+   "carnot_fraction": 0.42,
+   "evap_approach_K": 5.0,
+   "cond_approach_K": 15.0,
+   "pack_time_constant_h": 9.0
+  },
+  "wall_U_W_m2K": 5.0,
+  "resistance_margin": 0.2,
+  "pack_hardware": {
+   "pack_kWh": 60.0,
+   "liquid_loop_kg": 3.0,
+   "air_system_kg": 4.0,
+   "chiller_kg": 4.0
+  }
+ }
+}

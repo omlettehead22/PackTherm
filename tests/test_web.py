@@ -74,6 +74,8 @@ def test_study_check(tmp_path):
     assert c.post("/studies/check", content=b"{").status_code == 400
     search = c.post("/studies/check", json=dict(SMALL, search={})).json()  # v0.6.14: command line only
     assert not search["within_limits"] and "command line" in search["problems"][0]
+    sens = c.post("/studies/check", json=dict(SMALL, sensitivity={})).json()  # v0.6.15: likewise
+    assert not sens["within_limits"] and "sensitivity: runs from the command line" in sens["problems"][0]
     # Checking queues nothing.
     assert c.get("/health").json()["queued"] == 0
 

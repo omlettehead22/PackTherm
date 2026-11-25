@@ -131,6 +131,8 @@ class Coolant:
     pump_efficiency: float = 0.3
     radiator_fan_W_per_W: float = 0.03
     h_override: float | None = None
+    # Multiplies the coolant h (computed or overridden), for sensitivity studies (v0.6.15).
+    h_scale: float = 1.0
 
     def __post_init__(self) -> None:
         if self.flow_g_s_per_cell <= 0:
@@ -387,14 +389,14 @@ class BottomPlate:
         walls and floor are a fin of the channel sheet's thickness.
         """
         if self.coolant.h_override is not None:
-            return self.coolant.h_override
+            return self.coolant.h_override * self.coolant.h_scale
         from .channels import fin_efficiency
 
         g, p = self.plate, self.passage(cell, layout)
         h = self.flow(cell, layout, T_C).h_wall
         eta = fin_efficiency(h, g.channel_sheet_mm * 1e-3, p.height_m + 0.5 * p.width_m)
         per_length = p.count * (p.width_m + eta * (2.0 * p.height_m + p.width_m))
-        return h * per_length * layout.pitch(cell) / (math.pi * cell.radius**2)
+        return self.coolant.h_scale * h * per_length * layout.pitch(cell) / (math.pi * cell.radius**2)
 
     def pump_power_W_per_cell(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
         return self.coolant.pump_power_W_per_cell(self.flow(cell, layout, T_C).dp_Pa)
@@ -432,7 +434,7 @@ class SideRibbon:
         its ribs are fins from both faces (half the port width each, rib thick).
         """
         if self.coolant.h_override is not None:
-            return self.coolant.h_override
+            return self.coolant.h_override * self.coolant.h_scale
         from .channels import fin_efficiency
 
         g, p = self.tube, self.passage(cell, layout)
@@ -441,7 +443,7 @@ class SideRibbon:
         length_per_cell = layout.pitch(cell) * g.weave_factor / g.rows_per_ribbon
         wetted = p.count * (2.0 * p.height_m + eta * 2.0 * p.width_m) * length_per_cell
         contact = self.contact_fraction * 2.0 * math.pi * cell.radius * g.height_fraction * cell.height
-        return h * wetted / contact
+        return self.coolant.h_scale * h * wetted / contact
 
     def pump_power_W_per_cell(self, cell: Cell, layout: Layout, T_C: float = 25.0) -> float:
         return self.coolant.pump_power_W_per_cell(self.flow(cell, layout, T_C).dp_Pa)

@@ -179,6 +179,18 @@ SEARCH_KEYS = {
     "objectives": (list, ["mass", "energy"], None),  # checked below
     "worst_case": (bool, True, None),
 }
+# v0.6.15: an optional section. With it the study ranks which inputs matter most for one design
+# (packtherm.sensitivity, needs the sensitivity extra). Command line only, like search.
+SENSITIVITY_KEYS = {
+    "design": ((str, dict), "balanced", None),  # checked below
+    "trajectories": (int, 10, _rule(min=2)(lambda x: None if x >= 2 else "must be at least 2")),
+    "levels": (int, 4, _rule(min=2)(lambda x: None if x >= 2 and x % 2 == 0 else "must be an even number, 2 or more")),
+    "seed": (int, 1, None),
+    "mode": (str, "fast", _choice("normal", "fast")),
+    "factors": (list, None, None),  # null: every input that applies to the design
+    "ranges": (dict, {}, None),
+}
+SENSITIVITY_DESIGN_KEYS = ("topology", "flow_g_s", "chiller_C", "filler", "gap_mm")
 
 
 def _type_ok(value, types) -> bool:
@@ -245,7 +257,7 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
     errors: list[str] = []
     if not isinstance(doc, dict):
         raise StudyError("A study must be a mapping of keys to values (YAML or a JSON object).")
-    top = {k: v for k, v in doc.items() if k not in SECTIONS and k != "search"}
+    top = {k: v for k, v in doc.items() if k not in SECTIONS and k not in ("search", "sensitivity")}
     spec = _check_section(top, TOP_KEYS, "", errors)
     for k in ("packtherm_study", "cell"):
         if k not in doc:
@@ -306,6 +318,14 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
                 errors.append("search.objectives: each objective once")
         if spec["search"].get("population", 0) > spec["search"].get("evaluations", 0):
             errors.append("search.population: must not be more than search.evaluations")
+    if "sensitivity" in doc:
+        if "search" in doc:
+            errors.append("sensitivity: a study can search or rank its inputs, not both")
+        sec = doc["sensitivity"] if doc["sensitivity"] is not None else {}
+        if not isinstance(sec, dict):
+            errors.append("sensitivity: must be a mapping")
+            sec = {}
+        spec["sensitivity"] = _check_sensitivity(_check_section(sec, SENSITIVITY_KEYS, "sensitivity.", errors), errors)
 
     duty, raw_duty = spec["duty"], doc.get("duty") or {}
     if isinstance(raw_duty, dict):
@@ -314,9 +334,11 @@ def validate(doc: Any, base_dir: str | Path | None = None) -> dict:
         elif duty.get("type") in DUTY_USES:
             # A key left at its default (null included) sets nothing, so it is not flagged: results
             # files list every duty key, and must read back as the same study.
-            unused = {
-                k for k, v in raw_duty.items() if not (k in DUTY_KEYS and v == DUTY_KEYS[k][1])
-            } - DUTY_USES[duty["type"]] - {"type", "rest_h"}
+            unused = (
+                {k for k, v in raw_duty.items() if not (k in DUTY_KEYS and v == DUTY_KEYS[k][1])}
+                - DUTY_USES[duty["type"]]
+                - {"type", "rest_h"}
+            )
             for k in sorted(unused & set(DUTY_KEYS)):
                 errors.append(f"duty.{k}: not used by a {duty['type']} duty")
             if duty["type"] == "segments":
@@ -496,6 +518,7 @@ def file_stem(spec: dict) -> str:
     else:
         stem = f"{cell}_segments"
     stem = f"module_{stem}_{spec['ambient_C']:g}C" + ("_search" if "search" in spec else "")
+    stem += "_sensitivity" if "sensitivity" in spec else ""
     return re.sub(r"_+", "_", re.sub(r"[^a-z0-9_.]+", "_", stem.lower()))
 
 
@@ -555,6 +578,18 @@ class StudySpec:
     def is_search(self) -> bool:
         return "search" in self.spec
 
+    @property
+    def is_sensitivity(self) -> bool:
+        return "sensitivity" in self.spec
+
+    def sensitivity_settings(self):
+        from .sensitivity import SensitivitySettings
+
+        se = dict(self.spec["sensitivity"])
+        se["factors"] = tuple(se["factors"]) if se["factors"] else None
+        se["ranges"] = {k: tuple(v) for k, v in (se["ranges"] or {}).items()}
+        return SensitivitySettings(**se)
+
     def search_settings(self):
         from .search import SearchSettings
 
@@ -583,7 +618,11 @@ class StudySpec:
 
         study = self.build()
         t0 = time.perf_counter()
-        if self.is_search:
+        if self.is_sensitivity:
+            from .sensitivity import run_sensitivity
+
+            result = run_sensitivity(study, self.sensitivity_settings(), workers=workers, progress=progress)
+        elif self.is_search:
             from .search import run_module_search
 
             result = run_module_search(study, self.search_settings(), workers=workers, progress=progress)
@@ -607,6 +646,8 @@ class StudyRun:
         from . import __version__
 
         res, st = self.result, self.study
+        if hasattr(res, "ranking"):
+            return self._sensitivity_json()
         t = res.table
         picks = []
         for key, row in res.picks.items():
@@ -644,6 +685,59 @@ class StudyRun:
             "designs": [_row(r) for _, r in t.iterrows()],
         }
 
+    def _sensitivity_json(self) -> dict:
+        from . import __version__
+        from .sensitivity import FACTORS, OUTPUTS
+
+        res, st = self.result, self.study
+        d = res.design
+        grid = res.grid
+        return {
+            "packtherm_results": FORMAT_VERSION,
+            "packtherm_version": __version__,
+            "created": self.created,
+            "elapsed_s": round(self.elapsed_s, 2),
+            "study": self.spec.spec,
+            "summary": {
+                "cell": st.cell.name,
+                "cell_model": st.cell.model_label,
+                "duty": st.duty.name,
+                "mode": res.settings.mode,
+                "design": res.design_label,
+                "simulations": len(res.samples),
+                "feasible_share": _num(float(res.samples.feasible.mean())),
+                "text": res.summary(),
+            },
+            "design": {
+                "topology": d.topology,
+                "flow_g_s": d.flow_g_s,
+                "chiller_C": d.inlet_C,
+                "filler": d.filler,
+                "gap_mm": d.gap_mm,
+            },
+            "inputs": [
+                {"name": n, "label": FACTORS[n][0], "unit": FACTORS[n][1], "low": lo, "high": hi}
+                for n, (lo, hi) in zip(res.factors, res.bounds)
+            ],
+            "outputs": dict(OUTPUTS),
+            "ranking": [{k: _num(v) for k, v in r.items()} for r in res.ranking.to_dict("records")],
+            "notes": (
+                [f"The design is the grid study's {res.settings.design} pick ({len(grid.table)} designs run first)."]
+                if grid is not None
+                else []
+            )
+            + [
+                (
+                    "mu_star: about how much a result changes as the input goes from the low to the high end of "
+                    "its range (the mean absolute Morris elementary effect, SALib); sigma large against mu_star: "
+                    "the effect depends on the other inputs."
+                ),
+                "cell_to_cell_K compares the outlet cell's peak with the inlet cell's peak, which can come at different times.",
+            ]
+            + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
+            "assumptions": _assumptions(st),
+        }
+
     def write(self, out_dir: str | Path) -> dict[str, Path]:
         """Write results.json, the designs CSV and the trade-off chart."""
         from .report import plot_tradeoff
@@ -651,6 +745,20 @@ class StudyRun:
         out = Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
         stem = file_stem(self.spec.spec)
+        if hasattr(self.result, "ranking"):  # v0.6.15: a sensitivity study
+            from .sensitivity import plot
+
+            paths = {
+                "json": out / f"{stem}_results.json",
+                "csv": out / f"{stem}_ranking.csv",
+                "samples": out / f"{stem}_samples.csv",
+                "chart": out / f"{stem}_ranking.png",
+            }
+            paths["json"].write_text(json.dumps(self.to_json(), indent=1, allow_nan=False), encoding="utf-8")
+            self.result.ranking.to_csv(paths["csv"], index=False)
+            self.result.samples.to_csv(paths["samples"], index=False)
+            plot(self.result, paths["chart"])
+            return paths
         paths = {
             "json": out / f"{stem}_results.json",
             "csv": out / f"{stem}_designs.csv",
@@ -674,6 +782,45 @@ def _num(x):
     if isinstance(x, float) and not math.isfinite(x):
         return None
     return x
+
+
+def _check_sensitivity(sec: dict, errors: list[str]) -> dict:
+    from .materials import PCM_LIBRARY
+    from .module_design import KIND
+    from .sensitivity import FACTORS
+
+    d = sec.get("design")
+    if isinstance(d, str) and d not in ("lightest", "lowest_energy", "balanced"):
+        errors.append(f"sensitivity.design: lightest, lowest_energy, balanced or a design, got {d!r}")
+    elif isinstance(d, dict):
+        for k in d:
+            if k not in SENSITIVITY_DESIGN_KEYS:
+                errors.append(f"sensitivity.design.{k}: unknown key (allowed: {', '.join(SENSITIVITY_DESIGN_KEYS)})")
+        topo = d.get("topology")
+        if topo not in KIND:
+            errors.append(f"sensitivity.design.topology: one of {', '.join(KIND)}, got {topo!r}")
+        flow = d.get("flow_g_s", 0.0)
+        if not _type_ok(flow, (int, float)) or (topo not in (None, "none") and not flow > 0):
+            errors.append(f"sensitivity.design.flow_g_s: a positive number for {topo}, got {flow!r}")
+        ch = d.get("chiller_C")
+        if ch is not None and (not _type_ok(ch, (int, float)) or KIND.get(topo) != "liquid"):
+            errors.append(f"sensitivity.design.chiller_C: a number, for liquid cooling only, got {ch!r}")
+        f = d.get("filler")
+        if f not in (None, "none") and f not in PCM_LIBRARY:
+            errors.append(f"sensitivity.design.filler: none or one of {', '.join(PCM_LIBRARY)}, got {f!r}")
+        gap = d.get("gap_mm", 2.0)
+        if not _type_ok(gap, (int, float)) or not gap > 0:
+            errors.append(f"sensitivity.design.gap_mm: a positive number, got {gap!r}")
+    if isinstance(sec.get("factors"), list):
+        for i, n in enumerate(sec["factors"]):
+            if n not in FACTORS:
+                errors.append(f"sensitivity.factors[{i}]: one of {', '.join(FACTORS)}, got {n!r}")
+    for n, r in (sec.get("ranges") or {}).items():
+        if n not in FACTORS:
+            errors.append(f"sensitivity.ranges.{n}: one of {', '.join(FACTORS)}")
+        elif not (isinstance(r, list) and len(r) == 2 and all(_type_ok(v, (int, float)) for v in r) and r[0] < r[1]):
+            errors.append(f"sensitivity.ranges.{n}: [low, high] with low below high, got {r!r}")
+    return sec
 
 
 def _search_block(log) -> dict:

@@ -1,0 +1,15 @@
+# Which inputs matter most for the road trip's balanced design (v0.6.15).
+# Needs the sensitivity extra: pip install "packtherm[sensitivity]". Then: packtherm run this file.
+# The design is the balanced pick of m50_roadtrip_35c.yaml, named here so the grid isn't run
+# again; "design: balanced" would run the grid first and take its pick.
+packtherm_study: 1
+name: M50 road trip, 35 degC, sensitivity of the balanced design
+cell: M50
+ambient_C: 35
+duty:
+  type: roadtrip
+  speed_kmh: 130
+sensitivity:
+  design: {topology: ribbon, flow_g_s: 0.05, filler: none, gap_mm: 3.5}
+  trajectories: 10
+  seed: 1
