@@ -139,6 +139,11 @@ class ModuleStudy:
     # radiator for recovery. "always": the chiller keeps running through the rest.
     chiller_runs: str = "event"
     resistance_margin: float = 0.2
+    # v0.6.13: battery life (packtherm.life): capacity left after life_years of this duty once a
+    # day, parked at life_park_C (None: the study's ambient) in between. 0 years: not estimated.
+    life_years: float = 8.0
+    life_park_C: float | None = None
+    capacity_min_pct: float | None = None  # a design keeping less fails ("ages"); None: report only
     mode: str = "normal"  # numerical resolution: "normal" or "fast" (RESOLUTIONS)
     dt: float | None = None  # thermal step [s]; None = the mode's
 
@@ -281,12 +286,24 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
     else:
         rec_ok = recovered and recovery_min <= req.recovery_max_min
     share = delivered_share(r.load, event)
+    life = None
+    if study.life_years > 0:
+        from .life import capacity_after
+
+        park = req.T_env_C if study.life_park_C is None else study.life_park_C
+        T_cell = 0.5 * (res.T_max + res.T_min) - KELVIN  # the cell's mean, roughly
+        life = capacity_after(
+            cell, res.t, np.interp(res.t, a["t"], a["soc"]), T_cell, park, years=study.life_years
+        )
+    cap_min = study.capacity_min_pct
+    life_ok = cap_min is None or life is None or life.capacity_pct >= cap_min
     fails = (
         ("hot", T_peak > T_limit),
         ("uneven", dT > req.dT_cell_max_C),
         ("slow", not rec_ok),
         ("spread", not c2c_ok),
         ("short", share < MIN_DELIVERED),
+        ("ages", not life_ok),
     )
     # Current ratings, and the lower temperature limits (v0.6.7); the upper ones are the peak criterion.
     rating = [w for w in check_limits(cell, r.load, res) if "rating" in w or "below the" in w]
@@ -331,6 +348,9 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         "heat_kJ": res.E_generated / 1e3,
         "throughput_Wh": throughput_Wh,
         "pump_mW_per_cell": 1e3 * r.pump_W_per_cell,
+        "capacity_after_pct": life.capacity_pct if life else np.nan,
+        "life_years": life.years if life else np.nan,
+        "life_model": life.note if life else "",
         "fan_pump_Wh": fan_pump_Wh,
         "radiator_fan_Wh": radiator_fan_Wh,
         "chiller_Wh": chiller_Wh,

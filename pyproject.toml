@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "packtherm"
-version = "0.6.12"
+version = "0.6.13"
 description = "Battery thermal management design toolkit for cylindrical-cell EV packs: electro-thermal cells, packed-module model, cooling design advisor"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 120
+extend-exclude = ["src/packtherm/_vendor"]  # copied as is (BLAST-Lite, v0.6.13)
 
 [tool.setuptools.package-data]
-packtherm = ["data/*.csv", "data/*.yaml", "web_static/*", "web_static/assets/*"]
+packtherm = ["data/*.csv", "data/*.yaml", "web_static/*", "web_static/assets/*", "_vendor/blast/LICENSE", "_vendor/blast/NOTICE"]

@@ -524,9 +524,11 @@ class StudyResult:
                 else f"  (fails at worst-case R0 = {r.R0_worst_mOhm:.0f} mOhm: {r.T_peak_worst_C:.1f} degC)"
             )
             rec = f"{r.recovery_min:.0f} min" if np.isfinite(r.recovery_min) else "n/a"
+            cap = r.get("capacity_after_pct", np.nan)
+            life = f", {cap:.0f}% capacity after {r.life_years:g} yr" if pd.notna(cap) else ""
             lines.append(
                 f"{label:<14} {r.design}: T_peak {r.T_peak_C:.1f} degC, +{r.mass_overhead_pct:.1f}% mass, "
-                f"aux {r.aux_energy_pct:.2f}% of energy, recovery {rec}{robust}"
+                f"aux {r.aux_energy_pct:.2f}% of energy, recovery {rec}{life}{robust}"
             )
         fragile = self.table[self.table.fragile].sort_values("mass_overhead_pct")
         for _, r in fragile.iterrows():

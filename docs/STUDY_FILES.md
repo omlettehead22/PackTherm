@@ -130,6 +130,7 @@ Unusual but possible values are warnings, shown by `packtherm cells` and written
 | `dT_cell_max_C` | 5 | In-cell spread limit (> 0) |
 | `recovery_max_min` | null | Ready again (within 1 K of ambient, PCM re-frozen) within this time; null: within the rest window. From v0.6.8 a cell no warmer than 25 °C is also ready if it is above ambient by no more than the event's headroom to its peak limit: in the cold, a little warmth is no harm |
 | `cell_to_cell_max_K` | null | Hottest-to-coolest cell limit; null: reported but not limited |
+| `capacity_min_pct` | null | Capacity left after `life_years` (% of new) a design must keep; null: reported but not limited (from v0.6.13) |
 
 ## `design_space`
 
@@ -155,6 +156,12 @@ Every combination is simulated (ribbons widen to their minimum gap; duplicates a
 | `chiller_cop` | null | Fixed chiller COP; null: from ambient (Carnot fraction) |
 | `chiller_runs` | `event` | `event` (then the radiator takes over) or `always` |
 | `liquid_loop_kg`, `air_system_kg`, `chiller_kg` | 3, 4, 4 | Pack-level hardware mass |
+| `life_years` | 8 | Battery life estimate: capacity left after this many years of the duty once a day (from v0.6.13); 0: no estimate |
+| `life_park_C` | null | Where the cell waits between duties; null: `ambient_C` |
+
+### Battery life (from v0.6.13)
+
+Each design gets `capacity_after_pct`: the capacity left after `life_years`, from NREL's BLAST-Lite ageing models (BSD 3-clause, copied into PackTherm). One day is the duty as simulated (state of charge, and the cell's mean temperature: halfway between its hottest and coolest points), then parked at `life_park_C` and the state of charge it ended at for the rest of 24 h; that day repeats every day. The LG M50 and MJ1 have their own models; the other cells use the closest model by chemistry (Panasonic 18650B for NCA, Sony-Murata 26650 for LFP, the M50 for other NMC) and `life_model` says it is a stand-in. Use it to compare designs: a hot-day study makes every day hot, so as an absolute life it is pessimistic.
 
 ## Results document
 
@@ -172,4 +179,4 @@ Every combination is simulated (ribbons widen to their minimum gap; duplicates a
 | `assumptions` | Resolution, coolant and air reference points, chiller, wall, resistance margin and pack-level parts |
 | `designs` | Every design, one object per row of the designs CSV |
 
-Each design's `fail_reason` lists what it fails, joined by ` · `: `hot` (peak over the limit), `uneven` (in-cell spread over the limit), `slow` (not ready again in time), `spread` (cell-to-cell over the limit) and `short`, when the cell reached its voltage cut-off and delivered less than 80% of the discharge the duty asks for. A run like that understates the heat, so it fails whatever the cooling, and `rating_warning` says how much was delivered. `rating_warning` also holds datasheet-rating breaches, which are warnings only.
+Each design's `fail_reason` lists what it fails, joined by ` · `: `hot` (peak over the limit), `uneven` (in-cell spread over the limit), `slow` (not ready again in time), `spread` (cell-to-cell over the limit), `ages` (less capacity left than `capacity_min_pct`) and `short`, when the cell reached its voltage cut-off and delivered less than 80% of the discharge the duty asks for. A run like that understates the heat, so it fails whatever the cooling, and `rating_warning` says how much was delivered. `rating_warning` also holds datasheet-rating breaches, which are warnings only.

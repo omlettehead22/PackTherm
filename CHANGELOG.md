@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.13
+
+Battery life: each module design reports the capacity left after some years of its duty, from NREL's BLAST-Lite ageing models.
+
+- **New: `packtherm/life.py`.** One day is the duty as simulated (the cell's state of charge, and its temperature halfway between its hottest and coolest points), then parked for the rest of 24 h at `life_park_C` (default: the study's ambient) and the state of charge it ended at. BLAST-Lite's calendar and cycle ageing models run that day for `life_years` (default 8).
+- **Models:** the LG M50 and MJ1 have their own (NMC811 / graphite-Si). The others use the closest model by chemistry and say so in `life_model`: the Panasonic 18650B for NCA (the NCR18650PF), the Sony-Murata 3 Ah 26650 for LFP (the A123), and the M50's for other NMC cells (30T, HG2, user cells).
+- **BLAST-Lite is copied in** (`packtherm/_vendor/blast`, BSD 3-clause, licence and notice kept; upstream commit 991591726c07), rather than a dependency: its package pins Python ≤ 3.13 and numpy < 2 and pulls in weather-data packages. Only the models and the rainflow counter are copied. Changes: relative imports, no plotting, and a stand-in for `np.trapz` (removed in numpy 2.4, which breaks upstream too). A test checks the copy gives upstream's capacity on a test day to 1e-12 for all four models.
+- **Study files:**
+  - `options.life_years` (0: no estimate) and `options.life_park_C`;
+  - `requirements.capacity_min_pct`: designs keeping less fail with `ages`; null (default) reports only.
+- **Results:** `capacity_after_pct`, `life_years` and `life_model` on every design; the CLI summary gives each pick's capacity; the web app has a "Capacity left" column and shows it on the pick cards.
+- **Example studies re-run** (verdicts unchanged). Road trip at 35 °C: 46–52 % left after 8 years sealed, 55–57 % for every cooled design that passes. 3 × WLTC at 35 °C: 69–70 %. 1.5C discharge at 25 °C: 62–71 %. Between passing designs life hardly differs: most of each day is parked at the ambient.
+- **Limits** (BACKLOG item 17): every day is the study's day (a hot-day study ages the cell as if every day were hot), so compare designs with it rather than read it as the car's life; ageing does not raise the resistance during the study.
+
 ## 0.6.12
 
 The liquid coolant's heat transfer and pressure drop come from the channels' shape, the flow and the coolant's properties, using two new dependencies: ht and fluids (Caleb Bell, MIT, pure Python).

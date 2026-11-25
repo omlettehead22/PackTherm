@@ -59,6 +59,7 @@ At the M50's rated 1.5C, run continuously to empty, every one of these cells pas
 
 - **Side ribbon vs bottom plate for a 70 mm cell:** the ribbon runs about 17 K cooler at the inlet while touching a quarter of the can, and its in-cell spread is 4.9 K against 8.2 K. Pulling heat down the full height of the winding is slow, and since v0.6.12 the plate's coolant side is worked out from its channels: a 10 × 4 mm channel under half the footprint gives about 650 W/m²K per can base, where the ribbon's many small ports give about 1,950 per bonded strip (both had been an assumed 1,500). That is why tall cylindrical cells are usually side-cooled.
 - **The coolant warms up to 17 K along the channel** at this flow, so the outlet cell runs up to 13 K hotter than the inlet cell. PCM in the gaps narrows that spread (13.0 → 10.8 K with RT31, 8.4 K with RT42-EG).
+- **Battery life is mostly decided while the car is parked** (v0.6.13): on the road trip at 35 °C, with the duty once a day and the car parked at 35 °C in between, the M50 keeps 46–52 % of its capacity after 8 years sealed (52 % with RT42) and 55–57 % with any cooling that passes. Between passing designs life hardly differs, because most of each day is spent parked at the ambient. Ageing from NREL's BLAST-Lite models; a hot-day study makes every day hot, so compare designs with it rather than read it as the car's life.
 - **More flow mostly cuts how much the coolant warms:** the channels are laminar, so extra flow barely improves heat transfer at the can. On the road trip, 2.5 times the flow lowers the hottest cell by about 3 K for about 1.6 times the pump and fan energy.
 
 ## Validation
@@ -92,6 +93,7 @@ Method, per-test results and known gaps: [docs/VALIDATION.md](docs/VALIDATION.md
 - **Mass:** filler plus cooling hardware built up from sourced dimensions (plate sheets and channels, ribbon walls and ribs, bond lines, pack-level loop, fans and chiller).
 - **Duties:** constant C-rate, a road trip (motorway then rapid charge), WLTC Class 3b through a road-load model, or a current CSV.
 - **Speed:** a normal mode for final numbers and a fast mode about 5× quicker for exploring, with the same verdicts on the example studies ([docs/FAST_MODE.md](docs/FAST_MODE.md)).
+- **Battery life** (v0.6.13): capacity left after 8 years (`life_years`) of the duty once a day, from NREL's BLAST-Lite calendar and cycle ageing models (BSD 3-clause, copied in). The M50 and MJ1 have their own models; other cells use the closest by chemistry, marked as a stand-in. An optional `capacity_min_pct` limit fails designs that age too fast.
 - **Picks:** the trade-off front of feasible designs, re-checked at worst-case resistance (the published maximum plus a 20 % ageing margin), with designs that fail reported and dropped.
 
 **Limits to keep in mind:** the M50 circuit is derived, with its resistance scaled to measured pulses at 25 °C only; the plate and ribbon are 2D slices of a 3D field; flows, pressure drops, the roll-end resistance, wall U-value and pack-level masses are labelled assumptions. The full list, ranked by how much each could change a recommendation, is in [docs/BACKLOG.md](docs/BACKLOG.md).
@@ -215,9 +217,10 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.9** | The LG M50 against measured data with a core thermocouple: its circuit had half the real resistance, now scaled ×2.04 on measured pulses (1C voltage 114–146 → 18–40 mV, core 0.7–1.4 K); drive cycles 44 → 35 mV; a tenth of the radial conductivity ruled out; the M50's cold limits; earlier and lumped cell versions listed apart, for comparison only; the example studies re-run (the 1.5C discharge now has no feasible design) |
 | **v0.6.10** | Patch: cold limits for the PF and MJ1 (no warning before when charging them in the cold); no warning for a dip of hundredths of a kelvin below a limit |
 | **v0.6.11** | The lumped model's slow losses (datasheet cells, the MJ1): heat from 22–64 % of the fitted circuits' to within −31 to +19 % (LFP −42 to +27 %); the M50's datasheet resistance now gives 8.0–8.4 K on the measured 1C tests against 8–10.4 K (was 5.5–5.9) |
-| **v0.6.12** (current) | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
-| v0.6.13 (next) | Battery life from each design's temperatures (NREL BLAST-Lite's degradation models) |
-| v0.6.14–v0.6.17 | Optimised designs (pymoo); which inputs matter most (SALib); BPX cell files; the cold capacity and charging from empty (BACKLOG item 7) |
+| **v0.6.12** | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
+| **v0.6.13** (current) | Battery life: capacity left after 8 years of the duty once a day, from NREL's BLAST-Lite ageing models (copied in, BSD 3-clause), and an optional minimum. Road trip at 35 °C: 46–52 % sealed, 55–57 % for every cooled design that passes |
+| v0.6.14 (next) | Optimised designs (pymoo) |
+| v0.6.15–v0.6.17 | Which inputs matter most (SALib); BPX cell files; the cold capacity and charging from empty (BACKLOG item 7) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).

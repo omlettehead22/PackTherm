@@ -125,6 +125,7 @@ REQ_KEYS = {
     "dT_cell_max_C": (NUM, 5.0, _pos),
     "recovery_max_min": (OPT_NUM, None, _optional(_nonneg)),
     "cell_to_cell_max_K": (OPT_NUM, None, _optional(_pos)),
+    "capacity_min_pct": (OPT_NUM, None, _optional(_pos)),  # v0.6.13: after life_years; null = report only
 }
 
 SPACE_KEYS = {
@@ -154,6 +155,8 @@ OPTION_KEYS = {
     "liquid_loop_kg": (NUM, 3.0, _nonneg),
     "air_system_kg": (NUM, 4.0, _nonneg),
     "chiller_kg": (NUM, 4.0, _nonneg),
+    "life_years": (NUM, 8.0, _nonneg),  # v0.6.13: 0 = no life estimate
+    "life_park_C": (OPT_NUM, None, None),  # null = ambient_C
 }
 
 TOP_KEYS = {
@@ -500,6 +503,9 @@ class StudySpec:
             gaps_mm=tuple(sp["gaps_mm"]),
             packing=sp["packing"],
             cell_to_cell_max_K=r["cell_to_cell_max_K"],
+            capacity_min_pct=r["capacity_min_pct"],
+            life_years=o["life_years"],
+            life_park_C=o["life_park_C"],
             edge_cells=o["edge_cells"],
             wall=Wall(U=o["wall_U"]),
             pack=PackHardware(
@@ -676,6 +682,7 @@ requirements:
   dT_cell_max_C: 5              # in-cell spread
   recovery_max_min: null        # null = within the rest window
   cell_to_cell_max_K: null      # null = report only
+  capacity_min_pct: null        # capacity left after life_years; null = report only
 
 design_space:
   topologies: [none, air, bottom, ribbon]
@@ -695,4 +702,6 @@ options:
   liquid_loop_kg: 3
   air_system_kg: 4
   chiller_kg: 4
+  life_years: 8                 # battery life estimate: the duty once a day; 0 = none
+  life_park_C: null             # parked between duties at; null = ambient_C
 """

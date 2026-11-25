@@ -119,6 +119,9 @@ export interface Design {
   cell_to_cell_K: number | null;
   recovery_min: number | null;
   aux_energy_pct: number | null;
+  capacity_after_pct?: number | null;
+  life_years?: number | null;
+  life_model?: string | null;
   mass_overhead_pct: number | null;
   mass_overhead_g: number | null;
   T_limit_C: number | null;
