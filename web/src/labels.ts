@@ -65,6 +65,12 @@ export const LABELS: Record<string, Label> = {
     empty: "Reported, not limited",
     help: "Hottest cell to coolest cell.",
   },
+  "requirements.capacity_min_pct": {
+    label: "Capacity left at least",
+    unit: "% of new",
+    empty: "Reported, not limited",
+    help: "After the battery-life years in the options.",
+  },
 
   // -- design space
   "design_space.topologies": { label: "Cooling" },
@@ -92,6 +98,12 @@ export const LABELS: Record<string, Label> = {
   "options.liquid_loop_kg": { label: "Liquid loop mass", unit: "kg per pack" },
   "options.air_system_kg": { label: "Air system mass", unit: "kg per pack" },
   "options.chiller_kg": { label: "Chiller mass", unit: "kg per pack" },
+  "options.life_years": {
+    label: "Battery life over",
+    unit: "years",
+    help: "The duty once a day, parked in between (NREL BLAST-Lite ageing models). 0: no estimate.",
+  },
+  "options.life_park_C": { label: "Parked between duties at", unit: "°C", empty: "The ambient" },
 
   // -- a user-defined cell
   "cell.name": { label: "Name" },

@@ -226,6 +226,15 @@
    "default": null,
    "min": 0,
    "exclusive": true
+  },
+  "capacity_min_pct": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null,
+   "min": 0,
+   "exclusive": true
   }
  },
  "design_space": {
@@ -409,6 +418,20 @@
    ],
    "default": 4.0,
    "min": 0
+  },
+  "life_years": {
+   "type": [
+    "number"
+   ],
+   "default": 8.0,
+   "min": 0
+  },
+  "life_park_C": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "default": null
   }
  },
  "cell": {
