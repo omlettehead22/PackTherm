@@ -183,6 +183,36 @@ A search optimises what it is given and nothing else. Wider gaps, for example, c
 
 `packtherm run` names a search's files `<stem>_search_…`, so they sit beside the grid study's, and also writes `<stem>_search_simulated.csv`: every design the search simulated, in order, at the search's mode and resistance. The results document gains a `search` block (settings, designs simulated, generations, feasible designs found).
 
+## `sensitivity`
+
+From v0.6.15. Optional: with this section the study ranks which uncertain inputs matter most for one design, instead of comparing designs. It needs the sensitivity extra (`pip install "packtherm[sensitivity]"`, which installs SALib and needs numpy 2) and runs from the command line; the web app and the API refuse it for now. A study can have `search` or `sensitivity`, not both.
+
+It uses Morris screening (SALib): each input moves across its range one level at a time along random trajectories, about `trajectories × (inputs + 1)` simulations. For each result it reports `mu_star`, about how much the result changes as the input goes from the low to the high end of its range (the mean absolute elementary effect, in the result's units), and `sigma`, the spread of those effects: large against `mu_star` when the input's effect depends on the others. The results ranked are peak temperature, in-cell spread, cell-to-cell spread, running energy and capacity left.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `design` | `balanced` | `lightest`, `lowest_energy` or `balanced`: run the grid study first and take that pick. Or a design: `{topology, flow_g_s, chiller_C, filler, gap_mm}` (`chiller_C` null or absent: no chiller; `filler` none by default; `gap_mm` 2 by default) |
+| `trajectories` | 10 | Morris trajectories (≥ 2) |
+| `levels` | 4 | Levels across each range (even, ≥ 2) |
+| `seed` | 1 | Random seed: the same seed gives the same screening |
+| `mode` | `fast` | Resolution of the simulations |
+| `factors` | null | Inputs to vary; null: every one that applies to the design |
+| `ranges` | `{}` | `{input: [low, high]}` replacing an input's default range |
+
+| Input | Default range | What moves |
+|---|---|---|
+| `ambient` | −5 to +5 K | The study's ambient (and where the car is parked, for battery life) |
+| `resistance` | 0 to 1 | The cell's resistance, from its own (0) to the study's worst case (1: the datasheet maximum plus `r_margin`) |
+| `cell_heat_capacity` | × 0.9 to 1.1 | The cell's specific heat |
+| `cell_conductivity` | × 0.7 to 1.3 | The cell's radial (and axial) thermal conductivity |
+| `entropic_heat` | × 0.5 to 1.5 | The reversible heat, dU/dT |
+| `tim_conductivity` | × 0.5 to 1.5 | The interface material's conductivity (cold plate and ribbon) |
+| `heat_transfer` | × 0.7 to 1.3 | The coolant's h, or the air's |
+| `flow` | × 0.8 to 1.2 | The air or coolant flow |
+| `chiller_inlet` | −3 to +3 K | The chiller's set-point (chilled designs) |
+
+`packtherm run` names a sensitivity study's files `<stem>_sensitivity_…`: the results document (the design, the inputs and their ranges, the ranking), the ranking CSV, every simulation's inputs and results (`_samples.csv`), and a chart with one panel per result.
+
 ## Results document
 
 `packtherm run` writes `<stem>_results.json` next to the designs CSV and the chart (`<stem>` is the name `packtherm design` uses). Format `packtherm_results: 1`, strict JSON (NaN and infinities become `null`):

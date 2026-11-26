@@ -194,8 +194,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         study = StudySpec(spec).build()
         n = len(study.designs())
         problems = []
-        if "search" in spec:  # v0.6.14: hundreds of simulations, and pymoo is an optional extra
-            problems.append("search: runs from the command line (packtherm run), not through the API yet")
+        for sec in ("search", "sensitivity"):  # v0.6.14-15: many simulations, and optional extras
+            if sec in spec:
+                problems.append(f"{sec}: runs from the command line (packtherm run), not through the API yet")
         if not unlimited:
             cap = lim.max_designs_fast if study.mode == "fast" else lim.max_designs_normal
             if n > cap:

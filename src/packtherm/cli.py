@@ -495,7 +495,11 @@ def _run(args) -> None:
     spec = load_study(args.study)
     study = spec.build()
     label = f" ({spec.spec['name']})" if spec.spec.get("name") else ""
-    if spec.is_search:
+    if spec.is_sensitivity:
+        se = spec.spec["sensitivity"]
+        what = f"the grid's {se['design']} pick" if isinstance(se["design"], str) else "the named design"
+        print(f"{args.study}{label}: which inputs matter most for {what}, {se['mode']} mode...")
+    elif spec.is_search:
         se = spec.spec["search"]
         print(
             f"{args.study}{label}: searching up to {se['evaluations']} module designs in {se['mode']} mode, "

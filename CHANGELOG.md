@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.15
+
+Which inputs matter most: a study can rank the uncertain inputs around one design by how much each moves its results, with Morris screening from SALib (an optional extra: `pip install "packtherm[sensitivity]"`).
+
+- **New: `packtherm/sensitivity.py`** and a study-file `sensitivity:` section. The design is a pick of the grid study (`balanced` by default; the grid runs first) or named. Nine inputs, each over a default range you can change: ambient (±5 K), cell resistance (its own to the worst case), cell heat capacity (×0.9–1.1), cell conductivity (×0.7–1.3), reversible heat (×0.5–1.5), interface conductivity (×0.5–1.5), air or coolant heat transfer (×0.7–1.3), flow (×0.8–1.2) and chiller set-point (±3 K); only those that apply to the design are varied.
+- **Results:** for peak temperature, in-cell spread, cell-to-cell spread, running energy and capacity left, each input's `mu_star` (about how much the result changes across the input's range) and `sigma` (whether that depends on the other inputs). Files: results JSON, ranking CSV, every simulation's inputs and results, and a chart with one panel per result.
+- **New: `Coolant.h_scale`**, a multiplier on the coolant h (default 1: results unchanged).
+- **Example** (`docs/examples/m50_roadtrip_35c_sensitivity.yaml`): the road trip's balanced design, a ribbon at 0.05 g/s, at 35 °C. 90 simulations in about 2 minutes on two cores; 82 of them pass (8 run hot at the top of the ambient range).
+  - Peak temperature: ambient about 9 K across its ±5 K, cell resistance 1.5 K, flow 1.2 K; the interface material and the coolant heat transfer under 0.2 K each. Without a chiller the heat ends up in the 35 °C air, so that sets the peak rather than the path to the coolant.
+  - In-cell spread: the cell's own conductivity (0.55 K), then its resistance.
+  - Capacity left: the ambient, about 9 percentage points; nothing else moves it by more than 0.1.
+- **Where it runs:** the command line and Python. The web app and the API refuse a study with a `sensitivity` section for now. SALib needs numpy 2; the core still runs on numpy 1.24.
+- **Found while testing:** the cell-to-cell spread compares the outlet and inlet cells' peaks, which can come at different times, and understates it for chilled designs (BACKLOG item 11a, to fix in a patch).
+- **Tests:** which inputs apply to which design, each input moving what it names (and the scaled dU/dT surviving worker processes), a small screening ranking ambient first for an air design, a grid pick as the design, the study-file section, the API and browser refusing it, and the stored example ranking matching its samples.
+
 ## 0.6.14
 
 Design search: instead of simulating every combination, a study can search the design space with pymoo's NSGA-II (an optional extra: `pip install "packtherm[search]"`).
