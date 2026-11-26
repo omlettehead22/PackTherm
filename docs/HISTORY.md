@@ -48,6 +48,7 @@ How PackTherm grew from an MSc thesis model to a module design tool. Results on 
 | **v0.6.12** | Coolant heat transfer and pressure drop from the channel shape (ht, fluids) and 50/50 glycol properties: plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip (both an assumed 1,500 before); channel pressure drop under 1 kPa (an assumed 20 kPa before). Road trip 24 of 39 feasible |
 | **v0.6.14** | Design search with pymoo's NSGA-II (optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance. Road trip: air at 0.43 % running energy against the grid's 1.91 %, with a wider gap |
 | **v0.6.15** | Which inputs matter most: Morris screening (SALib, optional extra) of nine inputs around one design. Road trip's balanced ribbon: ambient about 9 K on the peak, interface and coolant heat transfer under 0.2 K |
+| **v0.6.15.1** | Fix: cell-to-cell spread at the same moment, not the difference of peaks at different times; chilled road-trip designs from about 0 to up to 16.5 K, no verdicts changed |
 | **v0.6.13** | Battery life from NREL's BLAST-Lite ageing models: capacity left after 8 years of the duty once a day, parked at the ambient between; road trip at 35 °C 46–52 % sealed, 55–57 % for the cooled designs that pass |
 
 ## v0.3.1: single-cell design advisor

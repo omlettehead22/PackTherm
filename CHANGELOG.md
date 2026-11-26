@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.15.1
+
+Fix: the cell-to-cell spread is now the largest difference between the hottest and coolest cells at the same moment. Up to v0.6.15 it was the hottest cell's peak minus the coolest cell's peak, and those can come at different times (found while testing v0.6.15, BACKLOG item 11a).
+
+- **What was wrong:** with a chiller, every cell starts at the ambient and is cooled from there, so the inlet cell's peak is its starting temperature, and often so is the outlet cell's. On the 35 °C road trip the chilled ribbon designs were reported at about 0 K, while during the chiller's pull-down the inlet and outlet cells are up to 16.5 K apart. Without a chiller the error was smaller but in the same direction: the inlet cell peaks early and cools while the outlet cell keeps warming.
+- **Now:** at each time step, the hottest of the outlet cells (interior and edge) minus the coolest of the inlet cells, over the time all of them were simulated (`module_design.cell_to_cell_spread`); `packtherm module --compare` likewise. The new value is at least the old one (to within 0.01 K, from interpolating between time steps).
+- **Example studies re-run.** No verdicts or picks changed; none of them limits the cell-to-cell spread.
+  - Road trip and 3 × WLTC at 35 °C: chilled designs from about 0 to 4–17 K (up 11 K on average); unchilled within 0.1 K.
+  - 1.5C discharge at 25 °C: chilled designs up by 2–7 K, unchilled by 1–5 K.
+  - The search and sensitivity examples: the same designs and picks; in the sensitivity ranking the cell-to-cell spread's order is unchanged (`mu_star` within 0.07 K).
+  - The module comparison (`docs/examples/m50_module_1.5c_25c.csv`, README table): forced air 4.9 → 6.1 K, bottom plate 6.8 → 9.0 K, side ribbon 13.0 → 16.4 K; with RT31 in the ribbon's gaps 10.8 → 13.6 K.
+- **Fast mode:** its largest cell-to-cell difference from normal mode is now 0.77 K (1.5C discharge), was 0.56; FAST_MODE.md and the example re-run test's tolerance (1.0 K) updated.
+- **Tests:** the spread by hand (an outlet warming while the inlet is cooled: 20 K at the same moment where the peaks differ by 10), and a chilled design's spread clearly above the difference of its peaks.
+
 ## 0.6.15
 
 Which inputs matter most: a study can rank the uncertain inputs around one design by how much each moves its results, with Morris screening from SALib (an optional extra: `pip install "packtherm[sensitivity]"`).

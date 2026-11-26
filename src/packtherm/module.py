@@ -951,8 +951,9 @@ def compare_modules(
             "filler": m.filler or "air",
             "gap_mm": m.layout.gap_mm,
         }
+        runs = {}
         for pos in ("inlet", "outlet"):
-            r = simulate_module(
+            r = runs[pos] = simulate_module(
                 cell,
                 m,
                 duty.profile(cell),
@@ -976,9 +977,17 @@ def compare_modules(
                 out["pump_mW_per_cell"] = 1e3 * r.pump_W_per_cell
                 out["filler_g_per_cell"] = 1e3 * module_mass_per_cell_kg(cell, m)
                 out["filler_mass_pct"] = 100 * module_mass_per_cell_kg(cell, m) / cell.mass
-        out["cell_to_cell_K"] = out["T_peak_outlet_C"] - out["T_peak_inlet_C"]
+        # At the same moment (v0.6.15.1), not the difference of the two peaks.
+        out["cell_to_cell_K"] = _same_moment_spread(runs["outlet"], runs["inlet"])
         rows.append(out)
     return rows
+
+
+def _same_moment_spread(hot: ModuleResult, cold: ModuleResult) -> float:
+    """Largest difference between two cells' peak temperatures at the same time [K]."""
+    t = hot.res.t[hot.res.t <= cold.res.t[-1] + 1e-9]
+    T_hot = np.interp(t, hot.res.t, hot.res.T_max)
+    return float(np.max(np.abs(T_hot - np.interp(t, cold.res.t, cold.res.T_max))))
 
 
 def _coolant_rise_max(r: ModuleResult) -> float:

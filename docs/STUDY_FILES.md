@@ -129,7 +129,7 @@ Unusual but possible values are warnings, shown by `packtherm cells` and written
 | `T_max_C` | null | Peak limit for the hottest cell; null: the lower of 45 °C and the cell's datasheet limit |
 | `dT_cell_max_C` | 5 | In-cell spread limit (> 0) |
 | `recovery_max_min` | null | Ready again (within 1 K of ambient, PCM re-frozen) within this time; null: within the rest window. From v0.6.8 a cell no warmer than 25 °C is also ready if it is above ambient by no more than the event's headroom to its peak limit: in the cold, a little warmth is no harm |
-| `cell_to_cell_max_K` | null | Hottest-to-coolest cell limit; null: reported but not limited |
+| `cell_to_cell_max_K` | null | Limit on the largest temperature difference between the hottest and coolest cells at the same moment (from v0.6.15.1; before, the difference of their peaks); null: reported but not limited |
 | `capacity_min_pct` | null | Capacity left after `life_years` (% of new) a design must keep; null: reported but not limited (from v0.6.13) |
 
 ## `design_space`

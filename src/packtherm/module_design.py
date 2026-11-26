@@ -214,6 +214,23 @@ def _base(study: ModuleStudy) -> Params:
     return base.with_(solver=replace(base.solver, dt=study.time_step, store_every=max(1, int(60 / study.time_step))))
 
 
+def cell_to_cell_spread(hot: list, cold: list) -> float:
+    """The largest difference between cells at the same moment (v0.6.15.1).
+
+    At each time, the hottest of the ``hot`` cells' peak temperatures minus the
+    coolest of the ``cold`` cells' peaks, over the time all of them were
+    simulated. Up to v0.6.15 this was the hottest cell's peak minus the coolest
+    cell's peak, which can come at different times: with a chiller, the inlet
+    cell's peak is its starting temperature.
+    """
+    t_end = min(float(x.res.t[-1]) for x in hot + cold)
+    t = hot[0].res.t
+    t = t[t <= t_end + 1e-9]
+    T_hot = np.max([np.interp(t, x.res.t, x.res.T_max) for x in hot], axis=0)
+    T_cold = np.min([np.interp(t, x.res.t, x.res.T_max) for x in cold], axis=0)
+    return float(np.max(np.abs(T_hot - T_cold)))
+
+
 def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None = None, inlet: bool = True) -> dict:
     """Simulate the outlet cell (and the inlet cell if ``inlet``) of one design."""
     cell = study.cell if R0 is None else with_R0(study.cell, R0)
@@ -267,15 +284,23 @@ def evaluate_module_design(study: ModuleStudy, d: ModuleDesign, R0: float | None
         cell, module, duty.profile(cell), event, req.T_env_C, position=pos, edge=edge, **kw
     )
     flows = d.topology != "none"  # without a coolant, inlet and outlet cells are the same
-    T_peak_inlet = (sim("inlet", False).T_peak_C if flows else T_interior) if inlet else np.nan
+    hot, cold = [r], []  # simulations of the hottest and coolest candidate cells
+    T_peak_inlet = np.nan
+    if inlet:
+        ri = sim("inlet", False) if flows else r
+        T_peak_inlet = ri.T_peak_C
+        cold.append(ri)
     T_edge_out = T_edge_in = np.nan
     if study.edge_cells:
         re = sim("outlet", True)
         T_edge_out, dT = re.T_peak_C, max(dT, re.dT_cell_max)
+        hot.append(re)
         if inlet:
-            T_edge_in = sim("inlet", True).T_peak_C if flows else T_edge_out
+            rei = sim("inlet", True) if flows else re
+            T_edge_in = rei.T_peak_C
+            cold.append(rei)
     T_peak = float(np.nanmax([T_interior, T_edge_out]))
-    c2c = T_peak - float(np.nanmin([T_peak_inlet, T_edge_in])) if inlet else np.nan
+    c2c = cell_to_cell_spread(hot, cold) if inlet else np.nan
     c2c_lim = study.cell_to_cell_max_K
     c2c_ok = c2c_lim is None or not np.isfinite(c2c) or c2c <= c2c_lim
 
