@@ -417,6 +417,26 @@ The cold profiles fitted on are much better (fitted to 30%), but the −12 °C c
 - **Charge lost with rate** (a third try at the cold): the open-circuit voltage and the rise near empty read at a surface state of charge, the bulk's less what a sustained current holds back (filtered by the slow branch). On a known cell it was recovered within 25%. On the 30T and the HG2 the fit set it to zero at most temperatures, including the cold, and the checks didn't move (26.3 and 39.5 mV, tried before the 30% floor above). The cold needs more than this.
 - **The rise near empty on charge**, for the A123's charge from empty (about 200 mV low over its first 10%): its share ran to its bound (all of the discharge's) and the error didn't move. The error is the open-circuit curve below about 7% state of charge, which the slow discharge gives badly (it ends at the cut-off with the largest drop of the test). Charging from below about 7% is still not right.
 
+## Solid diffusion, tried and not shipped (v0.6.17)
+
+The A123's worst checks are in the cold near empty and charging from empty (BACKLOG item 7): its two −12 °C drive cycles at 84 and 96 mV RMS (370–384 mV at worst, near empty) and its 15 °C C/30 charge at 96 mV (800 mV in its first minutes). v0.6.17 tried the standard reduced-order fix: a solid-diffusion state, the particles' surface lagging their average as in a sphere under a constant flux (the three slowest modes, time constants τ_s/λₙ² with tan λₙ = λₙ, and the rest at once; in steady state the lag is τ_s/15 times the rate), with the open-circuit voltage read at the surface. τ_s was fitted at each temperature with the slow branch on the long tests, and a law through them. Unlike the three attempts before it, the lag has its own time constant and the shape of diffusion, not the slow branch's.
+
+The ship rule, set beforehand: the cold cycles and the charge from empty a third better, and nothing else worse. Each refit took about 40 minutes; the refit without diffusion reproduced the shipped file exactly.
+
+| A123 checks (RMS, mV) | Shipped | Diffusion, rise at the surface | Diffusion, rise on the average |
+|---|---|---|---|
+| −12 °C drive cycle (DYN05) | 95.9 | 88.4 | 98.1 |
+| −12 °C drive cycle (DYN15) | 84.4 | 77.0 | 87.3 |
+| 25 °C drive cycle, 4C peaks | 12.9 | 13.3 | 13.4 |
+| 15 °C C/30 charge from empty | 95.7 | 94.7 | 94.9 |
+| Fitted on: −15 °C changes in current below 20 % | 47.0 | 190.3 | (as shipped) |
+
+- **With the rise near empty read at the surface too**, the cold cycles came 8–9 % closer, but at −15 °C the surface went past empty and the near-empty windows the fit sees went from 47 to 190 mV. The fitted time constants didn't follow a law: 415 s at −3 °C, 9,900 s at 7 °C, 14,400 s at −12 °C. The tests don't pin them.
+- **With only the open-circuit voltage at the surface**, the time constants came out smooth (46–360 s), the warm fits improved (35 and 45 °C changes in current 3.2 → 1.8–1.9 mV, 5 °C cycle 7.2 → 4.1 mV), and the cold checks got slightly worse.
+- **The charge from empty didn't move either way.** At C/30 the lag is a fraction of a percent of charge, too small to explain 200 mV: whatever holds the voltage down there, it isn't diffusion this simple.
+
+The cold tests' temperatures can't say what the remaining error does to the heat. The cell warms only about 1 K under these drive profiles at −12 °C (the 15 K in one of them is the cell cooling from 3 °C to the chamber before the load), and the model's temperatures match to 0.1–0.7 K. Near empty in the cold the model's voltage is too high, so its heat there is too low, but the real cell stops with about 12 % left by the −15 °C C/30 curve while the model runs on, adding heat the cell wouldn't make. Which wins in a study isn't known.
+
 ## The cells side by side
 
 The checks are the tests never fitted to, predicted from their current alone, as a study runs the cell. The figures are medians.

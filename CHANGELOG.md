@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.17
+
+Cold capacity and charging from empty (BACKLOG item 7), investigated. No change to the model or any result: the attempt didn't meet the bar set before it, so it didn't ship. The results are in [docs/FITTING.md](docs/FITTING.md#solid-diffusion-tried-and-not-shipped-v0617).
+
+- **What was tried:** a solid-diffusion state, the standard reduced-order model of the particles' surface lagging their average (a sphere under constant flux: three slow modes and the rest at once), with the open-circuit voltage read at the surface, and its time constant fitted at each temperature with a law through them. Two ways: with the rise near empty read at the surface too, and without.
+- **The bar, set beforehand:** the A123's held-out −12 °C drive cycles (84 and 96 mV RMS) and its C/30 charge from empty (96 mV) a third better, nothing else worse.
+- **What it gave:** at best the −12 °C cycles 8–9 % closer (88 and 77 mV), with the −15 °C near-empty windows the fit sees going from 47 to 190 mV and time constants that followed no law. Without the rise at the surface, the warm fits improved but the cold checks got slightly worse. The charge from empty didn't move: at C/30 the lag is too small to explain its 200 mV.
+- **Learned:** the A123's cold tests warm the cell only about 1 K, so they can't show whether the cold voltage error matters for the heat. The model's voltage near empty in the cold is too high (heat too low), but the model runs on where the real cell stops (heat it wouldn't make). A test with real self-heating in the cold, run to empty, is what would settle it (BACKLOG item 7).
+- **Checked:** the refit without diffusion, on the same code, reproduced the shipped A123 file exactly.
+
 ## 0.6.16
 
 Cells from BPX files: `packtherm bpx cell.json` turns a [BPX](https://github.com/FaradayInstitution/BPX) file (Battery Parameter eXchange, the open format for physics-based cell models) into PackTherm cell files. Both new dependencies are optional extras.

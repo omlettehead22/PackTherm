@@ -228,8 +228,8 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.14** | Design search (pymoo's NSGA-II, an optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance; on the road trip, air at 0.43 % running energy where the grid's best needs 1.91 % (with a wider gap: more volume) |
 | **v0.6.15** | Which inputs matter most (Morris screening with SALib, an optional extra): for the road trip's balanced ribbon, the ambient moves the peak by about 9 K, the interface material and coolant heat transfer by under 0.2 K |
 | **v0.6.15.1** | Cell-to-cell spread at the same moment, not the difference of peaks that come at different times: chilled road-trip designs went from about 0 to up to 16.5 K (the chiller's pull-down); no verdicts or picks changed |
-| **v0.6.16** (current) | Cells from BPX files: size, mass, open-circuit voltage and reversible heat from the file, and a circuit derived in PyBaMM (optional extras). An LG M50 file from Chen2020: 26.7 mΩ at 25 °C against 33.7 measured |
-| v0.6.17 | The cold capacity and charging from empty (BACKLOG item 7) |
+| **v0.6.16** | Cells from BPX files: size, mass, open-circuit voltage and reversible heat from the file, and a circuit derived in PyBaMM (optional extras). An LG M50 file from Chen2020: 26.7 mΩ at 25 °C against 33.7 measured |
+| **v0.6.17** (current) | Cold capacity and charging from empty, investigated: a solid-diffusion state brought the A123's −12 °C checks only 8–9 % closer, worsened its −15 °C fits and didn't move the charge from empty, so it didn't ship (results in [FITTING.md](docs/FITTING.md#solid-diffusion-tried-and-not-shipped-v0617)) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
