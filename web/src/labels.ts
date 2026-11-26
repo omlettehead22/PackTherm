@@ -140,6 +140,17 @@ export const LABELS: Record<string, Label> = {
     help: "How fast resistance rises in the cold.",
   },
   "cell.entropic": { label: "Entropic heat" },
+  "cell.entropic_soc": {
+    label: "Own entropic heat: states of charge",
+    empty: "The chemistry's",
+    help: "From 0 to 1, rising; packtherm bpx writes these from a BPX file.",
+  },
+  "cell.entropic_mV_K": {
+    label: "Own entropic heat: dU/dT",
+    unit: "mV/K",
+    empty: "The chemistry's",
+    help: "One value for each state of charge above.",
+  },
   "cell.source": { label: "Source", help: "Where the values come from; shown with the results." },
 };
 
