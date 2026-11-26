@@ -1,0 +1,82 @@
+{
+ "Header": {
+  "BPX": "1.0.0",
+  "Title": "LG M50 21700 cylindrical cell (NMC811|graphite-SiOx), from PyBaMM's Chen2020 parameter set: a PackTherm test file",
+  "Description": "Written for PackTherm's tests from PyBaMM's Chen2020 set (Chen et al. 2020, doi:10.1149/1945-7111/ab9050; PyBaMM, BSD 3-clause). Conversions: surface area per volume 3 eps_s / r, transport efficiency eps^1.5, reaction rate constant m_ref c_max sqrt(1000 mol/m3) / F (BPX's normalised form). Chen2020 has no entropic coefficients (zero here). Density, heat capacity and conductivity are PackTherm's LG M50 values.",
+  "Model": "DFN"
+ },
+ "Parameterisation": {
+  "Cell": {
+   "Reference temperature [K]": 298.15,
+   "Lower voltage cut-off [V]": 2.5,
+   "Upper voltage cut-off [V]": 4.2,
+   "Nominal cell capacity [A.h]": 5.0,
+   "Specific heat capacity [J.K-1.kg-1]": 842.4,
+   "Density [kg.m-3]": 2772.2,
+   "Electrode area [m2]": 0.1027,
+   "Number of electrode pairs connected in parallel to make a cell": 1,
+   "External surface area [m2]": 0.005349,
+   "Volume [m3]": 2.4529e-05
+  },
+  "Electrolyte": {
+   "Cation transference number": 0.2594,
+   "Conductivity [S.m-1]": "0.1297 * (x / 1000) ** 3 - 2.51 * (x / 1000) ** 1.5 + 3.329 * (x / 1000)",
+   "Diffusivity [m2.s-1]": "8.794e-11 * (x / 1000) ** 2 - 3.972e-10 * (x / 1000) + 4.862e-10",
+   "Conductivity activation energy [J.mol-1]": 0,
+   "Diffusivity activation energy [J.mol-1]": 0
+  },
+  "Negative electrode": {
+   "Particle radius [m]": 5.86e-06,
+   "Thickness [m]": 8.52e-05,
+   "Diffusivity [m2.s-1]": 3.3e-14,
+   "OCP [V]": "1.9793 * exp(-39.3631 * x) + 0.2482 - 0.0909 * tanh(29.8538 * (x - 0.1234)) - 0.04478 * tanh(14.9159 * (x - 0.2769)) - 0.0205 * tanh(30.4444 * (x - 0.6103))",
+   "Entropic change coefficient [V.K-1]": 0.0,
+   "Conductivity [S.m-1]": 215.0,
+   "Surface area per unit volume [m-1]": 383959,
+   "Porosity": 0.25,
+   "Transport efficiency": 0.125,
+   "Reaction rate constant [mol.m-2.s-1]": 7.0368e-06,
+   "Minimum stoichiometry": 0.0279,
+   "Maximum stoichiometry": 0.9014,
+   "Maximum concentration [mol.m-3]": 33133.0,
+   "Diffusivity activation energy [J.mol-1]": 0,
+   "Reaction rate constant activation energy [J.mol-1]": 35000
+  },
+  "Positive electrode": {
+   "Particle radius [m]": 5.22e-06,
+   "Thickness [m]": 7.56e-05,
+   "Diffusivity [m2.s-1]": 4e-15,
+   "OCP [V]": "-0.8090 * x + 4.4875 - 0.0428 * tanh(18.5138 * (x - 0.5542)) - 17.7326 * tanh(15.7890 * (x - 0.3117)) + 17.5842 * tanh(15.9308 * (x - 0.3120))",
+   "Entropic change coefficient [V.K-1]": 0.0,
+   "Conductivity [S.m-1]": 0.18,
+   "Surface area per unit volume [m-1]": 382184,
+   "Porosity": 0.335,
+   "Transport efficiency": 0.1939,
+   "Reaction rate constant [mol.m-2.s-1]": 7.0733e-05,
+   "Minimum stoichiometry": 0.2661,
+   "Maximum stoichiometry": 0.9084,
+   "Maximum concentration [mol.m-3]": 63104.0,
+   "Diffusivity activation energy [J.mol-1]": 0,
+   "Reaction rate constant activation energy [J.mol-1]": 17800
+  },
+  "Separator": {
+   "Thickness [m]": 1.2e-05,
+   "Porosity": 0.47,
+   "Transport efficiency": 0.32222
+  },
+  "User-defined": {
+   "Thermal conductivity [W.m-1.K-1]": 1.2251
+  }
+ },
+ "State": {
+  "Initial conditions": {
+   "Initial state-of-charge": 1,
+   "Initial electrolyte concentration [mol.m-3]": 1000.0,
+   "Initial temperature [K]": 298.15
+  },
+  "Thermal environment": {
+   "Ambient temperature [K]": 298.15,
+   "Heat transfer coefficient [W.m-2.K-1]": 10.0
+  }
+ }
+}

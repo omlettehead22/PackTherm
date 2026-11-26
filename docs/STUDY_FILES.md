@@ -82,6 +82,7 @@ DCIR_mOhm: 22
 | `cp_J_kgK`, `k_radial_W_mK`, `k_axial_W_mK` | jelly roll | Heat capacity and conductivities, if you have measured values |
 | `Ea_kJ_mol` | 20 | How fast resistance rises in the cold (20 kJ/mol: about ×2.1 from 25 to 0 °C) |
 | `entropic` | true | Entropic heat (NMC and LFP; NCA has none) |
+| `entropic_soc`, `entropic_mV_K` | null | The cell's own reversible heat (from v0.6.16): dU/dT in mV/K at each state of charge (rising from 0 to 1, as many values as states of charge), instead of the chemistry's; `packtherm bpx` writes them from a BPX file. `entropic: false` still turns it off |
 | `source` | none | Where the values come from, echoed in the results |
 
 **Checks.** Values no real cylindrical Li-ion cell has are errors, so a unit slip fails before anything runs. Each error names the likely slip:
@@ -97,6 +98,15 @@ Unusual but possible values are warnings, shown by `packtherm cells` and written
 - voltage outside 3.4–3.8 V (LFP 3.1–3.35);
 - more than 800 Wh/L (LFP 500);
 - a current limit above 20C.
+
+### Cells from BPX files
+
+From v0.6.16. `packtherm bpx cell.json` reads a [BPX](https://github.com/FaradayInstitution/BPX) file (the open format for physics-based cell models; needs `pip install "packtherm[bpx]"`) and writes PackTherm cell files:
+
+- `<name>.yaml`, a cell definition as above, from the file: capacity, size (from the volume and external surface area, as a cylinder: PackTherm reads only files that say they describe a cylindrical cell, or `--diameter-mm` and `--height-mm`), mass (density × volume), heat capacity, thermal conductivity if the file gives one (BPX 1.x has no field for it; PackTherm reads it from the file's `User-defined` block, else uses the chemistry's), and the reversible heat from each electrode's entropic coefficient.
+- `<name>_circuit.yaml`, a circuit derived from the file's own model, a fitted cell file naming the first under `like`; use this one in studies. PackTherm runs the file's DFN in PyBaMM (`pip install "packtherm[bpx-fit]"`) through a C/25 discharge and charge for its open-circuit voltage, then 10 s pulses at 0.2C to 3C from twelve states of charge at 25, 10, 0 and −10 °C (`--quick`: fewer, at 25, 5 and −10 °C), and fits the same circuit as the library cells to them. For the LG M50 test file ([`tests/data/lg_m50_chen2020_bpx.json`](../tests/data/lg_m50_chen2020_bpx.json), written from PyBaMM's Chen2020 set) it takes about 25 s on one core and replays the tests through the circuit to 4.6–4.8 mV; its output is in [docs/examples](examples/lg_m50_chen2020_bpx_circuit.yaml).
+
+A derived circuit is not measured. For the LG M50 a derivation like this gave about half the resistance measured on real cells (v0.6.9), so check it against pulses on the real cell before trusting its heat. With a datasheet resistance instead (`--dcir-mohm`), PyBaMM is not needed and only the first file is written, for the lumped model. PackTherm switches PyBaMM's usage telemetry off when it runs it.
 
 ### LFP cells
 

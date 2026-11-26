@@ -554,6 +554,42 @@ def _fit(layout, filler, cooling, note=True):
     return Module(layout, filler, cooling)
 
 
+def _bpx(args) -> None:
+    from .bpx import BPXError, read_bpx, write_cell_files
+
+    try:
+        cell = read_bpx(args.file, chemistry=args.chemistry, diameter_mm=args.diameter_mm, height_mm=args.height_mm)
+    except BPXError as e:
+        raise SystemExit(f"Error: {e}") from None
+    print(
+        f"{cell.title}: {cell.chemistry}, {cell.capacity_Ah:g} Ah, {cell.diameter_mm:.1f} x {cell.height_mm:.1f} mm, "
+        f"{cell.mass_g:.1f} g, {cell.V_min:g}-{cell.V_max:g} V"
+    )
+    for n in cell.notes:
+        print(f"Note: {n}.")
+    report = None
+    if args.dcir_mohm is None:
+        from .bpx_fit import FULL, QUICK, derive
+
+        settings = QUICK if args.quick else FULL
+        print(f"Deriving the circuit: the file's {settings.model} through pulse tests at "
+              f"{', '.join(f'{t:g}' for t in settings.temperatures_C)} degC in PyBaMM...")
+        try:
+            report = derive(cell, settings, progress=lambda i, n: print(f"  temperature {i} of {n} done", flush=True))
+        except RuntimeError as e:
+            raise SystemExit(f"Error: {e} (or give --dcir-mohm)") from None
+        errs = ", ".join(f"{k:g} degC {v:.1f} mV" for k, v in report.replay_rmse_mV.items())
+        print(f"  {report.pulses} pulses, replayed through the circuit: {errs} ({report.seconds:.0f} s)")
+    paths = write_cell_files(cell, args.out, name=args.name, DCIR_mOhm=args.dcir_mohm, report=report)
+    use = paths.get("circuit", paths["cell"])
+    print("Wrote " + ", ".join(str(p) for p in paths.values()))
+    print(f"Use it in a study as  cell: {use}")
+    if report is not None:
+        from .bpx import DERIVED_WARNING
+
+        print(f"Note: {DERIVED_WARNING}.")
+
+
 def _module(args) -> None:
     import pandas as pd
 
@@ -672,6 +708,24 @@ def parser() -> argparse.ArgumentParser:
     ft.add_argument("--citation", help="where the data comes from, for the file's provenance")
     ft.add_argument("--licence", help="the data's licence, for the file's provenance")
     ft.set_defaults(func=_fit_cell)
+
+    bx = sub.add_parser(
+        "bpx",
+        help="Make PackTherm cell files from a BPX file (needs packtherm[bpx]; deriving the circuit, packtherm[bpx-fit]).",
+    )
+    bx.add_argument("file", help="the BPX file (.json)")
+    bx.add_argument("--out", default=".", help="folder for the cell files")
+    bx.add_argument("--name", help="the cell's name (default: the file's title)")
+    bx.add_argument("--chemistry", choices=["NMC", "NCA", "LFP"], help="if the file's title does not say")
+    bx.add_argument("--diameter-mm", type=float, help="the can's diameter, instead of from the volume and area")
+    bx.add_argument("--height-mm", type=float, help="the can's height, with --diameter-mm")
+    bx.add_argument(
+        "--dcir-mohm",
+        type=float,
+        help="a DC resistance from a datasheet: skip deriving the circuit (no PyBaMM) and use the lumped model",
+    )
+    bx.add_argument("--quick", action="store_true", help="fewer pulse tests (3 temperatures): about a tenth of the time")
+    bx.set_defaults(func=_bpx)
 
     e = sub.add_parser("cell", help="Electro-thermal run of one cell at constant C-rate.")
     e.add_argument("cell", help=f"Cell key ({', '.join(CELLS)}) or a cell file (.yaml or .json)")

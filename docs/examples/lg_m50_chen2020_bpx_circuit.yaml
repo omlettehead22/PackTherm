@@ -1,0 +1,269 @@
+# PackTherm cell: a circuit derived from the BPX file lg_m50_chen2020_bpx.json in PyBaMM (packtherm bpx).
+# derived from a physics model (the BPX file in PyBaMM), not measured: for the LG M50 a derivation like this gave about half the resistance measured on real cells (v0.6.9), so heat from this cell is likely low until its resistance is checked against pulses on the real cell.
+packtherm_fitted_cell: 1
+name: LG M50 (Chen2020 BPX)
+status: multi-temperature
+usable_in_studies: true
+like: lg_m50_chen2020_bpx.yaml
+model:
+  form: circuit
+  description: 'open-circuit voltage, instant resistance R0, a charge-transfer branch (I0, gamma, tau_ct), a slow
+    branch (Rd, tau_d) and a rise near empty (soc_a, soc_b): packtherm.ecm.ECM, derived from the BPX file''s model
+    (packtherm.bpx_fit)'
+  ecm:
+    R0_25C: 0.0105534
+    Ea_R0: 2838.37
+    I0_25C: 1.14942
+    Ea_I0: 32575.8
+    gamma: 1.16028
+    tau_ct: 2.48374
+    Rm_25C: 0.0
+    tau_m: 30.0
+    Ea_Rm: null
+    Rd_25C: 0.0169964
+    tau_d: 126.528
+    Ea_Rd: 1.63048e-11
+    soc_a: 0.923453
+    soc_b: 0.0546854
+    Ea_soc: 6.93479e-13
+    V_max: 4.2
+    V_min: 2.5
+    cv_cutoff_A: 0.05
+  dc_resistance_mOhm: 26.6692
+capacity:
+  measured_Ah: 5.0
+  how: the BPX file's nominal capacity
+open_circuit_voltage:
+  soc:
+  - -0.0204
+  - -0.0078
+  - 0.0049
+  - 0.0175
+  - 0.0301
+  - 0.0428
+  - 0.0554
+  - 0.0681
+  - 0.0807
+  - 0.0933
+  - 0.106
+  - 0.1186
+  - 0.1312
+  - 0.1439
+  - 0.1565
+  - 0.1692
+  - 0.1818
+  - 0.1944
+  - 0.2071
+  - 0.2197
+  - 0.2324
+  - 0.245
+  - 0.2576
+  - 0.2703
+  - 0.2829
+  - 0.2955
+  - 0.3082
+  - 0.3208
+  - 0.3335
+  - 0.3461
+  - 0.3587
+  - 0.3714
+  - 0.384
+  - 0.3966
+  - 0.4093
+  - 0.4219
+  - 0.4346
+  - 0.4472
+  - 0.4598
+  - 0.4725
+  - 0.4851
+  - 0.4978
+  - 0.5104
+  - 0.523
+  - 0.5357
+  - 0.5483
+  - 0.5609
+  - 0.5736
+  - 0.5862
+  - 0.5989
+  - 0.6115
+  - 0.6241
+  - 0.6368
+  - 0.6494
+  - 0.6621
+  - 0.6747
+  - 0.6873
+  - 0.7
+  - 0.7126
+  - 0.7252
+  - 0.7379
+  - 0.7505
+  - 0.7632
+  - 0.7758
+  - 0.7884
+  - 0.8011
+  - 0.8137
+  - 0.8264
+  - 0.839
+  - 0.8516
+  - 0.8643
+  - 0.8769
+  - 0.8895
+  - 0.9022
+  - 0.9148
+  - 0.9275
+  - 0.9401
+  - 0.9527
+  - 0.9654
+  - 0.978
+  - 0.9906
+  V:
+  - 2.56395
+  - 2.79385
+  - 2.94631
+  - 3.04919
+  - 3.12081
+  - 3.1739
+  - 3.21778
+  - 3.25913
+  - 3.30144
+  - 3.34386
+  - 3.38242
+  - 3.41351
+  - 3.43665
+  - 3.45356
+  - 3.46658
+  - 3.47745
+  - 3.48742
+  - 3.49722
+  - 3.50736
+  - 3.51814
+  - 3.52966
+  - 3.542
+  - 3.55491
+  - 3.56817
+  - 3.58144
+  - 3.59434
+  - 3.6067
+  - 3.6183
+  - 3.62915
+  - 3.63934
+  - 3.64897
+  - 3.6583
+  - 3.66741
+  - 3.67659
+  - 3.68594
+  - 3.6956
+  - 3.70569
+  - 3.71625
+  - 3.7273
+  - 3.73878
+  - 3.75054
+  - 3.76246
+  - 3.77426
+  - 3.78588
+  - 3.79718
+  - 3.80806
+  - 3.81853
+  - 3.82867
+  - 3.8386
+  - 3.84858
+  - 3.85894
+  - 3.8702
+  - 3.88293
+  - 3.89734
+  - 3.91276
+  - 3.92787
+  - 3.94174
+  - 3.9543
+  - 3.9661
+  - 3.9776
+  - 3.98913
+  - 4.00083
+  - 4.01268
+  - 4.02457
+  - 4.03638
+  - 4.04784
+  - 4.05864
+  - 4.06841
+  - 4.07682
+  - 4.0836
+  - 4.08876
+  - 4.09241
+  - 4.09516
+  - 4.09777
+  - 4.1014
+  - 4.10704
+  - 4.11558
+  - 4.12749
+  - 4.14286
+  - 4.16135
+  - 4.18247
+  how: the model's C/25 discharge and charge at 25 degC, averaged
+valid_for:
+  temperature_C:
+  - -10.0
+  - 25.0
+  discharge_C:
+  - 0.0
+  - 3.0
+  charge_C: null
+  soc:
+  - 0.05
+  - 0.95
+errors:
+  fitted_on:
+    pulse_overpotential_median_pct:
+      25C: 2.02
+      10C: 1.93
+      0C: 1.79
+      -10C: 1.42
+    replay_rmse_mV_above_10pct_soc:
+      25C: 4.56
+      10C: 4.65
+      0C: 4.72
+      -10C: 4.84
+  held_out: []
+data_warnings:
+- 'derived from a physics model (the BPX file in PyBaMM), not measured: for the LG M50 a derivation like this gave
+  about half the resistance measured on real cells (v0.6.9), so heat from this cell is likely low until its resistance
+  is checked against pulses on the real cell'
+- charging was not in the synthetic tests
+- 'size from the volume and external area: 21.1 x 70.1 mm'
+- 'the entropic coefficients are zero: no reversible heat'
+provenance:
+  packtherm: 0.6.16
+  fitted_at: '2026-11-26T21:00:07+00:00'
+  derived_from_bpx:
+    file: lg_m50_chen2020_bpx.json
+    sha256: bebc89a8fa946d23d0ffbe72d9f82ea1a8113fb5d9f80ade51338bc18af02306
+    title: 'LG M50 21700 cylindrical cell (NMC811|graphite-SiOx), from PyBaMM''s Chen2020 parameter set: a PackTherm
+      test file'
+    model: DFN
+  settings:
+    temperatures_C:
+    - 25.0
+    - 10.0
+    - 0.0
+    - -10.0
+    socs:
+    - 0.95
+    - 0.9
+    - 0.8
+    - 0.7
+    - 0.6
+    - 0.5
+    - 0.4
+    - 0.3
+    - 0.2
+    - 0.15
+    - 0.1
+    - 0.05
+    rates_C:
+    - 0.2
+    - 0.5
+    - 1.0
+    - 2.0
+    - 3.0
+    pulse_s: 10.0
+    rest_min: 60.0
+    pulses: 194

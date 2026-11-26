@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "packtherm"
-version = "0.6.15.1"
+version = "0.6.16"
 description = "Battery thermal management design toolkit for cylindrical-cell EV packs: electro-thermal cells, packed-module model, cooling design advisor"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,7 +14,9 @@ dependencies = ["numpy>=1.24", "scipy>=1.10", "pandas>=2.0", "matplotlib>=3.7", 
 api = ["fastapi>=0.110", "uvicorn>=0.29"]
 search = ["pymoo>=0.6.1"]  # v0.6.14: design search (packtherm.search)
 sensitivity = ["SALib>=1.5"]  # v0.6.15: which inputs matter most (packtherm.sensitivity); needs numpy 2
-dev = ["pytest>=7", "ruff>=0.4", "fastapi>=0.110", "uvicorn>=0.29", "httpx2>=2.0", "pymoo>=0.6.1", "SALib>=1.5"]
+bpx = ["bpx>=1.1"]  # v0.6.16: read BPX cell files (packtherm.bpx)
+bpx-fit = ["bpx>=1.1", "pybamm>=26.3"]  # v0.6.16: derive a BPX cell's circuit in PyBaMM (packtherm.bpx_fit)
+dev = ["pytest>=7", "ruff>=0.4", "fastapi>=0.110", "uvicorn>=0.29", "httpx2>=2.0", "pymoo>=0.6.1", "SALib>=1.5", "bpx>=1.1", "pybamm>=26.3"]
 
 [project.urls]
 Repository = "https://github.com/omlettehead22/packtherm"
