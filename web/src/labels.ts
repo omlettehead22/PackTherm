@@ -63,7 +63,7 @@ export const LABELS: Record<string, Label> = {
     label: "Cell-to-cell limit",
     unit: "K",
     empty: "Reported, not limited",
-    help: "Hottest cell to coolest cell.",
+    help: "Hottest cell to coolest cell at the same moment.",
   },
   "requirements.capacity_min_pct": {
     label: "Capacity left at least",

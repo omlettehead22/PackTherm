@@ -49,16 +49,16 @@ LG M50 at a 1.5C full discharge, 25 °C, hex packing, 0.05 g/s coolant per cell 
 | Cooling | Filler | Inlet cell peak | Outlet cell peak | Cell-to-cell | Inside the cell | Pump / fan per cell |
 |---|---|---|---|---|---|---|
 | none | air | 91.0 °C | 91.0 °C | 0 K | 0 K | 0 |
-| forced air, 2 mm gap | air | 48.4 °C | 53.3 °C | 4.9 K | 2.2 K | 169 mW |
-| bottom plate | air | 53.0 °C | 59.8 °C | 6.8 K | **8.2 K** | 4.7 mW |
-| bottom plate | RT42-EG | 45.3 °C | 52.1 °C | 6.8 K | 9.9 K | 4.7 mW |
-| side ribbon, 3.5 mm gap | air | **35.9 °C** | 48.8 °C | 13.0 K | 4.9 K | 4.7 mW |
-| side ribbon, 3.5 mm gap | RT31 | 34.8 °C | **45.6 °C** | 10.8 K | 4.7 K | 4.7 mW |
+| forced air, 2 mm gap | air | 48.4 °C | 53.3 °C | 6.1 K | 2.2 K | 169 mW |
+| bottom plate | air | 53.0 °C | 59.8 °C | 9.0 K | **8.2 K** | 4.7 mW |
+| bottom plate | RT42-EG | 45.3 °C | 52.1 °C | 8.1 K | 9.9 K | 4.7 mW |
+| side ribbon, 3.5 mm gap | air | **35.9 °C** | 48.8 °C | 16.4 K | 4.9 K | 4.7 mW |
+| side ribbon, 3.5 mm gap | RT31 | 34.8 °C | **45.6 °C** | 13.6 K | 4.7 K | 4.7 mW |
 
 At the M50's rated 1.5C, run continuously to empty, every one of these cells passes 45 °C somewhere (the cell's resistance measured in v0.6.9 doubled its heat), and the design study on this duty finds no feasible design ([results](docs/examples/module_m50_discharge_1.5c_25c_designs.csv)). The comparisons still hold:
 
 - **Side ribbon vs bottom plate for a 70 mm cell:** the ribbon runs about 17 K cooler at the inlet while touching a quarter of the can, and its in-cell spread is 4.9 K against 8.2 K. Pulling heat down the full height of the winding is slow, and since v0.6.12 the plate's coolant side is worked out from its channels: a 10 × 4 mm channel under half the footprint gives about 650 W/m²K per can base, where the ribbon's many small ports give about 1,950 per bonded strip (both had been an assumed 1,500). That is why tall cylindrical cells are usually side-cooled.
-- **The coolant warms up to 17 K along the channel** at this flow, so the outlet cell runs up to 13 K hotter than the inlet cell. PCM in the gaps narrows that spread (13.0 → 10.8 K with RT31, 8.4 K with RT42-EG).
+- **The coolant warms up to 17 K along the channel** at this flow, so the outlet cell runs up to 16 K hotter than the inlet cell at the same moment. PCM in the gaps narrows that spread (16.4 → 13.6 K with RT31, 13.4 K with RT42-EG). Since v0.6.15.1 the spread is taken at the same moment: before, it was the difference of the two cells' peaks, which come at different times.
 - **Battery life is mostly decided while the car is parked** (v0.6.13): on the road trip at 35 °C, with the duty once a day and the car parked at 35 °C in between, the M50 keeps 46–52 % of its capacity after 8 years sealed (52 % with RT42) and 55–57 % with any cooling that passes. Between passing designs life hardly differs, because most of each day is spent parked at the ambient. Ageing from NREL's BLAST-Lite models; a hot-day study makes every day hot, so compare designs with it rather than read it as the car's life.
 - **More flow mostly cuts how much the coolant warms:** the channels are laminar, so extra flow barely improves heat transfer at the can. On the road trip, 2.5 times the flow lowers the hottest cell by about 3 K for about 1.6 times the pump and fan energy.
 
@@ -224,7 +224,8 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.12** | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
 | **v0.6.13** | Battery life: capacity left after 8 years of the duty once a day, from NREL's BLAST-Lite ageing models (copied in, BSD 3-clause), and an optional minimum. Road trip at 35 °C: 46–52 % sealed, 55–57 % for every cooled design that passes |
 | **v0.6.14** | Design search (pymoo's NSGA-II, an optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance; on the road trip, air at 0.43 % running energy where the grid's best needs 1.91 % (with a wider gap: more volume) |
-| **v0.6.15** (current) | Which inputs matter most (Morris screening with SALib, an optional extra): for the road trip's balanced ribbon, the ambient moves the peak by about 9 K, the interface material and coolant heat transfer by under 0.2 K |
+| **v0.6.15** | Which inputs matter most (Morris screening with SALib, an optional extra): for the road trip's balanced ribbon, the ambient moves the peak by about 9 K, the interface material and coolant heat transfer by under 0.2 K |
+| **v0.6.15.1** (current) | Cell-to-cell spread at the same moment, not the difference of peaks that come at different times: chilled road-trip designs went from about 0 to up to 16.5 K (the chiller's pull-down); no verdicts or picks changed |
 | v0.6.16 (next) | BPX cell files |
 | v0.6.17 | The cold capacity and charging from empty (BACKLOG item 7) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |

@@ -1,8 +1,8 @@
 {
  "packtherm_results": 1,
- "packtherm_version": "0.6.15",
- "created": "2026-11-25T20:01:56+00:00",
- "elapsed_s": 128.42,
+ "packtherm_version": "0.6.15.1",
+ "created": "2026-11-26T13:32:39+00:00",
+ "elapsed_s": 196.48,
  "study": {
   "packtherm_study": 1,
   "name": "M50 road trip, 35 degC, sensitivity of the balanced design",
@@ -97,7 +97,7 @@
   "design": "ribbon, 0.05 g/s, 3.5 mm gap, no filler",
   "simulations": 90,
   "feasible_share": 0.9111111111111111,
-  "text": "Sensitivity of ribbon, 0.05 g/s, 3.5 mm gap, no filler (90 simulations, Morris, 10 trajectories, fast mode)\nPeak temperature (degC): ambient temperature 8.9, cell resistance (nominal to worst case) 1.5, air or coolant flow 1.2\nIn-cell spread (K): cell thermal conductivity 0.55, cell resistance (nominal to worst case) 0.3, ambient temperature 0.21\nCell-to-cell spread (K): air or coolant flow 1.2, cell resistance (nominal to worst case) 1, ambient temperature 0.75\nRunning energy (% of energy moved): air or coolant flow 0.063, cell resistance (nominal to worst case) 0.037, ambient temperature 0.027\nCapacity left (%): ambient temperature 9.2, cell resistance (nominal to worst case) 0.079, air or coolant flow 0.076"
+  "text": "Sensitivity of ribbon, 0.05 g/s, 3.5 mm gap, no filler (90 simulations, Morris, 10 trajectories, fast mode)\nPeak temperature (degC): ambient temperature 8.9, cell resistance (nominal to worst case) 1.5, air or coolant flow 1.2\nIn-cell spread (K): cell thermal conductivity 0.55, cell resistance (nominal to worst case) 0.3, ambient temperature 0.21\nCell-to-cell spread (K): air or coolant flow 1.2, cell resistance (nominal to worst case) 0.98, ambient temperature 0.74\nRunning energy (% of energy moved): air or coolant flow 0.063, cell resistance (nominal to worst case) 0.037, ambient temperature 0.027\nCapacity left (%): ambient temperature 9.2, cell resistance (nominal to worst case) 0.079, air or coolant flow 0.076"
  },
  "design": {
   "topology": "ribbon",
@@ -303,65 +303,65 @@
   {
    "output": "cell_to_cell_K",
    "factor": "ambient",
-   "mu_star": 0.7500814575201702,
-   "mu_star_conf": 0.058313113214386536,
-   "sigma": 0.11569842547077583,
+   "mu_star": 0.7440465325374447,
+   "mu_star_conf": 0.0704161888581981,
+   "sigma": 0.1274217904529976,
    "rank": 3
   },
   {
    "output": "cell_to_cell_K",
    "factor": "resistance",
-   "mu_star": 0.99773761216899,
-   "mu_star_conf": 0.1105260202072955,
-   "sigma": 0.1981163931137643,
+   "mu_star": 0.9844358363826473,
+   "mu_star_conf": 0.12322524744687749,
+   "sigma": 0.21570707084505705,
    "rank": 2
   },
   {
    "output": "cell_to_cell_K",
    "factor": "cell_heat_capacity",
-   "mu_star": 0.02130270407911894,
-   "mu_star_conf": 0.004325815481056155,
-   "sigma": 0.00792412980941843,
+   "mu_star": 0.0277604149986729,
+   "mu_star_conf": 0.006265307835919985,
+   "sigma": 0.010958579177335531,
    "rank": 7
   },
   {
    "output": "cell_to_cell_K",
    "factor": "cell_conductivity",
-   "mu_star": 0.07530200295426255,
-   "mu_star_conf": 0.02280505309551434,
-   "sigma": 0.044238360238401324,
+   "mu_star": 0.08543377545323097,
+   "mu_star_conf": 0.025402751725771992,
+   "sigma": 0.04703830231179812,
    "rank": 5
   },
   {
    "output": "cell_to_cell_K",
    "factor": "entropic_heat",
-   "mu_star": 0.1903442143871672,
-   "mu_star_conf": 0.04247049893542703,
-   "sigma": 0.07187875922378702,
+   "mu_star": 0.25978637564784035,
+   "mu_star_conf": 0.019303821073329973,
+   "sigma": 0.033199776189780116,
    "rank": 4
   },
   {
    "output": "cell_to_cell_K",
    "factor": "tim_conductivity",
-   "mu_star": 0.02301250152788157,
-   "mu_star_conf": 0.005842023332097055,
-   "sigma": 0.010043625230738295,
+   "mu_star": 0.029610319988620404,
+   "mu_star_conf": 0.005375290628902598,
+   "sigma": 0.010465436149174156,
    "rank": 6
   },
   {
    "output": "cell_to_cell_K",
    "factor": "heat_transfer",
-   "mu_star": 0.020423612634147048,
-   "mu_star_conf": 0.005948462627724508,
-   "sigma": 0.010401166099876747,
+   "mu_star": 0.02711097092530963,
+   "mu_star_conf": 0.00623215123506549,
+   "sigma": 0.009422759312560655,
    "rank": 8
   },
   {
    "output": "cell_to_cell_K",
    "factor": "flow",
-   "mu_star": 1.242801906051693,
-   "mu_star_conf": 0.10595496985459989,
-   "sigma": 0.20154196447368117,
+   "mu_star": 1.2426580019594495,
+   "mu_star_conf": 0.10595751738269689,
+   "sigma": 0.20155748011909777,
    "rank": 1
   },
   {
@@ -494,8 +494,7 @@
   }
  ],
  "notes": [
-  "mu_star: about how much a result changes as the input goes from the low to the high end of its range (the mean absolute Morris elementary effect, SALib); sigma large against mu_star: the effect depends on the other inputs.",
-  "cell_to_cell_K compares the outlet cell's peak with the inlet cell's peak, which can come at different times."
+  "mu_star: about how much a result changes as the input goes from the low to the high end of its range (the mean absolute Morris elementary effect, SALib); sigma large against mu_star: the effect depends on the other inputs."
  ],
  "assumptions": {
   "resolution": {

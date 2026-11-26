@@ -732,7 +732,6 @@ class StudyRun:
                     "its range (the mean absolute Morris elementary effect, SALib); sigma large against mu_star: "
                     "the effect depends on the other inputs."
                 ),
-                "cell_to_cell_K compares the outlet cell's peak with the inlet cell's peak, which can come at different times.",
             ]
             + [f"WARNING: {w}" for w in self.spec.cell_warnings()],
             "assumptions": _assumptions(st),

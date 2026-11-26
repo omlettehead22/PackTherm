@@ -7,7 +7,9 @@ from packtherm.module import Chiller
 from packtherm.module_design import ModuleDesign, ModuleStudy, evaluate_module_design, run_module_study
 from packtherm.report import plot_tradeoff
 
-DUTY = DutyCycle.constant(1.5, "discharge", soc0=1.0, soc_limits=(0.5, 1.0), rest_after_s=3600)  # the M50's rating (2C before its resistance was measured, v0.6.9)
+DUTY = DutyCycle.constant(
+    1.5, "discharge", soc0=1.0, soc_limits=(0.5, 1.0), rest_after_s=3600
+)  # the M50's rating (2C before its resistance was measured, v0.6.9)
 
 
 def small_study(**kw):
@@ -93,7 +95,31 @@ def test_edge_cells_in_the_score():
     assert np.isfinite(row["T_peak_edge_outlet_C"]) and np.isfinite(row["T_peak_edge_inlet_C"])
     assert row["T_peak_C"] == max(row["T_peak_interior_C"], row["T_peak_edge_outlet_C"])
     coolest = min(row["T_peak_inlet_C"], row["T_peak_edge_inlet_C"])
-    assert row["cell_to_cell_K"] == pytest.approx(row["T_peak_C"] - coolest)
+    # Since v0.6.15.1 the spread is taken at the same moment. When the hottest cell peaks the
+    # coolest is at or below its own peak, so the spread is at least the difference in peaks;
+    # chilled, the inlet cell's peak is its start, so it is clearly more.
+    assert row["cell_to_cell_K"] > row["T_peak_C"] - coolest + 1.0
+
+
+def test_cell_to_cell_at_the_same_moment():
+    from types import SimpleNamespace
+
+    from packtherm.module_design import cell_to_cell_spread
+
+    def run(t, T_C):
+        return SimpleNamespace(res=SimpleNamespace(t=np.array(t, float), T_max=np.array(T_C, float) + 273.15))
+
+    # The outlet warms from 30 to 40 degC; the inlet starts at 30 and is cooled to 20.
+    out = run([0, 100, 200], [30, 35, 40])
+    inl = run([0, 100, 200], [30, 25, 20])
+    assert cell_to_cell_spread([out], [inl]) == pytest.approx(20.0)  # the peaks differ by 10
+    # The hottest of the hot cells against the coolest of the cold, on the first run's times,
+    # over the time every run covers.
+    edge = run([0, 50, 100, 150], [30, 36, 37, 38])
+    assert cell_to_cell_spread([out, edge], [inl]) == pytest.approx(
+        37.0 - 25.0
+    )  # at t = 100 s; t = 200 s is past the edge run
+    assert cell_to_cell_spread([out], [inl, run([0, 200], [30, 22])]) == pytest.approx(20.0)
     off = evaluate_module_design(small_study(edge_cells=False), ModuleDesign("ribbon", 0.05, 15.0, None))
     assert np.isnan(off["T_peak_edge_outlet_C"]) and off["T_peak_C"] == off["T_peak_interior_C"]
 

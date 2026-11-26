@@ -39,12 +39,12 @@ Largest difference from normal mode over all 117 designs (v0.6.12: the M50's mea
 |---|---|---|---|
 | Hottest cell | 0.02 K | 0.40 K | 0.01 K |
 | In-cell spread | 0.16 K | 0.25 K | 0.19 K |
-| Cell-to-cell spread | 0.04 K | 0.56 K | 0.01 K |
+| Cell-to-cell spread (at the same moment, since v0.6.15.1) | 0.15 K | 0.77 K | 0.15 K |
 | Recovery time | 1.5 min | 2.6 min | 0.05 min |
 | Fan, pump and chiller energy | 0.2 % | 0.6 % | 0.5 % |
 | Designs whose verdict changes | 0 | 0 | 0 |
 | Picks | same | same (none) | same |
 
-The largest errors come from fast transients: the end of a hard discharge, when the cell heats fastest (time step), and a chiller pulling a hot pack down through its base (plate layers). A design within about 0.4 K of a temperature limit, 0.3 K of the in-cell limit or 0.6 K of the cell-to-cell limit can come out differently in the two modes; on these studies none did. Check close calls in normal mode.
+The largest errors come from fast transients: the end of a hard discharge, when the cell heats fastest (time step), and a chiller pulling a hot pack down through its base (plate layers). A design within about 0.4 K of a temperature limit, 0.3 K of the in-cell limit or 0.8 K of the cell-to-cell limit can come out differently in the two modes; on these studies none did. Check close calls in normal mode.
 
 `tests/test_module_design.py::test_fast_mode_tracks_normal_mode` checks agreement on a smaller study in CI.
