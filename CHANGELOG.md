@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.16
+
+Cells from BPX files: `packtherm bpx cell.json` turns a [BPX](https://github.com/FaradayInstitution/BPX) file (Battery Parameter eXchange, the open format for physics-based cell models) into PackTherm cell files. Both new dependencies are optional extras.
+
+- **New: `packtherm/bpx.py`** (`pip install "packtherm[bpx]"`, the `bpx` package, MIT). From the file: capacity and voltage limits; size from the volume and external surface area as a cylinder (only files that say the cell is cylindrical, or given `--diameter-mm` and `--height-mm`); mass from density × volume; heat capacity; thermal conductivity if the file gives one (BPX 1.x has no field for it, so PackTherm reads its `User-defined` block, else uses the chemistry's); and the open-circuit voltage and reversible heat by state of charge, from each electrode's OCP and entropic coefficient between its stoichiometry limits. Blended electrodes are refused.
+- **New: `packtherm/bpx_fit.py`** (`pip install "packtherm[bpx-fit]"`, adding PyBaMM, BSD 3-clause): the circuit, generalised from `validation/derive_m50_ecm.py`. The file's DFN runs a C/25 discharge and charge for the open-circuit voltage as the model sees it, then 10 s pulses at 0.2C to 3C from twelve states of charge at 25, 10, 0 and −10 °C (`--quick`: 25, 5 and −10 °C, fewer pulses), and the library cells' circuit is fitted to them. Taking the open-circuit voltage from the file's stoichiometry limits instead left a 42 mV offset, since PyBaMM sets its starting state of charge its own way. PackTherm switches PyBaMM's usage telemetry off when it runs it.
+- **Output:** `<name>.yaml` (a datasheet cell definition with the file's values and the circuit's DC resistance) and `<name>_circuit.yaml` (a fitted cell file naming the first under `like`; use it in studies). With `--dcir-mohm` instead, PyBaMM isn't needed and only the first is written, for the lumped model. A derived circuit says it is not measured: for the LG M50 a derivation like this gave about half the measured resistance (v0.6.9).
+- **New in datasheet cell files: `entropic_soc` and `entropic_mV_K`**, the cell's own dU/dT by state of charge in place of the chemistry's.
+- **Test file:** `tests/data/lg_m50_chen2020_bpx.json`, the LG M50 written as BPX from PyBaMM's Chen2020 set (its header gives the conversions; BPX's reaction rate constant is normalised: m_ref c_max √(1000 mol/m³) / F). It runs in PyBaMM to within 18 mV and 0.4 % capacity of PyBaMM's own Chen2020 at 1C. Its output is in `docs/examples/lg_m50_chen2020_bpx*.yaml`.
+  - The size (21.1 × 70.1 mm) and mass (68.0 g) come back exactly.
+  - Full derivation: 194 pulses in about 25 s on one core, median pulse error 1.4–2.0 %, the whole record replayed through the circuit to 4.6–4.8 mV.
+  - DC resistance 26.7 mΩ at 25 °C, 35.0 at 0 °C. The library M50 (scaled to measured pulses at 25 °C; its temperature dependence is still derived) has 33.7 and 56.0; the v0.4.11 derivation from O'Regan's set had 17.0 at 25 °C.
+  - In a study at 25 °C and 1C (fast mode): with a ribbon it runs 4.2 K cooler than the library M50 (less resistance), sealed 5.4 K hotter: with less resistance it runs to empty instead of stopping at the cut-off (3,635 s against 3,490), and heat is highest near empty. Not from the reversible heat (zero in Chen2020): with NMC811's, on the quick derivation, it ran hotter still.
+- **Not committed:** the About:Energy parameter sets and measured data that BPX's examples point to (licensing on hold).
+- **Tests:** the cylinder from volume and area by hand, the M50 file's values (its open-circuit voltage at half charge by hand from the two OCPs), reversible heat from an expression and a table, what it refuses, cell files with a datasheet resistance and with a derived circuit (fitted, valid, and run in a module study), and the dU/dT table's checks. The `dev` extra includes `bpx` and PyBaMM, so CI runs them.
+
 ## 0.6.15.1
 
 Fix: the cell-to-cell spread is now the largest difference between the hottest and coolest cells at the same moment. Up to v0.6.15 it was the hottest cell's peak minus the coolest cell's peak, and those can come at different times (found while testing v0.6.15, BACKLOG item 11a).

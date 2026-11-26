@@ -112,6 +112,10 @@ CELL_KEYS = {
     "k_axial_W_mK": (OPT_NUM, None, _opt_pos),
     "Ea_kJ_mol": (OPT_NUM, None, _optional(_nonneg)),
     "entropic": (bool, True, None),
+    # v0.6.16: the cell's own reversible heat, dU/dT by state of charge (e.g. from a BPX file),
+    # instead of the chemistry's
+    "entropic_soc": ((list, type(None)), None, None),
+    "entropic_mV_K": ((list, type(None)), None, None),
     "source": ((str, type(None)), None, None),
 }
 REQUIRED = ("name", "capacity_Ah", "V_nominal", "mass_g", "DCIR_mOhm")
@@ -143,6 +147,7 @@ def validate_cell(doc: Any, where: str = "cell.") -> tuple[dict, list[str]]:
             errors.append(f"{where}{k}: required")
     if spec.get("format") is None and (spec.get("diameter_mm") is None or spec.get("height_mm") is None):
         errors.append(f"{where}format: give a format ({', '.join(FORMATS)}) or both diameter_mm and height_mm")
+    _check_entropic_table(spec, where, errors)
     if errors:
         raise CellError("Invalid cell:\n  " + "\n  ".join(errors))
 
@@ -156,6 +161,40 @@ def validate_cell(doc: Any, where: str = "cell.") -> tuple[dict, list[str]]:
     if errors:
         raise CellError("Implausible cell (check the units):\n  " + "\n  ".join(errors))
     return spec, warnings
+
+
+def _check_entropic_table(s: dict, where: str, errors: list[str]) -> None:
+    soc, dudt = s.get("entropic_soc"), s.get("entropic_mV_K")
+    if soc is None and dudt is None:
+        return
+    if soc is None or dudt is None:
+        errors.append(f"{where}entropic_soc, entropic_mV_K: give both or neither")
+        return
+    if len(soc) != len(dudt) or len(soc) < 2:
+        errors.append(f"{where}entropic_mV_K: as many values as entropic_soc, two or more")
+        return
+    if not all(isinstance(x, NUM) and not isinstance(x, bool) for x in soc + dudt):
+        errors.append(f"{where}entropic_soc, entropic_mV_K: numbers only")
+        return
+    if any(soc[i + 1] <= soc[i] for i in range(len(soc) - 1)) or soc[0] < 0 or soc[-1] > 1:
+        errors.append(f"{where}entropic_soc: rising, from 0 to 1")
+    if max(abs(x) for x in dudt) > 2.0:
+        errors.append(f"{where}entropic_mV_K: dU/dT is within about +-1 mV/K for lithium-ion cells (check the units)")
+
+
+class TableDUdT:
+    """dU/dT from a table by state of charge [V/K]; a class so worker processes can take it."""
+
+    def __init__(self, soc, mV_K):
+        self.soc, self.V_K = tuple(float(x) for x in soc), tuple(1e-3 * float(x) for x in mV_K)
+
+    def __call__(self, soc: float) -> float:
+        from bisect import bisect_right
+
+        s = min(max(float(soc), self.soc[0]), self.soc[-1])
+        k = min(bisect_right(self.soc, s), len(self.soc) - 1)
+        a, b = self.soc[k - 1], self.soc[k]
+        return self.V_K[k - 1] + (self.V_K[k] - self.V_K[k - 1]) * (s - a) / (b - a)
 
 
 def _plausibility(s: dict, where: str, errors: list[str]) -> list[str]:
@@ -256,6 +295,8 @@ def cell_from_spec(spec: dict, base: str | Path | None = None) -> Cell:
         _, cp_jr, k_jr = nmc811_jellyroll_properties()
         k_ax, dudt = nmc811_jellyroll_k_axial(), nmc811_graphite_dUdT
     entropic = spec["entropic"] and chem in ENTROPIC
+    if spec.get("entropic_soc") is not None:  # the cell's own table (v0.6.16)
+        dudt, entropic = TableDUdT(spec["entropic_soc"], spec["entropic_mV_K"]), spec["entropic"]
     cap = float(spec["capacity_Ah"])
     r0 = _milli(spec["DCIR_mOhm"])
     rmax = _milli(spec["DCIR_max_mOhm"] or spec["DCIR_mOhm"])

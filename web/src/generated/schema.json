@@ -613,6 +613,20 @@
     ],
     "default": true
    },
+   "entropic_soc": {
+    "type": [
+     "list",
+     "null"
+    ],
+    "default": null
+   },
+   "entropic_mV_K": {
+    "type": [
+     "list",
+     "null"
+    ],
+    "default": null
+   },
    "source": {
     "type": [
      "string",
