@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 
 from .cells import Cell
+from .ecm import EXCESS_SEEN_V
 
 CurrentProfile = Callable[[float], float]  # t [s] -> I [A], + = discharge
 
@@ -102,6 +103,8 @@ class ElectroThermalLoad:
         h0 = 1.0 if self.soc0 >= FULL_SOC else 0.0
         self.ecm_state = ECMState(h=h0, s=h0) if self.cell.ecm is not None else None
         self.v_slow = 0.0  # the lumped model's slow overpotential [V] (v0.6.11)
+        # The largest smoothed current at which the excess branch acted (v0.6.17), A: checked against its tests.
+        self.excess_I_max = 0.0
         self.log = {
             k: [] for k in ("t", "current_A", "soc", "R_ohm", "Q_irr_W", "Q_rev_W", "V", "I_abs_A", "I_req_A")
         }
@@ -188,6 +191,10 @@ class ElectroThermalLoad:
         soc_mid = self.soc - 0.5 * current * dt / cap_As
         current, V = self.ecm_state.apply(ecm, current, soc_mid, T_cell, dt)
         soc_mid = self.soc - 0.5 * current * dt / cap_As
+        if ecm.excess:
+            i_f = self.ecm_state.i_f
+            if abs(ecm.excess_V(i_f, soc_mid, T_cell)) >= EXCESS_SEEN_V:
+                self.excess_I_max = max(self.excess_I_max, abs(i_f))
         # With hysteresis, the open-circuit voltage midway between the branches (ecm.py).
         ocv_mid = ecm.ocv(soc_mid, T_cell) + 0.5 * ecm.hyst_V(T_cell)
         q_irr = current * (ocv_mid - V)
@@ -311,6 +318,7 @@ def shortfall_warning(share: float) -> str:
     )
 
 
+EXCESS_TESTED_MARGIN = 1.2  # the excess branch's tested current, give or take this share, counts as tested
 RANGE_MARGIN_K = 2.0  # a fitted cell's tested temperatures, give or take this, count as tested
 
 
@@ -362,6 +370,14 @@ def check_fitted_range(cell: Cell, load: ElectroThermalLoad, res, window_s: floa
         if c > 0.05 and (tested is None or c > 1.1 * tested[1]):
             what = "was not tested" if tested is None else f"was tested up to {tested[1]:.2g}C"
             out.append(f"{label} {c:.2f}C: the fitted model's {label.lower()} {what}; this is extrapolation.")
+    ecm = cell.ecm
+    seen = getattr(load, "excess_I_max", 0.0)
+    if ecm is not None and ecm.excess and ecm.I_x_tested > 0 and seen > EXCESS_TESTED_MARGIN * ecm.I_x_tested:
+        out.append(
+            f"The cold, low-charge loss branch acts here at {seen / cell.capacity_Ah:.2f}C averaged over "
+            f"{ecm.tau_x:.0f} s; its tests reached {ecm.I_x_tested / cell.capacity_Ah:.2f}C there. It is linear "
+            "in that current beyond them, which the tests don't check, and it sets much of the heat there."
+        )
     return out
 
 

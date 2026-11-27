@@ -2,13 +2,16 @@
 
 ## 0.6.17
 
-Cold capacity and charging from empty (BACKLOG item 7), investigated. No change to the model or any result: the attempt didn't meet the bar set before it, so it didn't ship. The results are in [docs/FITTING.md](docs/FITTING.md#solid-diffusion-tried-and-not-shipped-v0617).
+The cold and charging from empty (BACKLOG item 7), fixed on the A123: its held-out −12 °C drive cycles from 96 and 84 mV RMS to 36 and 24 mV, and its C/30 charge from empty from 96 to 14 mV. Nothing it is fitted on got worse. Details in [docs/FITTING.md](docs/FITTING.md#the-cold-and-charging-from-empty-v0617).
 
-- **What was tried:** a solid-diffusion state, the standard reduced-order model of the particles' surface lagging their average (a sphere under constant flux: three slow modes and the rest at once), with the open-circuit voltage read at the surface, and its time constant fitted at each temperature with a law through them. Two ways: with the rise near empty read at the surface too, and without.
-- **The bar, set beforehand:** the A123's held-out −12 °C drive cycles (84 and 96 mV RMS) and its C/30 charge from empty (96 mV) a third better, nothing else worse.
-- **What it gave:** at best the −12 °C cycles 8–9 % closer (88 and 77 mV), with the −15 °C near-empty windows the fit sees going from 47 to 190 mV and time constants that followed no law. Without the rise at the surface, the warm fits improved but the cold checks got slightly worse. The charge from empty didn't move: at C/30 the lag is too small to explain its 200 mV.
-- **Learned:** the A123's cold tests warm the cell only about 1 K, so they can't show whether the cold voltage error matters for the heat. The model's voltage near empty in the cold is too high (heat too low), but the model runs on where the real cell stops (heat it wouldn't make). A test with real self-heating in the cold, run to empty, is what would settle it (BACKLOG item 7).
-- **Checked:** the refit without diffusion, on the same code, reproduced the shipped A123 file exactly.
+- **New: excess polarisation** (`packtherm/ecm.py`), an optional branch for losses beyond the current the open-circuit curves were measured at. The current smoothed over τ_x drives a drop R_x(SOC, T) · softplus(|i_f| − I_x): I_x is the slow tests' own current (C/30), and R_x follows an Arrhenius law and rises as the charge runs down. Found from the A123's cold errors, which relax at rest over about 200 s and are linear in the current smoothed over 300–400 s above C/30 (about 1 Ω at 25 % charge, −12 °C). On the A123: 95 kJ/mol, half way at 23 % charge, 1.3 Ω at −12 °C and 6 mΩ at 25 °C at 25 % charge.
+- **New in test lists: `excess_polarisation: true`** fits it last, with everything else held, on the long and slow tests down to 50 mV above the cut-off. Off by default: the 30T, HG2 and Panasonic are unchanged. Cell files keep it under `model.ecm.excess_polarisation`.
+- **New: `start_soc: end`** for checks and thermal checks: a charge's start counted back from full (it must end at the top voltage). The A123's 15 °C charge started 2 % up, not at 0 %; on LFP's steep low end that was most of its error (119 → 31 mV over the whole test with the old model).
+- **New warning:** where the tests saw the branch act, the drive profiles averaged about 0.1C. The cell file records that current (`I_tested_A`), and a study warns when the branch acts beyond 1.2 times it. A constant 1C discharge from −10 °C peaks about 6 K warmer with the branch (11.6 against 5.2 °C) and delivers the same charge.
+- **The A123 refitted** (library `A123`, `docs/examples/fitting/`): −15 °C drive cycle fitted on 29.6 → 20.3 mV, its near-empty windows 47 → 26 mV; 5 to 45 °C the same or up to 0.6 mV better; 25 °C 4C check 12.9 → 12.7 mV; thermal checks unchanged.
+- **Not blind:** the branch was found on the −12 °C checks' errors and three trial versions were scored on them. Its values come only from the tests fitted on.
+- **Tried and not shipped** (FITTING.md): solid diffusion (the cold checks 8–9 % closer, the −15 °C near-empty fits 47 → 190 mV), two particle groups (115 → 97 mV), and a linear branch without the threshold (stalled at 85 and 59 mV).
+- **Tests:** the branch off by default; ECM stepping and the fit's replay agree with it on; thinning keeps the charge; the start from the end; the cell file round trip; the study warning.
 
 ## 0.6.16
 

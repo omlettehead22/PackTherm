@@ -34,6 +34,8 @@ temperatures:               # one entry per test temperature (three or more for 
     cycles: [cycle1_0C.csv.gz]
 checks:                     # optional: tests the fit never sees, predicted afterwards
   - {file: udds_25.csv.gz, start_soc: 1.0, ambient_C: 25}
+  - {file: charge_15.csv.gz, start_soc: end, ambient_C: 15}  # a charge to full: its start from its end (v0.6.17)
+excess_polarisation: false  # optional (v0.6.17): the cold, low-charge loss branch; see "The cold, and charging from empty"
 compare: PF                 # optional: a library cell to predict the checks with too
 chamber_h_W_m2K: 38.7       # optional: the test chamber's convection, for the thermal check; or instead
 chamber_calibration:        # calibrate the rig on tests that are fitted to (heat from their measured voltage)
@@ -66,7 +68,8 @@ The model is the one PackTherm's electro-thermal runs use (`packtherm.ecm.ECM`):
 - a charge-transfer branch: a Butler–Volmer-shaped overpotential `gamma · 2RT/F · asinh(I / 2I0)`, reached with time constant `tau_ct` (seconds);
 - a middle branch: resistance `Rm`, time constant `tau_m` (5 to 120 s, below the slow branch's range since v0.6.5). New in v0.6.2; off in the library cells;
 - a slow branch: resistance `Rd`, time constant `tau_d` (minutes);
-- a rise of all of them near empty, `1 + soc_a · exp(−SOC / soc_b)`, on discharge.
+- a rise of all of them near empty, `1 + soc_a · exp(−SOC / soc_b)`, on discharge;
+- optionally (v0.6.17), a loss beyond the slow tests' own current that grows steeply in the cold and at low charge (the excess polarisation, [below](#the-cold-and-charging-from-empty-v0617)).
 
 **Values by temperature.** A cell fitted at several temperatures holds every value at each one. PackTherm interpolates between them (in 1/T, logarithmically: an Arrhenius law between neighbours). Beyond the coldest and warmest, the resistances and rates follow laws fitted through the temperatures' own values (`Ea_R0`, `Ea_I0`, `Ea_Rm`, `Ea_Rd`, `Ea_soc`), and the shape and time constants hold. Studies warn when a run goes beyond the tested temperatures (by more than 2 K) or rates.
 
@@ -417,25 +420,56 @@ The cold profiles fitted on are much better (fitted to 30%), but the −12 °C c
 - **Charge lost with rate** (a third try at the cold): the open-circuit voltage and the rise near empty read at a surface state of charge, the bulk's less what a sustained current holds back (filtered by the slow branch). On a known cell it was recovered within 25%. On the 30T and the HG2 the fit set it to zero at most temperatures, including the cold, and the checks didn't move (26.3 and 39.5 mV, tried before the 30% floor above). The cold needs more than this.
 - **The rise near empty on charge**, for the A123's charge from empty (about 200 mV low over its first 10%): its share ran to its bound (all of the discharge's) and the error didn't move. The error is the open-circuit curve below about 7% state of charge, which the slow discharge gives badly (it ends at the cut-off with the largest drop of the test). Charging from below about 7% is still not right.
 
-## Solid diffusion, tried and not shipped (v0.6.17)
+## The cold, and charging from empty (v0.6.17)
 
-The A123's worst checks are in the cold near empty and charging from empty (BACKLOG item 7): its two −12 °C drive cycles at 84 and 96 mV RMS (370–384 mV at worst, near empty) and its 15 °C C/30 charge at 96 mV (800 mV in its first minutes). v0.6.17 tried the standard reduced-order fix: a solid-diffusion state, the particles' surface lagging their average as in a sphere under a constant flux (the three slowest modes, time constants τ_s/λₙ² with tan λₙ = λₙ, and the rest at once; in steady state the lag is τ_s/15 times the rate), with the open-circuit voltage read at the surface. τ_s was fitted at each temperature with the slow branch on the long tests, and a law through them. Unlike the three attempts before it, the lag has its own time constant and the shape of diffusion, not the slow branch's.
+The A123's worst checks were in the cold near empty and charging from empty (BACKLOG item 7): its two −12 °C drive cycles at 96 and 84 mV RMS (384 and 371 mV at worst) and its 15 °C C/30 charge at 96 mV (800 mV in its first minutes). The ship rule, set beforehand: the cold cycles and the charge from empty a third better, and nothing else worse. Both are fixed, by different things.
 
-The ship rule, set beforehand: the cold cycles and the charge from empty a third better, and nothing else worse. Each refit took about 40 minutes; the refit without diffusion reproduced the shipped file exactly.
+**What the cold error is.** On the cold drive cycles the error below 40 % charge has three marks:
 
-| A123 checks (RMS, mV) | Shipped | Diffusion, rise at the surface | Diffusion, rise on the average |
-|---|---|---|---|
-| −12 °C drive cycle (DYN05) | 95.9 | 88.4 | 98.1 |
-| −12 °C drive cycle (DYN15) | 84.4 | 77.0 | 87.3 |
-| 25 °C drive cycle, 4C peaks | 12.9 | 13.3 | 13.4 |
-| 15 °C C/30 charge from empty | 95.7 | 94.7 | 94.9 |
-| Fitted on: −15 °C changes in current below 20 % | 47.0 | 190.3 | (as shipped) |
+- it relaxes at rest with a time constant of about 200 s, so it is a loss under current, not a wrong open-circuit curve;
+- against the current smoothed over 300–400 s it is linear (r² above 0.9), and the same line fits all three −15 °C chamber profiles;
+- it is about zero for smoothed currents up to 0.1 A and rises above that, about 1 Ω at 25 % charge and −12 °C.
 
-- **With the rise near empty read at the surface too**, the cold cycles came 8–9 % closer, but at −15 °C the surface went past empty and the near-empty windows the fit sees went from 47 to 190 mV. The fitted time constants didn't follow a law: 415 s at −3 °C, 9,900 s at 7 °C, 14,400 s at −12 °C. The tests don't pin them.
-- **With only the open-circuit voltage at the surface**, the time constants came out smooth (46–360 s), the warm fits improved (35 and 45 °C changes in current 3.2 → 1.8–1.9 mV, 5 °C cycle 7.2 → 4.1 mV), and the cold checks got slightly worse.
-- **The charge from empty didn't move either way.** At C/30 the lag is a fraction of a percent of charge, too small to explain 200 mV: whatever holds the voltage down there, it isn't diffusion this simple.
+The open-circuit curves come from C/30 discharges at 0.083 A, so they already hold what the cell loses at that current. What's missing is the loss beyond it: a slow, steeply temperature-dependent transport loss that grows as the cell runs down, the kind a state-of-charge-dependent diffusion resistance stands for in equivalent-circuit models. The model had none: its slow branch has one resistance at all states of charge.
 
-The cold tests' temperatures can't say what the remaining error does to the heat. The cell warms only about 1 K under these drive profiles at −12 °C (the 15 K in one of them is the cell cooling from 3 °C to the chamber before the load), and the model's temperatures match to 0.1–0.7 K. Near empty in the cold the model's voltage is too high, so its heat there is too low, but the real cell stops with about 12 % left by the −15 °C C/30 curve while the model runs on, adding heat the cell wouldn't make. Which wins in a study isn't known.
+**How it's modelled** (`model.ecm.excess_polarisation` in the cell file). The current smoothed over τ_x, i_f, drives a drop R_x(SOC, T) · softplus(|i_f| − I_x), on charge and discharge alike:
+
+- I_x is the slow tests' own current, so the curves aren't counted twice. The softplus turns over 0.01 A, so the fit stays smooth.
+- R_x = Rx_cold · exp(Ea_x/R · (1/T − 1/T_x)) / (1 + exp((SOC − soc_x)/w_x)): an Arrhenius law, and a rise as the charge runs down that levels off near empty.
+- It is fitted last, with everything else held, on every long test and slow test down to 50 mV above the cut-off (the other stages stop at the knee), thinned to every 5th sample, from two starts (Ea 60 and 150 kJ/mol). The slow charges are anchored at their full end for it, like the checks (below). From 0 % instead, the first try used the branch to patch the charge's start at every temperature (Rx at its 20 Ω cap, no temperature law): the −12 °C checks didn't move and the warm near-empty windows went from 3 to 35 mV.
+- Off unless the test list asks for it (`excess_polarisation: true`), so the 30T, the HG2 and the Panasonic are unchanged.
+
+On the A123: 3.24 Ω at −12 °C and empty, 95 kJ/mol, half way at 23 % charge (width 0.06), τ_x 670 s. At 25 % charge that is 1.3 Ω at −12 °C, 0.31 at −3 °C, 0.07 at 7 °C and 6 mΩ at 25 °C, so warm it does nearly nothing.
+
+**What the charge from empty was.** Not the model: the check started the charge at 0 %, but the cell was about 2 % up. It took in 2.530 Ah to full against a 2.578 Ah capacity. On LFP's steep low end, 2 % is hundreds of millivolts. A check (or thermal check) can now start a charge from its end (`start_soc: end`): the charge counted back from full, for a test that ends at the top voltage (within 20 mV). The A123's 15 °C charge does.
+
+**The A123, refitted** (fitted values the same where the branch isn't acting):
+
+| A123 (RMS, mV) | v0.6.8 | v0.6.17 |
+|---|---|---|
+| **Check: −12 °C drive cycle (DYN05)** | **95.9** (384 at worst) | **36.2** (152) |
+| **Check: −12 °C drive cycle (DYN15)** | **84.4** (371) | **24.2** (103) |
+| Check: 25 °C drive cycle, 4C peaks | 12.9 | 12.7 |
+| **Check: 15 °C C/30 charge from empty, 10–95 %** | **95.7** (whole test 118.9) | **14.1** (23.0) |
+| Fitted on: −15 °C drive cycle | 29.6 | 20.3 |
+| Fitted on: −15 °C changes in current, 20–95 % / below 20 % | 25.5 / 47.0 | 19.0 / 26.2 |
+| Fitted on: −5 °C changes in current below 20 % | 26.6 | 20.3 |
+| Fitted on: 5 to 45 °C, everything | 2.2–10.5 | the same or up to 0.6 better |
+
+- **The cold checks are 62 and 71 % better** and the charge from empty 85 %, past the bar. Nothing fitted on got worse.
+- **The charge from empty is the anchor, not the branch:** with the old model, starting it at 2 % already brings it from 119 to 31 mV over the whole test.
+- **The thermal checks are unchanged** (0.11, 0.71, 0.10 and 0.14 K): the cold profiles warm the cell about 1 K.
+- **The checks were not blind to the method.** The branch was found by studying these cold checks' errors, and three trial versions were scored on them before this one. Its values come only from the tests fitted on. The checks are three profiles, at one temperature.
+
+**What it does to studies.** At low charge in the cold the tests reached a smoothed current of about 0.1C (the drive profiles' average; the 1C step that opens each one is at high charge, where the branch is small). Beyond that the branch is linear in the current, which the tests don't check. A constant 1C discharge with free convection (10 W/(m² K)) from −10 °C delivers the same charge (92–93 %) but peaks at 11.6 °C, against 5.2 °C without the branch; at 0 °C 14.6 against 10.4 °C; at 25 °C 0.3 K more. Self-heating then cuts the branch back. So the cell file records the largest smoothed current at which the branch acted in its tests (`I_tested_A`), and a study warns when it acts beyond 1.2 times that.
+
+**Tried first, and not shipped.**
+
+- **Solid diffusion**, the standard reduced-order fix: the particles' surface lagging their average, as in a sphere under a constant flux (three slow modes, the rest at once), with the open-circuit voltage read at the surface. Fitted with the slow branch at each temperature. With the rise near empty read at the surface too, the cold checks came 8–9 % closer, but at −15 °C the near-empty windows fitted on went from 47 to 190 mV and the time constants followed no law (415 s at −3 °C, 9,900 at 7 °C, 14,400 at −12 °C). With only the open-circuit voltage at the surface, the warm fits improved and the cold checks got slightly worse. The charge from empty didn't move: at C/30 the lag is a fraction of a percent.
+- **Two particle groups** (a fast and a slow share, each with its own state of charge): the −12 °C checks 115 → 97 mV over the whole test.
+- **A linear branch** (no threshold) with the open-circuit curves corrected for it: the fit stalled, at 85 and 59 mV. Without the threshold it charges the slow tests' own current twice.
+
+Each refit takes about 30 minutes. With the branch off, the fit is as before: a refit before the branch reproduced the v0.6.8 file exactly.
 
 ## The cells side by side
 
@@ -446,11 +480,11 @@ The checks are the tests never fitted to, predicted from their current alone, as
 | Panasonic NCR18650PF | −20 to 25 °C | 43 | 24.4 mV (v0.6.4) | 26.4 mV | 81% | method compared on these checks (v0.6.2 to v0.6.5) |
 | Samsung INR21700-30T | −20 to 40 °C | 82 | 27.7 mV (v0.6.4) | 25.7 mV | 68% | method fixed with these checks in view (v0.6.3, v0.6.5) |
 | LG INR18650-HG2 | −20 to 40 °C | 74 | 59.7 mV (v0.6.4, blind) | 36.6 mV | 93% | blind in v0.6.4; fixed with it in view (v0.6.5) |
-| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | 76.5 mV (v0.6.6, blind) | 93.6 mV* | 100% | blind in v0.6.6; hysteresis with its errors known (v0.6.7); no pulse tests |
+| A123 ANR26650M1B (LFP) | −15 to 45 °C | 4 | 76.5 mV (v0.6.6, blind) | 19.2 mV* | 100% | blind in v0.6.6; hysteresis (v0.6.7) and the cold (v0.6.17) with its errors known; no pulse tests |
 
-\* Not the same four checks: v0.6.7 fits on the 25 °C charge and holds out the 15 °C one, whose whole-test error (95.9 mV) is mostly its first 10% from empty. On the three drive profiles both fits share, v0.6.8 is about level in the cold and 3.4 mV worse at 25 °C (the table above).
+\* Not the same four checks: v0.6.7 fits on the 25 °C charge and holds out the 15 °C one. The cold branch (v0.6.17) was found by studying the two −12 °C checks, so they are no longer blind. Its median says less than the others'.
 
-At 25 °C the four agree: 18.1, 17.2, 23.0 and 11.6 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 was v0.6.6's blind check; v0.6.7 added its hysteresis with those errors known. Its four checks are few: two of them are in the cold, where it fails, and one is a charge from empty. Its median says less than the others'.
+At 25 °C the four agree: 18.1, 17.2, 23.0 and 11.4 mV. The blind check of v0.6.4 found a middle branch that could take the slow branch's place, and a capacity that moves with temperature; both are now in the method. The A123 was v0.6.6's blind check; v0.6.7 added its hysteresis with those errors known. Its four checks are few: two of them are in the cold, where it failed until v0.6.17, and one is a charge from empty.
 
 ## Known limits
 
@@ -461,8 +495,8 @@ At 25 °C the four agree: 18.1, 17.2, 23.0 and 11.6 mV. The blind check of v0.6.
 - **The test rig.** The thermal checks need the rig's convection and, for drive cycles, the heat capacity its fixture adds. Both come from fitted tests, but they are the rig's, and a cell's peaks in a pack depend on the pack's own.
 - **One shape across currents.** Pulses from 0.5C to 6C share one non-linear charge-transfer shape; the 1C pulses at mid charge come out about 10% too deep at every temperature.
 - **One open-circuit curve without slow tests at other temperatures**, as for the Panasonic and PackTherm's hand-made library cells.
-- **Hysteresis** is modelled from v0.6.7 where slow charges are given (LFP); otherwise the curve follows the discharge, and the report gives the gap to the charge if the slow test has one. Charging from empty is still about 200 mV low over its first 10% on the A123.
-- **LFP in the cold.** At −12 °C the A123 runs out well before the model (180–270 mV high below 25%), and its loss in the first part of a profile is over-predicted by about 120 mV. Charge lost with rate in the cold, and a near-empty rise too gentle for LFP's, are outside the model.
+- **Hysteresis** is modelled from v0.6.7 where slow charges are given (LFP); otherwise the curve follows the discharge, and the report gives the gap to the charge if the slow test has one.
+- **The cold branch** (v0.6.17) is fitted on drive profiles that average about 0.1C at low charge; beyond that it is linear in the current, which no test checks (studies warn). It is fitted on one LFP cell, and is off for the others. At −12 °C the A123's checks are still 24–36 mV, against 4–8 mV warm.
 - **Without a pulse test**, the kinetics come from the long tests' changes in current (v0.6.6). The voltage comes out as well; how it splits between the branches does not.
 - **Charge.** The near-empty rise applies on discharge only, as in PackTherm's runs.
 - **Speed.** With the middle branch fitted two ways, the stages after the first run twice, and a fit takes up to twice as long as in v0.6.2.

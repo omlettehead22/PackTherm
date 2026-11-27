@@ -45,7 +45,7 @@ from typing import Any
 FORMAT = 1
 TOP_KEYS = {
     "packtherm_fit", "name", "like", "rated_capacity_Ah", "dataset", "slow", "temperatures", "checks",
-    "compare", "chamber_h_W_m2K", "chamber_calibration", "output", "report",
+    "compare", "chamber_h_W_m2K", "chamber_calibration", "output", "report", "excess_polarisation",
 }  # fmt: skip
 SET_KEYS = {"at", "pulses", "steps", "discharges", "cycles", "start_soc", "slow", "slow_charge"}
 CHECK_KEYS = {"file", "start_soc", "ambient_C"}
@@ -72,6 +72,7 @@ class TestList:
     chamber_calibration: list[dict] | None = None
     output: Path | None = None
     report: Path | None = None
+    excess_polarisation: bool = False  # v0.6.17: fit the excess polarisation branch (packtherm.ecm)
 
     def files(self) -> dict[str, list[Path]]:
         """Every file, by role: for the fitted cell file's provenance."""
@@ -188,7 +189,10 @@ def read_test_list(path: str | Path) -> TestList:
         checks.append(
             {
                 "file": file(c.get("file"), f"{w}.file"),
-                "start_soc": number(c.get("start_soc"), f"{w}.start_soc", 0, 1),
+                # v0.6.17: or "end", counted back from a test that ends full (a charge to the limit)
+                "start_soc": "end"
+                if c.get("start_soc") == "end"
+                else number(c.get("start_soc"), f"{w}.start_soc", 0, 1),
                 "ambient_C": number(c.get("ambient_C"), f"{w}.ambient_C", -60, 80),
             }
         )
@@ -239,6 +243,9 @@ def read_test_list(path: str | Path) -> TestList:
     name = doc.get("name")
     if not isinstance(name, str) or not name:
         errors.append("name: give the cell a name")
+    ex = doc.get("excess_polarisation", False)
+    if not isinstance(ex, bool):
+        errors.append(f"excess_polarisation: true or false, got {ex!r}")
     if errors:
         raise TestListError(f"{path}:\n  " + "\n  ".join(errors))
     out = doc.get("output")
@@ -257,6 +264,7 @@ def read_test_list(path: str | Path) -> TestList:
         chamber_calibration=cal,
         output=None if out is None else base / out,
         report=None if rep is None else base / rep,
+        excess_polarisation=ex,
     )
 
 
@@ -266,6 +274,7 @@ def run_test_list(tl: TestList, progress=print):
     from ..testdata import load_test_data
     from .cellfile import cell_from_doc, fitted_cell_doc
     from .circuit import TestSet, fit_cell
+    from .soc import start_soc_from_end
     from .thermal import ThermalCheck, thermal_checks
 
     def read(p):
@@ -294,6 +303,7 @@ def run_test_list(tl: TestList, progress=print):
         checks=[r for r, _ in checks],
         check_soc0=[c["start_soc"] for _, c in checks],
         compare_ecm=(f"library {compare.name}", compare.ecm, compare.capacity_Ah) if compare else None,
+        excess=tl.excess_polarisation,
     )
     kw = {"rated_capacity_Ah": tl.rated_capacity_Ah, "dataset": tl.dataset, "like": tl.like}
     doc = fitted_cell_doc(fit, tl.name, tl.files(), **kw)
@@ -313,7 +323,13 @@ def run_test_list(tl: TestList, progress=print):
     if checks and tl.like and h:
         progress("  predicting the checks' voltage and temperature from their current")
         cell = cell_from_doc(doc)
-        tc = [ThermalCheck(r, c["start_soc"] if c["start_soc"] is not None else 1.0, c["ambient_C"]) for r, c in checks]
+
+        def soc0(r, c):
+            if c["start_soc"] == "end":
+                return start_soc_from_end(r, fit.capacity_Ah, fit.ecm.V_max)
+            return c["start_soc"] if c["start_soc"] is not None else 1.0
+
+        tc = [ThermalCheck(r, soc0(r, c), c["ambient_C"]) for r, c in checks]
         fixture = cal["fixture_J_K"] if cal else 0.0
         thermal = thermal_checks(tc, cell, h, compare, f"library {compare.name}" if compare else "", fixture)
         doc = fitted_cell_doc(fit, tl.name, tl.files(), thermal_checks=thermal, **kw)
