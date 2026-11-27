@@ -6,6 +6,20 @@ It answers questions like *"for this cell and this duty, should I use air, a col
 
 **Try it in your browser: [omlettehead22.github.io/PackTherm](https://omlettehead22.github.io/PackTherm/).** Nothing to install: PackTherm runs on your own computer, inside the page, so nothing you enter is sent anywhere.
 
+## At a glance
+
+| | |
+|---|---|
+| **The question** | For this cell and this duty: air, a cold plate or a side ribbon? At what flow? Is phase-change material worth its weight, and does a chiller pay its way? |
+| **The answer** | Every combination simulated in a packed module, the trade-off between mass added and fan, pump and chiller energy, and three picks, each re-checked at an aged cell's resistance. The example studies (39 designs each, like the road trip below) take 22–47 s each in fast mode on a 2-core machine. |
+| **Why trust it** | Checked against measured data on five commercial cells: on the Panasonic NCR18650PF, 48 blind tests from 25 to −20 °C to 0.65 K median; fitted cells checked on 74 and 82 tests they never saw; the LG M50's core temperature, from a thermocouple inside it, to 0.7–1.4 K. The README's numbers are re-checked in CI. |
+| **Your own cell** | From a datasheet, a BPX file, or fitted to your own test data (`packtherm fit`): a cell file with 95 % ranges, the conditions it was tested in, and a warning when a study goes beyond them. |
+| **Where it runs** | In the browser (nothing sent), from the command line, as a Python library, or as an HTTP API in Docker. |
+
+**Under the hood:** finite-volume heat conduction in the cell (1D, and 2D for plates and ribbons), phase-change material by an enthalpy method, an equivalent-circuit cell model with Butler–Volmer kinetics fitted to measured tests, coolant and air laws from the `ht` and `fluids` libraries, and multi-objective search (NSGA-II). Python with NumPy and SciPy; a React + TypeScript app that runs the same Python engine in the browser through Pyodide; over 300 Python tests in CI.
+
+**Status:** a working engineering tool, not yet a supported product: cylindrical cells only, no licence chosen yet, and the assumptions that could change a recommendation are listed and ranked in [docs/BACKLOG.md](docs/BACKLOG.md).
+
 ![How the model works](docs/figures/model_overview.svg)
 
 ## Design result: LG M50 pack on a hot road trip
@@ -87,7 +101,7 @@ Method, per-test results and known gaps: [docs/VALIDATION.md](docs/VALIDATION.md
 
 ## What the model covers
 
-- **Cells:** electro-thermal heat from current (equivalent circuit with Butler–Volmer kinetics and a slow branch, temperature- and SOC-dependent, with entropic heat where the cell has data), coulomb-counted SOC, voltage cut-off and CC-CV charging. Library: Samsung INR21700-30T and LG INR18650-HG2 (fitted from tests at −20 to 40 °C), Panasonic NCR18650PF (measured), LG M50 (derived, resistance measured), LG MJ1 (lumped resistance); `packtherm cells` lists them. Earlier and lumped versions of these cells (`M50-DERIVED`, `M50-LUMPED`, `30T-LUMPED` and so on) are listed apart, for comparison only: a lumped model has no voltage limits. Your own cylindrical NMC, NCA or LFP cell can be described from its datasheet (lumped resistance, labelled as less accurate; see below).
+- **Cells:** electro-thermal heat from current (equivalent circuit with Butler–Volmer kinetics and a slow branch, temperature- and SOC-dependent, with entropic heat where the cell has data), coulomb-counted SOC, voltage cut-off and CC-CV charging. Library: Samsung INR21700-30T and LG INR18650-HG2 (fitted from tests at −20 to 40 °C), A123 ANR26650M1B (LFP, fitted from tests at −15 to 45 °C), Panasonic NCR18650PF (measured), LG M50 (derived, resistance measured), LG MJ1 (lumped resistance); `packtherm cells` lists them. Earlier and lumped versions of these cells (`M50-DERIVED`, `M50-LUMPED`, `30T-LUMPED` and so on) are listed apart, for comparison only: a lumped model has no voltage limits. Your own cylindrical NMC, NCA or LFP cell can be described from its datasheet (lumped resistance, labelled as less accurate; see below).
 - **Module:** one cell's share of a hex or square array. Gap filler: air, PCM (RT31, RT42 and others) or PCM + expanded graphite. Cooling: forced air through the gaps, a bottom cold plate (2D, radius × height) or a side ribbon (2D, radius × angle). The coolant warms along the channel with its own thermal mass. Every design is judged on four cells: interior and on the module wall, at the coolant inlet and outlet.
 - **Energy:** fan and pump power from flow and pressure drop over the whole loop (laminar coolant channels, cross-flow air over the cans), the radiator fan, and chiller electricity with an ambient-dependent COP and heat leak.
 - **Mass:** filler plus cooling hardware built up from sourced dimensions (plate sheets and channels, ribbon walls and ribs, bond lines, pack-level loop, fans and chiller).
@@ -184,55 +198,17 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 
 | Version | Scope |
 |---|---|
-| **v0.1** | Python port of the MATLAB thesis solver, parity tests, CI |
-| **v0.2** | Electro-thermal heat generation, cell library (M50 21700, MJ1 18650), enthalpy-Newton solver, datasheet limit checks |
-| **v0.3** | Design advisor: cooling × PCM sweep, feasibility (peak, ΔT, recovery), Pareto front, three picks, worst-case-resistance re-check, trade-off chart |
-| **v0.3.1** | Continuous h with fan-law power, chiller, PCM grade library, WLTC and road-trip EV duties, iterative robustness, 2.6× faster solver |
-| **v0.3.2** | Validation against measured temperatures (48 blind tests, 25 to −20 °C); equivalent-circuit electrical model with Butler–Volmer kinetics, voltage cut-off and CC-CV charging; validated Panasonic NCR18650PF cell |
-| **v0.4** | Module level: packed unit cell (hex/square), air / PCM / composite-PCM filler, forced air, bottom plate, side ribbon, coolant rise with inlet/outlet cells, pump and fan power from flow |
-| **v0.4.1** | Design advisor on the module model: flow, topology, filler and gap as design variables with physical pump/fan energy |
-| **v0.4.2** | Rename to PackTherm, new model picture, housekeeping |
-| **v0.4.3** | Cooling hardware mass from sourced geometry; ribbon gap and height coverage |
-| **v0.4.4** | Chiller accounting: ambient-dependent COP, heat leak, chiller during the event only |
-| **v0.4.5** | Whole-loop pump power and radiator fan energy |
-| **v0.4.6** | Edge cells on the module wall, in the model and the advisor |
-| **v0.4.7** | Coolant thermal mass in the channel |
-| **v0.4.8** | 2D (radius × height) bottom-plate model |
-| **v0.4.9** | Side ribbon on a strip of the can (radius × angle model) |
-| **v0.4.10** | Cold-weather cell model: temperature laws for the low-SOC rise and slow branch (88 % of blind tests within 1 K) |
-| **v0.4.11** | LG M50 equivalent circuit derived from a physics model (PyBaMM + ORegan2022); worst-case checks scale every loss term |
-| **v0.4.12** | Audit: crash and message fixes, air cooling depends on the gap, rebuilt README, 2D field and validation figures |
-| **v0.4.13** | Physics audit: laminar coolant channels and cross-flow air laws, in-cell spread measured on the cooled face, datasheet limits checked per phase and as currents, CLI input checks |
-| **v0.5.0** | Fast and normal modes: fast is about 5× quicker with the same verdicts on the example studies; exact region volumes on every mesh |
-| **v0.5.1** | Study files (YAML or JSON): `packtherm run`, `packtherm template`, results JSON; README numbers checked in CI |
-| **v0.5.2** | User-defined cylindrical NMC/NCA cells from datasheet values, with unit-slip checks |
-| **v0.5.3** | HTTP API (queue, progress, results, limits, API keys), Docker image; example studies re-run in CI |
-| **v0.5.4** | LFP user-defined cells: measured thermal properties and graphite-dominated entropic heat; chemistry-specific checks |
-| **v0.5.5** | Web app (React + TypeScript): study set-up form built from the study format, live checks, progress, interactive trade-off chart and design table, downloads and shareable result links |
-| **v0.5.6** | Public site on GitHub Pages: PackTherm runs in the visitor's browser (Pyodide, parallel workers), checked against `packtherm run` in CI; release wheels with the web app |
-| **v0.5.7** | Fixes from a full audit: a duty the cell cannot deliver (voltage cut-off) now fails instead of looking cool; chart downloads on the public site; results files re-run as study files; `--version` |
-| **v0.6.0** | Cell test data: CSV and `.mat` reading, column, unit and sign detection, checks, and the test's parts labelled (`packtherm data`) |
-| **v0.6.1** | Fitting the circuit model at one temperature (`packtherm fit`): fitted cell file with sources, 95% ranges, validity, errors and input hashes, and an HTML report; checked on known answers and on the Panasonic NCR18650PF |
-| **v0.6.2** | Fitting across temperatures from a test list: values by temperature, a third circuit branch, drive cycles as fitting tests; fitted cells usable in studies, with warnings beyond their tested range; checked on 43 Panasonic tests the fit never saw |
-| **v0.6.3** | The Samsung INR21700-30T fitted at six temperatures and added to the library; the middle branch's time constant no longer left loose by the pulses; the test rig calibrated for the thermal checks |
-| **v0.6.4** | The LG INR18650-HG2 fitted blind with v0.6.3's method and added to the library; one data-preparation script for the McMaster datasets |
-| **v0.6.5** | Open-circuit curves by temperature from slow tests at each; the middle branch kept below the slow branch; the HG2 from 59.7 to 36.6 mV |
-| **v0.6.6** | Fitting without a pulse test (the kinetics from drive profiles); the A123 26650 (LFP) fitted blind and added to the library: good from 5 to 45 °C, fails in the cold, hysteresis measured |
-| **v0.6.7** | LFP hysteresis, fitted from slow charges (the A123's held-out charge from 41 to 8 mV); datasheet temperature limits including no charging below 0 °C; a warning below a fitted cell's tested state of charge; the A123's tested range fixed. The cold is not fixed |
-| **v0.6.8** | Fixes: cold drive cycles were cut to seconds in the fit (30T 25.7 mV, HG2 36.6 mV); hysteresis in two parts (the A123's warm profiles back to 4–7 mV); the HG2's hysteresis sign; notes where branch values aren't pinned; a slightly warm module in the cold no longer fails on recovery; no cold-charge warning for a moment's regen. The cold and charging from empty are still not fixed |
-| **v0.6.9** | The LG M50 against measured data with a core thermocouple: its circuit had half the real resistance, now scaled ×2.04 on measured pulses (1C voltage 114–146 → 18–40 mV, core 0.7–1.4 K); drive cycles 44 → 35 mV; a tenth of the radial conductivity ruled out; the M50's cold limits; earlier and lumped cell versions listed apart, for comparison only; the example studies re-run (the 1.5C discharge now has no feasible design) |
-| **v0.6.10** | Patch: cold limits for the PF and MJ1 (no warning before when charging them in the cold); no warning for a dip of hundredths of a kelvin below a limit |
-| **v0.6.11** | The lumped model's slow losses (datasheet cells, the MJ1): heat from 22–64 % of the fitted circuits' to within −31 to +19 % (LFP −42 to +27 %); the M50's datasheet resistance now gives 8.0–8.4 K on the measured 1C tests against 8–10.4 K (was 5.5–5.9) |
-| **v0.6.12** | Coolant heat transfer and pressure drop from the channel shape, flow and glycol properties (ht, fluids): plate about 650 W/m²K per can base and ribbon about 1,950 per bonded strip, where both were an assumed 1,500; channel pressure drop well under 1 kPa, where 20 kPa was assumed. Road trip 24 of 39 feasible (was 23) |
-| **v0.6.13** | Battery life: capacity left after 8 years of the duty once a day, from NREL's BLAST-Lite ageing models (copied in, BSD 3-clause), and an optional minimum. Road trip at 35 °C: 46–52 % sealed, 55–57 % for every cooled design that passes |
-| **v0.6.14** | Design search (pymoo's NSGA-II, an optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance; on the road trip, air at 0.43 % running energy where the grid's best needs 1.91 % (with a wider gap: more volume) |
-| **v0.6.15** | Which inputs matter most (Morris screening with SALib, an optional extra): for the road trip's balanced ribbon, the ambient moves the peak by about 9 K, the interface material and coolant heat transfer by under 0.2 K |
-| **v0.6.15.1** | Cell-to-cell spread at the same moment, not the difference of peaks that come at different times: chilled road-trip designs went from about 0 to up to 16.5 K (the chiller's pull-down); no verdicts or picks changed |
-| **v0.6.16** | Cells from BPX files: size, mass, open-circuit voltage and reversible heat from the file, and a circuit derived in PyBaMM (optional extras). An LG M50 file from Chen2020: 26.7 mΩ at 25 °C against 33.7 measured |
-| **v0.6.17** (current) | The cold, fixed on the A123: a loss branch beyond the slow tests' current, steep in the cold and at low charge (its −12 °C checks from 96 and 84 to 36 and 24 mV); a charge check's start counted from its end (its charge from empty from 96 to 14 mV); a study warning beyond the branch's tested current. Solid diffusion tried first, not shipped ([FITTING.md](docs/FITTING.md#the-cold-and-charging-from-empty-v0617)) |
+| **v0.1–v0.2** | The MATLAB thesis solver ported to Python with parity tests; heat from an electro-thermal cell model; a cell library with datasheet limit checks |
+| **v0.3** | Design advisor: cooling × PCM sweeps, feasibility, the trade-off front and three picks, a worst-case-resistance re-check; validated on 48 blind tests of a measured cell |
+| **v0.4** | The module: packed cells with air, PCM or composite filler; forced air, a bottom plate and a side ribbon (2D); the coolant warming along its channel; whole-loop pump, fan and chiller energy; hardware mass from sourced geometry |
+| **v0.5** | A tool others can use: fast mode, study files, your own NMC, NCA and LFP cells from datasheets, an HTTP API and Docker image, a web app, and a public site that runs PackTherm in the browser |
+| **v0.6** | Cells from measured data: fitting from cell tests, a library of fitted cells (Samsung 30T, LG HG2, A123 LFP) and the LG M50 checked against its core temperature, LFP hysteresis and cold losses, battery life, design search, which inputs matter most, cells from BPX files |
+| **v0.6.18** (current) | The showcase: what PackTherm answers and how far to trust it, at the top of this README and on the public site; this roadmap by milestone |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
-Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).
+Every version is in [CHANGELOG.md](CHANGELOG.md) and its own [release](https://github.com/omlettehead22/PackTherm/releases).
+
+Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md).
 
 ## Repository layout
 
@@ -245,7 +221,7 @@ src/packtherm/api/    the HTTP API (FastAPI): settings and limits, jobs, endpoin
 src/packtherm/browser.py  the in-browser engine's side in Python (the study in steps, for Web Workers)
 web/                  the web app (React + TypeScript, built with Vite into src/packtherm/web_static/, or
                       as the public site with the in-browser engine: web/scripts/build_pages.py)
-src/packtherm/data/   WLTC Class 3b trace (UN GTR 15), NCR18650PF and LG M50 OCV tables, the fitted 30T and HG2
+src/packtherm/data/   WLTC Class 3b trace (UN GTR 15), NCR18650PF and LG M50 OCV tables, the fitted 30T, HG2 and A123
 validation/           dataset preparation, identification, M50 derivation and checks, processed test data
 docs/examples/        example study files, their results (JSON, CSV, charts) and module comparisons
 docs/figures/         model picture and 2D fields, with the scripts that draw them
