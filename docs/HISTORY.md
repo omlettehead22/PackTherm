@@ -51,6 +51,7 @@ How PackTherm grew from an MSc thesis model to a module design tool. Results on 
 | **v0.6.15.1** | Fix: cell-to-cell spread at the same moment, not the difference of peaks at different times; chilled road-trip designs from about 0 to up to 16.5 K, no verdicts changed |
 | **v0.6.16** | Cells from BPX files (optional extras): size, mass, OCV and reversible heat from the file, a circuit derived in PyBaMM. LG M50 from Chen2020: 26.7 mΩ against 33.7 measured |
 | **v0.6.17** | The cold, fixed on the A123: an excess-polarisation branch (losses beyond the slow tests' current, Arrhenius, rising at low charge) found from the cold errors' relaxation and linearity; held-out −12 °C cycles 96/84 → 36/24 mV. Its charge from empty 96 → 14 mV, mostly a check starting 2 % off. Solid diffusion, two particle groups and a linear branch tried first, not shipped |
+| **v0.6.18** | The showcase: an "At a glance" section in the README and an intro on the public site; the roadmap by milestone |
 | **v0.6.13** | Battery life from NREL's BLAST-Lite ageing models: capacity left after 8 years of the duty once a day, parked at the ambient between; road trip at 35 °C 46–52 % sealed, 55–57 % for the cooled designs that pass |
 
 ## v0.3.1: single-cell design advisor

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.18
+
+The showcase: what PackTherm answers and how far to trust it, for a first-time reader. No change to the model or its results.
+
+- **README: "At a glance"** under the introduction. It covers the question PackTherm answers, the answer it gives, why to trust it (measured data on five cells), how to bring your own cell, and where it runs. It also says what it is built with and where it stands: cylindrical cells only, no licence yet, and the assumptions ranked in BACKLOG.
+- **README: the roadmap by milestone** (v0.1–v0.2, v0.3, v0.4, v0.5, v0.6, then later), not every version; every version is still here and in its release.
+- **Public site: an intro card** above the study form (`web/src/components/Intro.tsx`), with the same question, three facts and links to the validation and the assumptions. Only on the public site, not the app served by `packtherm serve`.
+- **Fix:** the README's cell library list and repository layout left out the A123 (LFP), in the library since v0.6.6.
+- **Tests:** the intro's heading, its validation figure and links (`web/src/intro.test.tsx`).
+
 ## 0.6.17
 
 The cold and charging from empty (BACKLOG item 7), fixed on the A123: its held-out −12 °C drive cycles from 96 and 84 mV RMS to 36 and 24 mV, and its C/30 charge from empty from 96 to 14 mV. Nothing it is fitted on got worse. Details in [docs/FITTING.md](docs/FITTING.md#the-cold-and-charging-from-empty-v0617).

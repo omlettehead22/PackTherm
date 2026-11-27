@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { api, ApiError } from "./api";
 import { BrowserRun } from "./components/BrowserRun";
+import { Intro } from "./components/Intro";
 import { Results } from "./components/Results";
 import { Setup } from "./components/Setup";
 import { StudyPage } from "./components/StudyPage";
@@ -123,6 +124,7 @@ export function App() {
             </p>
           </div>
         )}
+        {ENGINE === "browser" && r.page === "setup" && <Intro />}
         {!error && (!loaded || !form) && <p className="status">Loading…</p>}
         {loaded && form && (r.page === "setup" || r.page === "shared") && (
           <Setup
