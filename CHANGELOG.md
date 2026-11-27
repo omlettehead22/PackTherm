@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.17
+
+The cold and charging from empty (BACKLOG item 7), fixed on the A123: its held-out −12 °C drive cycles from 96 and 84 mV RMS to 36 and 24 mV, and its C/30 charge from empty from 96 to 14 mV. Nothing it is fitted on got worse. Details in [docs/FITTING.md](docs/FITTING.md#the-cold-and-charging-from-empty-v0617).
+
+- **New: excess polarisation** (`packtherm/ecm.py`), an optional branch for losses beyond the current the open-circuit curves were measured at. The current smoothed over τ_x drives a drop R_x(SOC, T) · softplus(|i_f| − I_x): I_x is the slow tests' own current (C/30), and R_x follows an Arrhenius law and rises as the charge runs down. Found from the A123's cold errors, which relax at rest over about 200 s and are linear in the current smoothed over 300–400 s above C/30 (about 1 Ω at 25 % charge, −12 °C). On the A123: 95 kJ/mol, half way at 23 % charge, 1.3 Ω at −12 °C and 6 mΩ at 25 °C at 25 % charge.
+- **New in test lists: `excess_polarisation: true`** fits it last, with everything else held, on the long and slow tests down to 50 mV above the cut-off. Off by default: the 30T, HG2 and Panasonic are unchanged. Cell files keep it under `model.ecm.excess_polarisation`.
+- **New: `start_soc: end`** for checks and thermal checks: a charge's start counted back from full (it must end at the top voltage). The A123's 15 °C charge started 2 % up, not at 0 %; on LFP's steep low end that was most of its error (119 → 31 mV over the whole test with the old model).
+- **New warning:** where the tests saw the branch act, the drive profiles averaged about 0.1C. The cell file records that current (`I_tested_A`), and a study warns when the branch acts beyond 1.2 times it. A constant 1C discharge from −10 °C peaks about 6 K warmer with the branch (11.6 against 5.2 °C) and delivers the same charge.
+- **The A123 refitted** (library `A123`, `docs/examples/fitting/`): −15 °C drive cycle fitted on 29.6 → 20.3 mV, its near-empty windows 47 → 26 mV; 5 to 45 °C the same or up to 0.6 mV better; 25 °C 4C check 12.9 → 12.7 mV; thermal checks unchanged.
+- **Not blind:** the branch was found on the −12 °C checks' errors and three trial versions were scored on them. Its values come only from the tests fitted on.
+- **Tried and not shipped** (FITTING.md): solid diffusion (the cold checks 8–9 % closer, the −15 °C near-empty fits 47 → 190 mV), two particle groups (115 → 97 mV), and a linear branch without the threshold (stalled at 85 and 59 mV).
+- **Tests:** the branch off by default; ECM stepping and the fit's replay agree with it on; thinning keeps the charge; the start from the end; the cell file round trip; the study warning.
+
 ## 0.6.16
 
 Cells from BPX files: `packtherm bpx cell.json` turns a [BPX](https://github.com/FaradayInstitution/BPX) file (Battery Parameter eXchange, the open format for physics-based cell models) into PackTherm cell files. Both new dependencies are optional extras.

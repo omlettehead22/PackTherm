@@ -52,5 +52,9 @@ checks:
   - {file: "../../../validation/data/a123_26650/N15_DYN15.csv.gz", start_soc: 1, ambient_C: -12.51}
   - {file: "../../../validation/data/a123_26650/P25_DYN50.csv.gz", start_soc: 1, ambient_C: 25.94}
   # The 15 degC slow charge, held out: its hysteresis is predicted from the nearest temperature with one (25 degC).
-  - {file: "../../../validation/data/a123_26650/P15_C30_charge.csv.gz", start_soc: 0, ambient_C: 16.63}
+  # It starts where a C/30 discharge to the cut-off and a rest left the cell, about 2 % up, not empty: counted
+  # back from its end (charged to 3.6 V, full), v0.6.17.
+  - {file: "../../../validation/data/a123_26650/P15_C30_charge.csv.gz", start_soc: end, ambient_C: 16.63}
+# v0.6.17: losses beyond the slow tests' rate, which the cold drive cycles near empty show (docs/FITTING.md)
+excess_polarisation: true
 output: a123_26650_fitted.yaml

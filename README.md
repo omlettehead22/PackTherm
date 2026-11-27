@@ -72,7 +72,7 @@ At the M50's rated 1.5C, run continuously to empty, every one of these cells pas
 
 **Fitted cell (LG INR18650-HG2):** 74 tests it never saw, from current alone: 36.6 mV median voltage error and 93% within 1 K (v0.6.8 fixed a bug that had kept most of its cold drive cycles out of the fit; the median is unchanged). Blind in v0.6.4 it was 59.7 mV; v0.6.5 fixed what that showed (see [docs/FITTING.md](docs/FITTING.md#a-third-cell-fitted-blind-the-lg-hg2)).
 
-**Fitted LFP cell (A123 ANR26650M1B), blind (v0.6.6):** fitted at seven temperatures with no pulse tests (the kinetics from its drive profiles). From 5 to 45 °C its profiles fit to 4–7 mV, and a 25 °C profile at four times the current, never fitted to, comes out at 8.2 mV. At −12 °C it fails (about 100 mV): the cell runs out well before the model. A C/30 charge ran 35–50 mV above it: LFP's hysteresis, modelled from v0.6.7. Refitted with its slow charges, a held-out charge comes within 7.5 mV (was 41.2), and with the hysteresis in two parts (v0.6.8) its warm discharge profiles are back to 4–7 mV (see [docs/FITTING.md](docs/FITTING.md#fixes-after-v067-v068)).
+**Fitted LFP cell (A123 ANR26650M1B), blind (v0.6.6):** fitted at seven temperatures with no pulse tests (the kinetics from its drive profiles). From 5 to 45 °C its profiles fit to 4–7 mV, and a 25 °C profile at four times the current, never fitted to, comes out at 8.2 mV. At −12 °C it failed (about 100 mV): the cell runs out well before the model, fixed in v0.6.17 (36 and 24 mV). A C/30 charge ran 35–50 mV above it: LFP's hysteresis, modelled from v0.6.7. Refitted with its slow charges, a held-out charge comes within 7.5 mV (was 41.2), and with the hysteresis in two parts (v0.6.8) its warm discharge profiles are back to 4–7 mV (see [docs/FITTING.md](docs/FITTING.md#fixes-after-v067-v068)).
 
 **Fitted cell (Samsung INR21700-30T):** fitted by `packtherm fit` from its own tests at six temperatures (McMaster, CC BY 4.0), and checked on 82 others from current alone: 25.7 mV median voltage error, 68% within 1 K, all within 1 K at 25 and 40 °C (see [docs/FITTING.md](docs/FITTING.md)).
 
@@ -172,7 +172,7 @@ Tests the fit never saw were predicted from their current alone, as a study runs
 - **Samsung INR21700-30T**, six temperatures (−20 to 40 °C), 82 tests: 25.7 mV, and 68% within 1 K (all within 1 K at 25 and 40 °C; the cold is weaker). It is in the library as `30T`.
 - **LG INR18650-HG2**, six temperatures, 74 tests: 36.6 mV, and 93% within 1 K. Fitted blind in v0.6.4 (59.7 mV), it showed a middle branch taking the slow branch's place and a capacity that moves with temperature; v0.6.5 fixes both. It is in the library as `HG2`.
 
-- **A123 ANR26650M1B** (LFP), seven temperatures (−15 to 45 °C), fitted blind without pulse tests (v0.6.6), refitted with hysteresis (v0.6.7, in two parts from v0.6.8), 4 checks: 11.6 mV at 25 °C, 91–102 mV at −12 °C, a held-out C/30 charge 8.1 mV over 10–95%. It is in the library as `A123`.
+- **A123 ANR26650M1B** (LFP), seven temperatures (−15 to 45 °C), fitted blind without pulse tests (v0.6.6), refitted with hysteresis (v0.6.7, in two parts from v0.6.8), with a cold loss branch from v0.6.17, 4 checks: 11.4 mV at 25 °C, 24–36 mV at −12 °C (91–102 before), a held-out C/30 charge 14.1 mV over 10–95% (counted from its full end). It is in the library as `A123`.
 
 The 30T and the HG2 fitted again without their pulse tests give checks about as good (29.4 and 35.4 mV), so the method holds without them; the branch values differ, and a pulse test still measures them better. See [docs/FITTING.md](docs/FITTING.md).
 
@@ -228,8 +228,8 @@ A module study of about 40 designs takes 2–3½ minutes on two cores, or under 
 | **v0.6.14** | Design search (pymoo's NSGA-II, an optional extra): flows, gap and chiller set-point as ranges, judged at worst-case resistance; on the road trip, air at 0.43 % running energy where the grid's best needs 1.91 % (with a wider gap: more volume) |
 | **v0.6.15** | Which inputs matter most (Morris screening with SALib, an optional extra): for the road trip's balanced ribbon, the ambient moves the peak by about 9 K, the interface material and coolant heat transfer by under 0.2 K |
 | **v0.6.15.1** | Cell-to-cell spread at the same moment, not the difference of peaks that come at different times: chilled road-trip designs went from about 0 to up to 16.5 K (the chiller's pull-down); no verdicts or picks changed |
-| **v0.6.16** (current) | Cells from BPX files: size, mass, open-circuit voltage and reversible heat from the file, and a circuit derived in PyBaMM (optional extras). An LG M50 file from Chen2020: 26.7 mΩ at 25 °C against 33.7 measured |
-| v0.6.17 | The cold capacity and charging from empty (BACKLOG item 7) |
+| **v0.6.16** | Cells from BPX files: size, mass, open-circuit voltage and reversible heat from the file, and a circuit derived in PyBaMM (optional extras). An LG M50 file from Chen2020: 26.7 mΩ at 25 °C against 33.7 measured |
+| **v0.6.17** (current) | The cold, fixed on the A123: a loss branch beyond the slow tests' current, steep in the cold and at low charge (its −12 °C checks from 96 and 84 to 36 and 24 mV); a charge check's start counted from its end (its charge from empty from 96 to 14 mV); a study warning beyond the branch's tested current. Solid diffusion tried first, not shipped ([FITTING.md](docs/FITTING.md#the-cold-and-charging-from-empty-v0617)) |
 | Later | A generic circuit model (your choice of RC branches); fitting in the web app; a 3D view of the module; pouch and prismatic cells; licence and PyPI |
 
 Results from earlier versions, as they stood at the time, are in [docs/HISTORY.md](docs/HISTORY.md); every change is in [CHANGELOG.md](CHANGELOG.md).

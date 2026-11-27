@@ -66,6 +66,9 @@ R_GAS = 8.314462618
 T_REF = 298.15
 FULL_SOC = 0.98  # a run or test starting this full starts just charged: on the charge branch (hysteresis)
 BY_T_COLUMNS = ("T_K", "R0", "I0", "gamma", "tau_ct", "Rm", "tau_m", "Rd", "tau_d", "soc_a", "soc_b")
+# The excess branch's threshold turns over this current, A (a softplus, so the fit stays smooth).
+EXCESS_SOFT_A = 0.01
+EXCESS_SEEN_V = 0.02  # V: where the excess branch counts as acting (its tested range, and studies' warning)
 
 
 @dataclass(frozen=True)
@@ -100,6 +103,23 @@ class ECM:
     # Hysteresis (v0.6.7): (T_K, G, k) rows: the gap between the charge and discharge branches (V), and how
     # quickly a change of direction crosses it (1/Ah). Off when empty.
     hyst: tuple[tuple[float, ...], ...] = ()
+    # Excess polarisation (v0.6.17): transport losses beyond the rate the open-circuit curves were measured
+    # at. The curves come from slow tests (C/30), so they already hold whatever a cell loses at that
+    # current; above it, a cell can lose much more in the cold near empty (the A123 at -12 degC: about
+    # 1 ohm on the current above C/30 at 25 % charge, against tens of milliohms warm). The current
+    # smoothed over tau_x, i_f, drives a drop R_x(soc, T) softplus(|i_f| - I_x), on charge and discharge
+    # alike: R_x = Rx_cold exp(Ea_x/R (1/T - 1/T_x)) / (1 + exp((soc - soc_x)/w_x)), rising as the charge
+    # runs down and levelling off near empty. Off at Rx_cold = 0.
+    Rx_cold: float = 0.0  # ohm, at T_x and empty
+    Ea_x: float = 0.0  # J/mol
+    soc_x: float = 0.2  # where the rise is half way
+    w_x: float = 0.05  # how sharply it rises (SOC)
+    tau_x: float = 300.0  # s
+    I_x: float = 0.0  # A: the open-circuit curves' own current
+    T_x: float = 261.15  # K: where Rx_cold is given
+    # The largest smoothed current at which the fit's tests saw the branch add EXCESS_SEEN_V or more (A);
+    # studies warn beyond it (0: not recorded).
+    I_x_tested: float = 0.0
 
     def __post_init__(self):
         if self.by_T:
@@ -114,6 +134,28 @@ class ECM:
                 raise ValueError("ocv_by_T: each curve needs as many voltages as states of charge, two or more")
             object.__setattr__(self, "_ocv_T", tuple(float(c[0]) for c in curves))
             object.__setattr__(self, "_ocv_curves", tuple((tuple(c[1]), tuple(c[2])) for c in curves))
+
+    @property
+    def excess(self) -> bool:
+        return self.Rx_cold > 0.0
+
+    def Rx(self, soc: float, T: float) -> float:
+        """The excess branch's resistance at soc and T (K), ohm."""
+        z = min(max((soc - self.soc_x) / self.w_x, -50.0), 50.0)
+        return self.Rx_cold * math.exp(self.Ea_x / R_GAS * (1.0 / T - 1.0 / self.T_x)) / (1.0 + math.exp(z))
+
+    def excess_V(self, i_f: float, soc: float, T: float) -> float:
+        """The excess drop (V, + on discharge) for the smoothed current i_f (A)."""
+        if not self.excess:
+            return 0.0
+        x = (abs(i_f) - self.I_x) / EXCESS_SOFT_A
+        over = EXCESS_SOFT_A * (math.log1p(math.exp(x)) if x < 30.0 else x)
+        return math.copysign(self.Rx(soc, T) * over, i_f)
+
+    def excess_step(self, i_f: float, current: float, dt: float) -> float:
+        """The smoothed current after dt at current."""
+        e = math.exp(-dt / self.tau_x)
+        return i_f * e + current * (1.0 - e)
 
     def _hyst_at(self, i: int, T: float) -> float:
         rows = sorted(self.hyst)
@@ -285,6 +327,7 @@ class ECMState:
     V_m: float = 0.0
     h: float = 0.0  # hysteresis: 0 on the discharge branch, 1 on the charge branch
     s: float = 0.0  # the last direction (v0.6.8): 1 after a charge, 0 after a discharge
+    i_f: float = 0.0  # the current smoothed for the excess branch (v0.6.17), A
     cutoff: bool = False  # discharge hit V_min
     charge_done: bool = False  # CV phase ended
 
@@ -302,6 +345,9 @@ class ECMState:
             e3 = math.exp(-dt / ecm.tau_m_at(T))
             vm = self.V_m * e3 + f * Rm * current * (1.0 - e3)
         V = ecm.ocv(soc, T) - current * f * ecm.R0(T) - eta - vm - vd
+        if ecm.excess:  # v0.6.17
+            self._i_f_next = ecm.excess_step(self.i_f, current, dt)
+            V -= ecm.excess_V(self._i_f_next, soc, T)
         if ecm.hyst:
             V += ecm.hyst_offset(ecm.hyst_step(self.h, current, dt, T), ecm.hyst_sign(self.s, current), T)
         return V, eta, vd, vm
@@ -341,6 +387,8 @@ class ECMState:
                 current = 0.0
             V, eta, vd, vm = self.step(ecm, current, soc, T, dt)
         self.eta_ct, self.V_d, self.V_m = eta, vd, vm
+        if ecm.excess:
+            self.i_f = self._i_f_next  # from the last step: the current committed
         self.h = ecm.hyst_step(self.h, current, dt, T)
         self.s = ecm.hyst_sign(self.s, current)
         return current, V

@@ -101,9 +101,9 @@ model:
         - 0.332472
       - - 307.84
         - 0.00527859
-        - 172.996
-        - 17.5296
-        - 6.96697
+        - 172.997
+        - 17.5297
+        - 6.96698
         - 0.0114776
         - 102.292
         - 0.0462822
@@ -121,6 +121,15 @@ model:
         - 10000.0
         - 1.40284
         - 0.5
+    excess_polarisation:
+      Rx_cold_ohm: 3.24151
+      at_C: -12.0
+      Ea_x: 94761.9
+      soc_x: 0.227159
+      w_x: 0.0593707
+      tau_x_s: 666.106
+      I_x_A: 0.0826748
+      I_tested_A: 0.253592
     hysteresis:
       by_temperature:
       - cell_C: -12.0
@@ -203,6 +212,36 @@ values:
     - -29430.0
     - 17370.0
     note: 'the temperatures'' own values sit up to 2.7x off this law: the table follows them'
+  Rx_cold:
+    value: 3.2415
+    unit: ohm
+    source: fitted
+    what: excess polarisation at -12.4 degC and empty
+  Ea_x:
+    value: 94762.0
+    unit: J/mol
+    source: fitted
+    what: how the excess polarisation grows in the cold
+  soc_x:
+    value: 0.22716
+    unit: '-'
+    source: fitted
+    what: where the excess polarisation's rise is half way (SOC)
+  w_x:
+    value: 0.059371
+    unit: '-'
+    source: fitted
+    what: how sharply it rises as the charge runs down (SOC)
+  tau_x:
+    value: 666.11
+    unit: s
+    source: fitted
+    what: over how long the current that drives it is smoothed
+  I_x:
+    value: 0.082675
+    unit: A
+    source: data
+    what: 'the excess polarisation''s threshold: the slow tests'' current'
   capacity_Ah:
     value: 2.5777
     unit: Ah
@@ -2308,23 +2347,23 @@ identifiability:
 errors:
   fitted_on:
     changes in current at 20-95% SOC, 25 degC:
-      rmse_mV: 3.16
-      max_mV: 11.92
+      rmse_mV: 3.15
+      max_mV: 11.61
       samples: 16444
       parts: 261
     changes in current below 20% SOC, 25 degC:
-      rmse_mV: 3.63
-      max_mV: 14.08
+      rmse_mV: 3.56
+      max_mV: 13.8
       samples: 1323
       parts: 21
     drive cycles fitted on, 25 degC:
-      rmse_mV: 4.42
+      rmse_mV: 4.4
       max_mV: 53.56
       samples: 28800
       parts: 1
     slow charge at 10-95% SOC, 25 degC:
-      rmse_mV: 6.82
-      max_mV: 14.95
+      rmse_mV: 6.81
+      max_mV: 14.93
       samples: 9793
       parts: 1
     changes in current at 20-95% SOC, 35 degC:
@@ -2333,18 +2372,18 @@ errors:
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 35 degC:
-      rmse_mV: 2.79
-      max_mV: 9.9
+      rmse_mV: 2.8
+      max_mV: 9.94
       samples: 630
       parts: 10
     drive cycles fitted on, 35 degC:
-      rmse_mV: 3.94
+      rmse_mV: 3.93
       max_mV: 51.22
       samples: 28864
       parts: 1
     slow charge at 10-95% SOC, 35 degC:
       rmse_mV: 8.48
-      max_mV: 17.06
+      max_mV: 17.05
       samples: 10155
       parts: 1
     changes in current at 20-95% SOC, 45 degC:
@@ -2353,8 +2392,8 @@ errors:
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 45 degC:
-      rmse_mV: 2.86
-      max_mV: 9.68
+      rmse_mV: 2.87
+      max_mV: 9.69
       samples: 630
       parts: 10
     drive cycles fitted on, 45 degC:
@@ -2364,7 +2403,7 @@ errors:
       parts: 1
     slow charge at 10-95% SOC, 45 degC:
       rmse_mV: 10.27
-      max_mV: 30.6
+      max_mV: 30.59
       samples: 10099
       parts: 1
     changes in current at 20-95% SOC, 15 degC:
@@ -2373,127 +2412,127 @@ errors:
       samples: 8002
       parts: 127
     changes in current below 20% SOC, 15 degC:
-      rmse_mV: 2.21
-      max_mV: 6.71
+      rmse_mV: 2.22
+      max_mV: 6.64
       samples: 630
       parts: 10
     drive cycles fitted on, 15 degC:
-      rmse_mV: 4.5
+      rmse_mV: 4.47
       max_mV: 76.73
       samples: 28779
       parts: 1
     changes in current at 20-95% SOC, 5 degC:
-      rmse_mV: 4.28
+      rmse_mV: 4.23
       max_mV: 18.9
       samples: 8065
       parts: 128
     changes in current below 20% SOC, 5 degC:
-      rmse_mV: 5.72
-      max_mV: 23.57
+      rmse_mV: 5.1
+      max_mV: 21.76
       samples: 567
       parts: 9
     drive cycles fitted on, 5 degC:
-      rmse_mV: 7.22
+      rmse_mV: 7.15
       max_mV: 81.02
       samples: 29223
       parts: 1
     slow charge at 10-95% SOC, 5 degC:
-      rmse_mV: 10.49
+      rmse_mV: 10.32
       max_mV: 63.25
       samples: 9919
       parts: 1
     changes in current at 20-95% SOC, -5 degC:
-      rmse_mV: 7.91
-      max_mV: 48.1
+      rmse_mV: 6.89
+      max_mV: 40.9
       samples: 13987
       parts: 222
     changes in current below 20% SOC, -5 degC:
-      rmse_mV: 26.6
-      max_mV: 68.75
+      rmse_mV: 20.26
+      max_mV: 52.61
       samples: 1071
       parts: 17
     drive cycles fitted on, -5 degC:
-      rmse_mV: 7.39
+      rmse_mV: 6.29
       max_mV: 89.78
       samples: 29220
       parts: 1
     slow charge at 10-95% SOC, -5 degC:
-      rmse_mV: 22.51
+      rmse_mV: 22.32
       max_mV: 190.08
       samples: 10171
       parts: 1
     changes in current at 20-95% SOC, -15 degC:
-      rmse_mV: 25.45
-      max_mV: 173.42
+      rmse_mV: 18.97
+      max_mV: 121.35
       samples: 16823
       parts: 267
     changes in current below 20% SOC, -15 degC:
-      rmse_mV: 46.96
-      max_mV: 175.08
+      rmse_mV: 26.24
+      max_mV: 110.31
       samples: 1323
       parts: 21
     drive cycles fitted on, -15 degC:
-      rmse_mV: 29.6
-      max_mV: 143.34
+      rmse_mV: 20.33
+      max_mV: 93.4
       samples: 29231
       parts: 1
     slow charge at 10-95% SOC, -15 degC:
-      rmse_mV: 82.61
-      max_mV: 357.65
+      rmse_mV: 76.19
+      max_mV: 336.73
       samples: 9291
       parts: 1
   held_out:
   - file: N15_DYN05.csv.gz
-    rmse_mV: 95.88
-    max_mV: 383.67
-    rmse_whole_mV: 115.02
+    rmse_mV: 36.21
+    max_mV: 151.58
+    rmse_whole_mV: 37.41
     cell_C: -12.2
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: N15_DYN15.csv.gz
-    rmse_mV: 84.37
-    max_mV: 370.55
-    rmse_whole_mV: 94.65
+    rmse_mV: 24.25
+    max_mV: 103.4
+    rmse_whole_mV: 24.3
     cell_C: -12.4
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: P25_DYN50.csv.gz
-    rmse_mV: 12.86
+    rmse_mV: 12.7
     max_mV: 48.4
-    rmse_whole_mV: 12.86
+    rmse_whole_mV: 12.7
     cell_C: 26.0
     soc_start: 1.0
     anchored: 100.0% at the start, as given
   - file: P15_C30_charge.csv.gz
-    rmse_mV: 95.71
-    max_mV: 802.21
-    rmse_whole_mV: 118.86
+    rmse_mV: 14.13
+    max_mV: 134.61
+    rmse_whole_mV: 22.99
     cell_C: 16.6
-    soc_start: 0.0
-    anchored: 0.0% at the start, as given
+    soc_start: 0.02
+    anchored: 1.9% at the start, as given
   held_out_electrothermal:
   - file: N15_DYN05.csv.gz
     ambient_C: -12.14
-    V_rmse_mV: 102.06721581974458
-    T_rmse_K: 0.10678386654882335
-    peak_error_K: -0.1343381731429183
+    V_rmse_mV: 41.15363194709321
+    T_rmse_K: 0.11194566717437525
+    peak_error_K: -0.13411753362880674
     rise_meas_K: 0.963981848926462
   - file: N15_DYN15.csv.gz
     ambient_C: -12.51
-    V_rmse_mV: 91.29446723369458
-    T_rmse_K: 0.7117784859209825
+    V_rmse_mV: 25.200475615950914
+    T_rmse_K: 0.711042014317524
     peak_error_K: -1.8207657603852567e-14
     rise_meas_K: 15.53
   - file: P25_DYN50.csv.gz
     ambient_C: 25.94
-    V_rmse_mV: 11.62239981193981
-    T_rmse_K: 0.09587478832824207
-    peak_error_K: -0.02538685854257494
+    V_rmse_mV: 11.42780465788246
+    T_rmse_K: 0.09591129802530383
+    peak_error_K: -0.02494303883004534
     rise_meas_K: 0.1999999999999993
   - file: P15_C30_charge.csv.gz
     ambient_C: 16.63
-    V_rmse_mV: 95.90725642148813
-    T_rmse_K: 0.13494082141136737
+    V_rmse_mV: 7.678003951812517
+    T_rmse_K: 0.13496649021971205
     peak_error_K: 3.552713678800501e-15
     rise_meas_K: 3.4299999999999997
 state_of_charge_anchors:
@@ -2505,6 +2544,7 @@ state_of_charge_anchors:
   cycle 1 at -5 degC: 100.0% at the start, as given
   cycle 1 at -15 degC: 100.0% at the start, as given
 data_warnings:
+- 'excess polarisation (v0.6.17) fitted on 19 long tests and slow charges to the cut-off: 0.7 -> 0.6 mV RMS on them'
 - the middle branch's time constant (tau_m) set by the long tests at 35, 44, 18 degC, where they fit better that
   way and the kinetic windows (pulses, or changes in current) still fit (elsewhere by the kinetic windows (pulses,
   or changes in current))
@@ -2513,8 +2553,8 @@ data_warnings:
   The voltage and the 10 s DC resistance are fitted; take the branch values one by one with care (a pulse test pins
   them)'
 provenance:
-  packtherm: 0.6.8
-  fitted_at: '2026-11-23T11:24:40+00:00'
+  packtherm: 0.6.17
+  fitted_at: '2026-11-27T13:31:29+00:00'
   settings:
     pulse window: 5 s before each pulse to 40 s after
     kinetics fitted on: pulses at 20%-95% SOC, then the near-empty rise on all; with no pulse test (at 25 degC,

@@ -107,6 +107,18 @@ def ecm_doc(ecm) -> dict:
             "columns": list(BY_T_COLUMNS),
             "rows": [[_r(x, 6) for x in row] for row in sorted(ecm.by_T)],
         }
+    if ecm.excess:
+        # v0.6.17: losses beyond the open-circuit curves' rate (packtherm.ecm, excess polarisation)
+        out["excess_polarisation"] = {
+            "Rx_cold_ohm": _r(ecm.Rx_cold, 6),
+            "at_C": _r(ecm.T_x - 273.15, 2),
+            "Ea_x": _r(ecm.Ea_x, 6),
+            "soc_x": _r(ecm.soc_x, 6),
+            "w_x": _r(ecm.w_x, 6),
+            "tau_x_s": _r(ecm.tau_x, 6),
+            "I_x_A": _r(ecm.I_x, 6),
+            "I_tested_A": _r(ecm.I_x_tested, 6),
+        }
     if ecm.hyst:
         # v0.6.7: the gap between the charge and discharge branches at each temperature, and how quickly
         # a change of direction crosses it (packtherm.ecm.ECM).
@@ -153,7 +165,24 @@ def ecm_from_doc(doc: dict):
         by_T=rows,
         ocv_by_T=curves,
         **_hysteresis(m),
+        **_excess(m),
     )
+
+
+def _excess(m: dict) -> dict:
+    x = m.get("excess_polarisation")
+    if not x:
+        return {}
+    return {
+        "Rx_cold": float(x["Rx_cold_ohm"]),
+        "T_x": float(x["at_C"]) + 273.15,
+        "Ea_x": float(x["Ea_x"]),
+        "soc_x": float(x["soc_x"]),
+        "w_x": float(x["w_x"]),
+        "tau_x": float(x["tau_x_s"]),
+        "I_x": float(x["I_x_A"]),
+        "I_x_tested": float(x.get("I_tested_A", 0.0)),
+    }
 
 
 def _hysteresis(m: dict) -> dict:

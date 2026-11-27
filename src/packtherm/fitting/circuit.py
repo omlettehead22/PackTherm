@@ -32,10 +32,10 @@ from itertools import pairwise
 import numpy as np
 from scipy.optimize import least_squares
 
-from ..ecm import ECM, FULL_SOC
+from ..ecm import ECM, EXCESS_SEEN_V, FULL_SOC
 from ..testdata import TestRecord
 from .ocv import OCVCurve, hysteresis_mV, ocv_from_slow_test
-from .soc import track_soc
+from .soc import start_soc_from_end, track_soc
 
 T_REF = 298.15
 # The temperature behaviour used until v0.6.2 fits it: the library NCR18650PF's.
@@ -180,10 +180,12 @@ class CircuitModel(CellModel):
         eta = vd = vm = 0.0
         h = (1.0 if float(soc[0]) >= FULL_SOC else 0.0) if h0 is None else h0
         sgn = h
+        excess, i_f = ecm.excess, 0.0  # v0.6.17: the excess branch's smoothed current
         if steady_start:
             I0, T0 = float(now[0]), float(T_K[0])
             f0 = ecm.factor(float(soc[0]), I0, T0)
             eta, vd, vm = f0 * ecm.eta_ss(I0, T0), f0 * Rd(T0) * I0, f0 * Rm(T0) * I0
+            i_f = I0
         for k in range(t.size):
             Tk = float(T_K[k])
             if k:
@@ -197,9 +199,13 @@ class CircuitModel(CellModel):
                 vm = vm * e3 + f * Rm(Tk) * Im * (1.0 - e3)
                 h = ecm.hyst_step(h, Im, dt, Tk)
                 sgn = ecm.hyst_sign(sgn, Im)
+                if excess:
+                    i_f = ecm.excess_step(i_f, Im, dt)
             In = float(now[k])
             fn = ecm.factor(float(soc[k]), In, Tk)
             out[k] = ecm.ocv(float(soc[k]), Tk) - In * fn * R0(Tk) - eta - vm - vd
+            if excess:
+                out[k] -= ecm.excess_V(i_f, float(soc[k]), Tk)
             if ecm.hyst:
                 out[k] += ecm.hyst_offset(h, sgn, Tk)
         return out
@@ -716,6 +722,95 @@ HYST_SOC = (0.2, 0.85)  # where a slow charge gives the gap: past the change of 
 HYST_RATE = (1.0, 100.0)
 
 
+EXCESS_FLOOR_V = 0.05  # the excess stage scores long tests down to this far above the cut-off
+EXCESS_THIN = 5  # and thins them to every n-th sample (the branch relaxes over minutes)
+
+
+def _thin(tr: Trace, n: int) -> Trace:
+    """Every n-th sample, with the mean current over each new interval (no charge lost)."""
+    if n <= 1 or tr.t.size <= 2 * n:
+        return tr
+    keep = np.arange(0, tr.t.size, n)
+    q = np.concatenate([[0.0], np.cumsum(tr.current[1:] * np.diff(tr.t))])[keep]
+    dt = np.diff(tr.t[keep])
+    Im = np.concatenate([[0.0], np.diff(q) / np.where(dt > 0, dt, 1.0)])
+    return Trace(tr.t[keep], Im, tr.soc[keep], tr.T_K[keep], tr.V[keep], tr.now[keep], tr.steady_start)
+
+
+def _fit_excess(model, ecm: ECM, fits: list, ocv: OCVCurve, cap: float) -> tuple[ECM, dict]:
+    """The excess polarisation branch (v0.6.17), fitted on every long test and slow charge, whole.
+
+    The other stages score long tests down to the knee; this one goes to the cut-off, where the cold
+    losses are. Everything else is held. Two starts (a milder and a steeper temperature law); the better.
+    """
+    traces = []
+    for f in fits:
+        traces += [w.trace for w in f.step_wins if w.kind in ("discharge", "cycle")]
+        if f.test.slow_charge is not None:
+            # Anchored at its full end, as the trial was: from 0 % the branch went to patching the
+            # charge's start at every temperature (Rx at its cap, no temperature law, below 9 % only).
+            tr = _charge_trace(f.test, cap)
+            try:
+                soc0 = start_soc_from_end(f.test.slow_charge, cap, ecm.V_max)
+                tr = replace(tr, soc=tr.soc - tr.soc[0] + soc0)
+            except ValueError:
+                pass
+            traces.append(tr)
+        if f.test.slow is not None:
+            rec = f.test.slow
+            soc = 1.0 - rec.charge_Ah() / ocv.capacity_Ah
+            traces.append(Trace(rec.t, interval_current(rec), soc, temperature_K(rec), rec.voltage_V, rec.current_A))
+    traces = [_thin(tr, EXCESS_THIN) for tr in traces]
+    floor = ocv.V_min + EXCESS_FLOOR_V
+    use = [tr.V > floor for tr in traces]
+    I_x = abs(float(ocv.current_A))
+    T_x = min(float(np.median(tr.T_K)) for tr in traces)  # anchored at the coldest set's temperature
+
+    def with_q(q) -> ECM:
+        return replace(
+            ecm, Rx_cold=math.exp(q[0]), Ea_x=q[1], soc_x=q[2], w_x=q[3], tau_x=math.exp(q[4]), I_x=I_x, T_x=T_x
+        )
+
+    def resid(q):
+        e = with_q(q)
+        return np.concatenate(
+            [(tr.simulate(model, e) - tr.V)[u] / math.sqrt(max(u.sum(), 1)) for tr, u in zip(traces, use)]
+        )
+
+    lo = [math.log(1e-3), 0.0, 0.0, 0.01, math.log(30.0)]
+    hi = [math.log(20.0), 400e3, 0.7, 0.3, math.log(3000.0)]
+    best = None
+    for Ea0 in (60e3, 150e3):
+        r = least_squares(
+            resid,
+            [math.log(1.5), Ea0, 0.3, 0.06, math.log(300.0)],
+            bounds=(lo, hi),
+            x_scale=[0.3, 3e4, 0.05, 0.02, 0.3],
+            diff_step=1e-2,
+            max_nfev=200,
+        )
+        if best is None or r.cost < best.cost:
+            best = r
+    before = float(np.sqrt(np.mean(resid([math.log(1e-9), 0.0, 0.3, 0.06, math.log(300.0)]) ** 2)))
+    out = with_q(best.x)
+    after = float(np.sqrt(np.mean(resid(best.x) ** 2)))
+    out = replace(out, I_x_tested=_excess_tested(out, traces, use))
+    return out, {"tests": len(traces), "rms_before": before, "rms_after": after, "I_x": I_x, "T_x": T_x}
+
+
+def _excess_tested(ecm: ECM, traces: list, use: list) -> float:
+    """The largest smoothed current at which the branch adds EXCESS_SEEN_V or more on the scored tests."""
+    seen = 0.0
+    for tr, u in zip(traces, use):
+        i_f = float(tr.now[0]) if tr.steady_start else 0.0  # as the replay starts it
+        for k in range(tr.t.size):
+            if k:
+                i_f = ecm.excess_step(i_f, float(tr.current[k]), float(tr.t[k] - tr.t[k - 1]))
+            if u[k] and abs(ecm.excess_V(i_f, float(tr.soc[k]), float(tr.T_K[k]))) >= EXCESS_SEEN_V:
+                seen = max(seen, abs(i_f))
+    return seen
+
+
 def _charge_trace(test: TestSet, cap: float) -> Trace:
     """A slow charge as a trace, its state of charge counted from its start (empty, by default)."""
     rec = test.slow_charge
@@ -940,6 +1035,7 @@ def fit_cell(
     V_max: float | None = None,
     sets: list[TestSet] | None = None,
     check_soc0: list[float | None] | None = None,
+    excess: bool = False,
 ) -> FitResult:
     """Fit the circuit model, at one temperature or several.
 
@@ -1041,6 +1137,9 @@ def fit_cell(
             _off_charge_branch(ocv, curves, ecm0, cap)
 
     ecm = model.ecm(values, ocv, V_max, by_T=rows, hyst=hyst if multi else None)
+    excess_info = None
+    if excess:  # v0.6.17: losses beyond the open-circuit curves' rate, to the cut-off
+        ecm, excess_info = _fit_excess(model, ecm, fits, ocv, cap)
     correlated: list[tuple[str, str, float]] = []
     if multi:
         params = list(laws)
@@ -1050,6 +1149,23 @@ def fit_cell(
         params, correlated = _uncertainty(model, f.names, f.values, f.res, sizes)
         params += _stage_params(model, f.values, f.stages.get("rise"))
         params += _slow_params(model, f.values, f.slow)
+    if excess_info is not None:
+        src = "fitted"
+        for name, unit, v, what in (
+            ("Rx_cold", "ohm", ecm.Rx_cold, f"excess polarisation at {ecm.T_x - 273.15:.1f} degC and empty"),
+            ("Ea_x", "J/mol", ecm.Ea_x, "how the excess polarisation grows in the cold"),
+            ("soc_x", "-", ecm.soc_x, "where the excess polarisation's rise is half way (SOC)"),
+            ("w_x", "-", ecm.w_x, "how sharply it rises as the charge runs down (SOC)"),
+            ("tau_x", "s", ecm.tau_x, "over how long the current that drives it is smoothed"),
+        ):
+            params.append(ParamResult(name, unit, v, src, what))
+        params.append(
+            ParamResult("I_x", "A", ecm.I_x, "data", "the excess polarisation's threshold: the slow tests' current")
+        )
+        notes.append(
+            f"excess polarisation (v0.6.17) fitted on {excess_info['tests']} long tests and slow charges to the "
+            f"cut-off: {1e3 * excess_info['rms_before']:.1f} -> {1e3 * excess_info['rms_after']:.1f} mV RMS on them"
+        )
     params.append(ParamResult("capacity_Ah", "Ah", cap, "data", "capacity: the slow discharge's charge"))
     params.append(ParamResult("V_min", "V", ocv.V_min, "data", "discharge cut-off: where the slow discharge stopped"))
     params.append(ParamResult("V_max", "V", V_max, "data", "charge limit: the highest voltage in the tests"))
@@ -1128,7 +1244,11 @@ def fit_cell(
     from_long = [f for f in fits if f.stages.get("middle") == "long tests"]
     if from_long:
         at = ", ".join(f"{f.T_C:.0f}" for f in from_long)
-        kin = "pulses" if all(f.test.pulses is not None for f in fits) else "kinetic windows (pulses, or changes in current)"
+        kin = (
+            "pulses"
+            if all(f.test.pulses is not None for f in fits)
+            else "kinetic windows (pulses, or changes in current)"
+        )
         notes.append(
             f"the middle branch's time constant (tau_m) set by the long tests at {at} degC, where they fit "
             f"better that way and the {kin} still fit (elsewhere by the {kin})"
@@ -1136,9 +1256,7 @@ def fit_cell(
     # v0.6.8: say plainly where the tests don't pin the split between the branches (two or more of a
     # temperature's branch values at the edge of their ranges); the total they give is still fitted.
     branch = ["I0_25C", "gamma", "tau_ct", "Rm_25C", "tau_m", "Rd_25C", "tau_d"]
-    loose = [
-        (f, [n for n in branch if _at_edge(f.values[n], model.param(n))]) for f in fits
-    ]
+    loose = [(f, [n for n in branch if _at_edge(f.values[n], model.param(n))]) for f in fits]
     loose = [(f, ns) for f, ns in loose if len(ns) >= 2]
     if loose:
         at = "; ".join(f"{round(f.T_C) + 0:d} degC ({', '.join(ns)})" for f, ns in loose)
@@ -1230,7 +1348,9 @@ def _slow_params(model, values, stage) -> list[ParamResult]:
         for nme in SLOW_NAMES:
             prm = model.param(nme)
             out.append(
-                ParamResult(nme, prm.unit, values[nme], "not fitted", prm.what, note="a starting value: give a steps test")
+                ParamResult(
+                    nme, prm.unit, values[nme], "not fitted", prm.what, note="a starting value: give a steps test"
+                )
             )
         return out
     nms, res, wins = stage
@@ -1261,6 +1381,8 @@ def _checks(model, ecm, ocv, cap, checks, compare_ecm, soc0s=None):
     check_out, plot_checks = [], []
     soc0s = list(soc0s or []) + [None] * len(checks)
     for rec, soc0 in zip(checks, soc0s):
+        if soc0 == "end":  # v0.6.17: counted back from a test that ends full
+            soc0 = start_soc_from_end(rec, cap, ecm.V_max)
         row = {"file": rec.source}
         soc_c, how = track_soc(rec, ocv, cap, soc0=soc0)
         I = interval_current(rec)
@@ -1292,9 +1414,7 @@ def _checks(model, ecm, ocv, cap, checks, compare_ecm, soc0s=None):
     return check_out, plot_checks
 
 
-def _uncertainty(
-    model, names, values, res, sizes: list[int]
-) -> tuple[list[ParamResult], list[tuple[str, str, float]]]:
+def _uncertainty(model, names, values, res, sizes: list[int]) -> tuple[list[ParamResult], list[tuple[str, str, float]]]:
     """95% ranges and correlations, counting each window (a pulse, a step) as one piece of evidence.
 
     The usual ranges from a least-squares fit assume every sample's error is
@@ -1354,7 +1474,9 @@ def _uncertainty(
     return out, pairs
 
 
-def _validity(slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: list[Window], multi: bool = False) -> dict:
+def _validity(
+    slow: TestRecord, ocv: OCVCurve, wins: list[Window], step_wins: list[Window], multi: bool = False
+) -> dict:
     """What the fit saw: the cell temperatures in the parts it used, the state of charge and rates of its pulses."""
     temps = [w.trace.T_K[w.k0 : w.k1] - 273.15 for w in (*wins, *step_wins)]
     if slow.temperature_C is not None and ocv.discharge_span is not None:
